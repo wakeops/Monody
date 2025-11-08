@@ -1,0 +1,42 @@
+# General
+.git
+.gitignore
+.gitattributes
+.github/
+.vscode/
+.idea/
+*.user
+*.swp
+*.swo
+
+# Build outputs
+bin/
+obj/
+**/bin/
+**/obj/
+artifacts/
+out/
+publish/
+
+# NuGet caches on host
+.nuget/
+
+# Logs / runtime artifacts
+*.log
+*.trace
+*.trn
+*.etl
+*.pid
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Tests output
+TestResults/
+*.coverage
+*.coveragexml
+
+# Docker recursion safety
+Dockerfile
+docker-compose.yml

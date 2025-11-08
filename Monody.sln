@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.Bot", "src\Monody.Bot\Monody.Bot.csproj", "{7700117D-489B-4B3A-B389-22771EFC83DD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		Dockerfile = Dockerfile
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7647D9FD-931E-4C9E-ADE5-8D225ED410FD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.Module.Weather", "src\Monody.Module.Weather\Monody.Module.Weather.csproj", "{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.Domain", "src\Monody.Domain\Monody.Domain.csproj", "{6A8BA823-61F6-487C-BA19-8722BCC19561}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{BDB0A987-658F-4CAF-99CD-F3961B8FC114}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7700117D-489B-4B3A-B389-22771EFC83DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7700117D-489B-4B3A-B389-22771EFC83DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7700117D-489B-4B3A-B389-22771EFC83DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7700117D-489B-4B3A-B389-22771EFC83DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A8BA823-61F6-487C-BA19-8722BCC19561}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A8BA823-61F6-487C-BA19-8722BCC19561}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A8BA823-61F6-487C-BA19-8722BCC19561}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A8BA823-61F6-487C-BA19-8722BCC19561}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7700117D-489B-4B3A-B389-22771EFC83DD} = {7647D9FD-931E-4C9E-ADE5-8D225ED410FD}
+		{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5} = {BDB0A987-658F-4CAF-99CD-F3961B8FC114}
+		{6A8BA823-61F6-487C-BA19-8722BCC19561} = {7647D9FD-931E-4C9E-ADE5-8D225ED410FD}
+		{BDB0A987-658F-4CAF-99CD-F3961B8FC114} = {7647D9FD-931E-4C9E-ADE5-8D225ED410FD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5711E48B-ED9A-4635-86B1-31D50B663FAE}
+	EndGlobalSection
+EndGlobal

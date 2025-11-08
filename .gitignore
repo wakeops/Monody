@@ -1,0 +1,43 @@
+## Build output
+bin/
+obj/
+out/
+artifacts/
+publish/
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/packages/
+
+## Logs
+*.log
+*.trace
+*.trn
+
+## User-specific files
+*.user
+*.suo
+*.rsuser
+
+## Rider / VS / VSCode / JetBrains
+.vscode/
+.idea/
+.vs/
+*.sln.docstates
+
+## Testing
+TestResults/
+*.coverage
+*.coveragexml
+*.trx
+appsettings.Development.json
+
+## OS / Tooling Noise
+.DS_Store
+Thumbs.db
+
+## Cache
+*.cache
+*.temp
+!/src/**/*.Cache/
