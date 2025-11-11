@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36414.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.Bot", "src\Monody.Bot\Monody.Bot.csproj", "{7700117D-489B-4B3A-B389-22771EFC83DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monody.Bot", "src\Monody.Bot\Monody.Bot.csproj", "{7700117D-489B-4B3A-B389-22771EFC83DD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
@@ -18,15 +18,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7647D9FD-931E-4C9E-ADE5-8D225ED410FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.Module.Weather", "src\Monody.Module.Weather\Monody.Module.Weather.csproj", "{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monody.Module.Weather", "src\Monody.Module.Weather\Monody.Module.Weather.csproj", "{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.Domain", "src\Monody.Domain\Monody.Domain.csproj", "{6A8BA823-61F6-487C-BA19-8722BCC19561}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monody.Domain", "src\Monody.Domain\Monody.Domain.csproj", "{6A8BA823-61F6-487C-BA19-8722BCC19561}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{BDB0A987-658F-4CAF-99CD-F3961B8FC114}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.Module.AIChat", "src\Monody.Module.AIChat\Monody.Module.AIChat.csproj", "{55AF6A54-EF00-452E-8B34-32D33DE85303}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monody.Module.AIChat", "src\Monody.Module.AIChat\Monody.Module.AIChat.csproj", "{55AF6A54-EF00-452E-8B34-32D33DE85303}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6A8BA823-61F6-487C-BA19-8722BCC19561} = {6A8BA823-61F6-487C-BA19-8722BCC19561}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{4CFEB703-866E-4E40-95E5-9F25AAFC0B92}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\01-release.yaml = .github\workflows\01-release.yaml
+		.github\workflows\02-publish-on-release.yaml = .github\workflows\02-publish-on-release.yaml
 	EndProjectSection
 EndProject
 Global
@@ -61,6 +67,7 @@ Global
 		{6A8BA823-61F6-487C-BA19-8722BCC19561} = {7647D9FD-931E-4C9E-ADE5-8D225ED410FD}
 		{BDB0A987-658F-4CAF-99CD-F3961B8FC114} = {7647D9FD-931E-4C9E-ADE5-8D225ED410FD}
 		{55AF6A54-EF00-452E-8B34-32D33DE85303} = {BDB0A987-658F-4CAF-99CD-F3961B8FC114}
+		{4CFEB703-866E-4E40-95E5-9F25AAFC0B92} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5711E48B-ED9A-4635-86B1-31D50B663FAE}
