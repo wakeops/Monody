@@ -28,7 +28,10 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
     [SlashCommand("now", "Get the current forecast.")]
     [CommandContextType(InteractionContextType.PrivateChannel, InteractionContextType.BotDm, InteractionContextType.Guild)]
-    public async Task GetWeatherNowAsync(string location)
+    public async Task GetWeatherNowAsync(
+        [Summary("Location", "Where would like to forecast?")]
+        [MaxLength(Constants.MaxLocationNameLength)]
+        string location)
     {
         await DeferAsync();
 
@@ -154,7 +157,10 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
     [SlashCommand("hourly", "Get the hourly forecast.")]
     [CommandContextType(InteractionContextType.PrivateChannel, InteractionContextType.BotDm, InteractionContextType.Guild)]
-    public async Task GetWeatherHourlyAsync(string location)
+    public async Task GetWeatherHourlyAsync(
+        [Summary("Location", "Where would like to forecast?")]
+        [MaxLength(Constants.MaxLocationNameLength)]
+        string location)
     {
         await ProcessGetWeatherHourly(0, location);
     }
@@ -255,7 +261,10 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
     [SlashCommand("week", "Get the weekly forecast.")]
     [CommandContextType(InteractionContextType.PrivateChannel, InteractionContextType.BotDm, InteractionContextType.Guild)]
-    public async Task GetWeatherWeekAsync(string location)
+    public async Task GetWeatherWeekAsync(
+        [Summary("Location", "Where would like to forecast?")]
+        [MaxLength(Constants.MaxLocationNameLength)]
+        string location)
     {
         await DeferAsync();
 

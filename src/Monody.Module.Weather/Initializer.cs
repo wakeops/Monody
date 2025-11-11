@@ -3,6 +3,7 @@ using DarkSky.Services;
 using Geo.Here.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Monody.Domain.Extensions;
 using Monody.Domain.Module;
 using Monody.Module.Weather.Services;
 
@@ -12,18 +13,14 @@ public class Initializer : ModuleInitializer
 {
     public override void AddModuleServices(IServiceCollection services, IConfiguration configuration)
     {
-        services
-            .AddOptions<WeatherOptions>()
-            .BindConfiguration("Weather")
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+        services.RegisterOptions<WeatherOptions>("Weather");
 
-        var opt = configuration.GetSection("Weather").Get<WeatherOptions>();
+        var opts = configuration.GetRequiredOptions<WeatherOptions>("Weather");
 
-        services.AddHereServices(builder => builder.UseKey(opt.HereApiKey));
+        services.AddHereServices(builder => builder.UseKey(opts.HereApiKey));
 
         services.AddTransient(sp => new DarkSkyService(
-            opt.PirateWeatherApiKey,
+            opts.PirateWeatherApiKey,
             baseUri: new Uri(Constants.PirateWeatherApi),
             jsonSerializerService: new DarkSkyJsonSerializerService()));
 

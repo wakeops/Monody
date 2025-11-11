@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Monody.Bot.Options;
 using Monody.Bot.Services;
+using Monody.Domain.Extensions;
 using Monody.Domain.Module;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -18,11 +19,7 @@ internal static partial class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDiscord(this IServiceCollection services)
     {
-        services
-            .AddOptions<DiscordOptions>()
-            .BindConfiguration("Discord")
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+        services.RegisterOptions<DiscordOptions>("Discord");
 
         services.AddDiscordHost((config, sp) =>
         {
@@ -63,7 +60,7 @@ internal static partial class ServiceCollectionExtensions
 
     public static IServiceCollection AddCache(this IServiceCollection services, IConfiguration configuration)
     {
-        var cacheOptions = configuration.GetSection("Cache").Get<CacheOptions>();
+        var cacheOptions = configuration.GetRequiredOptions<CacheOptions>("Cache");
 
         services.Configure<LoggerFilterOptions>(options =>
         {
@@ -110,7 +107,7 @@ internal static partial class ServiceCollectionExtensions
 
         foreach (var type in moduleTypes)
         {
-            logger.LogInformation("Loading module: {ModuleName}", type.Assembly.GetName().Name);
+            logger.Log_LoadingModule(type.Assembly.GetName().Name);
 
             if (Activator.CreateInstance(type, nonPublic: true) is ModuleInitializer module)
             {
@@ -118,10 +115,19 @@ internal static partial class ServiceCollectionExtensions
             }
             else
             {
-                logger.LogWarning("Failed to initialize module: {ModuleName}", type.FullName);
+                logger.Log_FailedToInitializeModule(type.Assembly.GetName().Name);
             }
         }
 
         return services;
     }
+}
+
+internal static partial class ServiceCollectionExtensions
+{
+    [LoggerMessage(Level = LogLevel.Information, Message = "Loading module: {ModuleName}")]
+    private static partial void Log_LoadingModule(this ILogger logger, string moduleName);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to initialize module: {ModuleName}")]
+    private static partial void Log_FailedToInitializeModule(this ILogger logger, string moduleName);
 }

@@ -18,6 +18,7 @@
     <PackageVersion Include="Discord.Addons.Hosting" Version="6.1.0" />
     <PackageVersion Include="DarkSkyCore" Version="6.0.2" />
     <PackageVersion Include="Geo.Here" Version="1.2.1" />
+    <PackageVersion Include="OpenAI" Version="2.6.0" />
     <PackageVersion Include="StackExchange.Redis" Version="2.9.32" />
     <PackageVersion Include="TimeZoneNames" Version="6.0.0" />
     <PackageVersion Include="ZiggyCreatures.FusionCache" Version="2.4.0" />

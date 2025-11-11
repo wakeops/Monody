@@ -30,7 +30,7 @@ internal static class ModuleLoader
                 continue;
             }
 
-            Assembly? asm = null;
+            Assembly asm = null;
             try
             {
                 var an = AssemblyName.GetAssemblyName(path);

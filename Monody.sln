@@ -24,6 +24,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.Domain", "src\Monody
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{BDB0A987-658F-4CAF-99CD-F3961B8FC114}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.Module.AIChat", "src\Monody.Module.AIChat\Monody.Module.AIChat.csproj", "{55AF6A54-EF00-452E-8B34-32D33DE85303}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6A8BA823-61F6-487C-BA19-8722BCC19561} = {6A8BA823-61F6-487C-BA19-8722BCC19561}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,6 +47,10 @@ Global
 		{6A8BA823-61F6-487C-BA19-8722BCC19561}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A8BA823-61F6-487C-BA19-8722BCC19561}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A8BA823-61F6-487C-BA19-8722BCC19561}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55AF6A54-EF00-452E-8B34-32D33DE85303}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55AF6A54-EF00-452E-8B34-32D33DE85303}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55AF6A54-EF00-452E-8B34-32D33DE85303}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55AF6A54-EF00-452E-8B34-32D33DE85303}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -51,6 +60,7 @@ Global
 		{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5} = {BDB0A987-658F-4CAF-99CD-F3961B8FC114}
 		{6A8BA823-61F6-487C-BA19-8722BCC19561} = {7647D9FD-931E-4C9E-ADE5-8D225ED410FD}
 		{BDB0A987-658F-4CAF-99CD-F3961B8FC114} = {7647D9FD-931E-4C9E-ADE5-8D225ED410FD}
+		{55AF6A54-EF00-452E-8B34-32D33DE85303} = {BDB0A987-658F-4CAF-99CD-F3961B8FC114}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5711E48B-ED9A-4635-86B1-31D50B663FAE}
