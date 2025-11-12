@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using Discord;
 using Discord.Addons.Hosting;
 using Discord.Addons.Hosting.Util;
 using Discord.Interactions;
+using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -30,8 +32,9 @@ internal class InteractionHandler : DiscordClientService
     {
         Client.InteractionCreated += HandleInteractionAsync;
 
-        var appAssemblies = AppDomain.CurrentDomain.GetAssemblies().Where(a => a.FullName.Contains("Monody.Module"));
-        foreach (var appAssembly in appAssemblies) {
+        var appAssemblies = AppDomain.CurrentDomain.GetAssemblies().Where(a => a.FullName.StartsWith("Monody.Module"));
+        foreach (var appAssembly in appAssemblies)
+        {
             await _interactionService.AddModulesAsync(appAssembly, _serviceProvider);
         }
 
@@ -43,8 +46,34 @@ internal class InteractionHandler : DiscordClientService
         }
         else
         {
-            await _interactionService.RegisterCommandsGloballyAsync(true);
+            var commands = await _interactionService.RegisterCommandsGloballyAsync(true);
+
+            LogCommands(commands);
         }
+    }
+
+    private void LogCommands(IEnumerable<RestGlobalCommand> commands)
+    {
+        var commandList = commands
+            .SelectMany(command =>
+            {
+                var entry = $"/{command.Name}";
+
+                var entries = new List<string>();
+                if (command.Options.Count == 0 || !command.Options.All(o => o.Type == ApplicationCommandOptionType.SubCommand || o.Type == ApplicationCommandOptionType.SubCommandGroup))
+                {
+                    entries.Add(entry);
+                }
+
+                entries.AddRange(command.Options
+                    .Where(option => option.Type == ApplicationCommandOptionType.SubCommand || option.Type == ApplicationCommandOptionType.SubCommandGroup)
+                    .Select(option => $"{entry} {option.Name}"));
+
+                return entries;
+            })
+            .ToList();
+
+        Logger.LogInformation($"Added commands: {string.Join(", ", commandList)}");
     }
 
     private async Task HandleInteractionAsync(SocketInteraction interaction)

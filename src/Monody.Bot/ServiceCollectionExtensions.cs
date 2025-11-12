@@ -1,6 +1,6 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
-using System.Reflection;
 using Discord.Addons.Hosting;
 using Discord.Commands;
 using Microsoft.Extensions.Configuration;
@@ -52,7 +52,6 @@ internal static partial class ServiceCollectionExtensions
 
         services
             .AddHostedService<InteractionHandler>()
-            .AddHostedService<CommandHandler>()
             .AddHostedService<BotStatusService>();
 
         return services;
@@ -85,41 +84,48 @@ internal static partial class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddModules(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddModules(this IServiceCollection services, IConfiguration configuration, string modulesRoot)
     {
-        using var provider = services.BuildServiceProvider();
-        var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
-        var logger = loggerFactory.CreateLogger("ModuleBootstrap");
-
-        // Find all non-abstract types that inherit ModuleInitializer across loaded assemblies
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-        var assemblyTypes = assemblies
-            .SelectMany(a =>
-            {
-                try { return a.GetTypes(); }
-                catch (ReflectionTypeLoadException ex) { return ex.Types.Where(t => t != null)!; }
-            });
-
-        var moduleTypes = assemblyTypes
-            .Where(t => t is not null && typeof(ModuleInitializer).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract)
-            .Distinct()
-            .ToList();
-
-        foreach (var type in moduleTypes)
+        if (!Directory.Exists(modulesRoot))
         {
-            logger.Log_LoadingModule(type.Assembly.GetName().Name);
+            return services;
+        }
 
-            if (Activator.CreateInstance(type, nonPublic: true) is ModuleInitializer module)
-            {
-                module.AddModuleServices(services, configuration);
-            }
-            else
-            {
-                logger.Log_FailedToInitializeModule(type.Assembly.GetName().Name);
-            }
+        using var provider = services.BuildServiceProvider();
+        var logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger("ModuleBootstrap");
+
+        foreach (var modulePath in Directory.EnumerateDirectories(modulesRoot))
+        {
+            LoadModuleAssembly(services, configuration, logger, modulePath);
         }
 
         return services;
+    }
+
+    private static void LoadModuleAssembly(IServiceCollection services, IConfiguration configuration, ILogger logger, string modulePath)
+    {
+        var moduleAsms = Directory.EnumerateFiles(modulePath, "Monody.Module.*.dll", SearchOption.AllDirectories);
+
+        foreach (var moduleAsm in moduleAsms)
+        {
+            var mlc = new ModuleLoadContext(moduleAsm);
+            var asm = mlc.LoadFromAssemblyName(new(Path.GetFileNameWithoutExtension(moduleAsm)));
+
+            foreach (var type in asm.GetTypes().Where(t => typeof(ModuleInitializer).IsAssignableFrom(t)))
+            {
+                logger.Log_LoadingModule(asm.GetName().Name);
+
+                if (Activator.CreateInstance(type) is ModuleInitializer module)
+                {
+                    module.AddModuleServices(services, configuration);
+                }
+                else
+                {
+                    logger.Log_FailedToInitializeModule(asm.GetName().Name);
+                    throw new ApplicationException($"Failed to initialize module: {type.Assembly.GetName().Name}");
+                }
+            }
+        }
     }
 }
 

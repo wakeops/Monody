@@ -6,10 +6,9 @@ COPY *.sln ./
 COPY Directory.Packages.props ./
 
 COPY ./src/Monody.Bot/*.csproj ./src/Monody.Bot/
-
-COPY *.sln ./
-COPY Directory.Packages.props ./
-COPY ./src/Monody.Bot/*.csproj ./src/Monody.Bot/
+COPY ./src/Monody.Domain/*.csproj ./src/Monody.Domain/
+COPY ./src/Modules/Monody.Module.AIChat/*.csproj ./src/Modules/Monody.Module.AIChat/
+COPY ./src/Modules/Monody.Module.Weather/*.csproj ./src/Modules/Monody.Module.Weather/
 
 RUN --mount=type=cache,target=/root/.nuget/packages dotnet restore --nologo
 

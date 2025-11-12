@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Geo.Here.Abstractions;
+using Geo.Here;
 using Geo.Here.Models.Parameters;
 using Geo.Here.Models.Responses;
 using Microsoft.Extensions.Logging;

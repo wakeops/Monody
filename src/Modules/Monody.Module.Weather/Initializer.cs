@@ -1,6 +1,6 @@
 ﻿using System;
 using DarkSky.Services;
-using Geo.Here.DependencyInjection;
+using Geo.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Monody.Domain.Extensions;
@@ -17,7 +17,8 @@ public class Initializer : ModuleInitializer
 
         var opts = configuration.GetRequiredOptions<WeatherOptions>("Weather");
 
-        services.AddHereServices(builder => builder.UseKey(opts.HereApiKey));
+        services.AddHereGeocoding()
+            .AddKey(opts.HereApiKey);
 
         services.AddTransient(sp => new DarkSkyService(
             opts.PirateWeatherApiKey,

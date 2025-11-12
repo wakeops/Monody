@@ -4,13 +4,9 @@
     <PackageReference Include="Discord.Addons.Hosting" />
     <PackageReference Include="OpenAI" />
   </ItemGroup>
-    
-  <PropertyGroup>
-      <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Monody.Domain\Monody.Domain.csproj" />
+    <ProjectReference Include="..\..\Monody.Domain\Monody.Domain.csproj" />
   </ItemGroup>
 
 </Project>

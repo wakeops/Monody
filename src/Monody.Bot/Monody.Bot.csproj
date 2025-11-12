@@ -18,7 +18,6 @@
     
   <ItemGroup>
       <ProjectReference Include="..\Monody.Domain\Monody.Domain.csproj" />
-      <ProjectReference Include="..\Monody.Module.*\*.csproj" />
   </ItemGroup>
 
   <ItemGroup>

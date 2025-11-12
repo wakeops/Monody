@@ -1,9 +1,13 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.IO;
+using System;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Monody.Bot;
 
-ModuleLoader.LoadModules();
+var modulesPath = Path.Combine(AppContext.BaseDirectory, "modules");
+
+//ModuleLoader.LoadModules();
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -21,7 +25,7 @@ builder.Configuration
 // Services
 builder.Services
     .AddCache(builder.Configuration)
-    .AddModules(builder.Configuration)
+    .AddModules(builder.Configuration, modulesPath)
     .AddDiscord();
 
 // Build and run

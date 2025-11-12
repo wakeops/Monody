@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
 		Directory.Packages.props = Directory.Packages.props
 		Dockerfile = Dockerfile
 		README.md = README.md
@@ -18,13 +19,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7647D9FD-931E-4C9E-ADE5-8D225ED410FD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monody.Module.Weather", "src\Monody.Module.Weather\Monody.Module.Weather.csproj", "{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monody.Module.Weather", "src\Modules\Monody.Module.Weather\Monody.Module.Weather.csproj", "{17A3C4E8-23B2-41F1-B7C0-482DF6953AD5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monody.Domain", "src\Monody.Domain\Monody.Domain.csproj", "{6A8BA823-61F6-487C-BA19-8722BCC19561}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{BDB0A987-658F-4CAF-99CD-F3961B8FC114}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monody.Module.AIChat", "src\Monody.Module.AIChat\Monody.Module.AIChat.csproj", "{55AF6A54-EF00-452E-8B34-32D33DE85303}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monody.Module.AIChat", "src\Modules\Monody.Module.AIChat\Monody.Module.AIChat.csproj", "{55AF6A54-EF00-452E-8B34-32D33DE85303}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6A8BA823-61F6-487C-BA19-8722BCC19561} = {6A8BA823-61F6-487C-BA19-8722BCC19561}
 	EndProjectSection
