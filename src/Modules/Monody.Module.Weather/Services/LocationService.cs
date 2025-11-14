@@ -36,7 +36,7 @@ public class LocationService
 
     private async Task<LocationDetails> SearchGeocodeByLocationFromApiAsync(string locationQuery)
     {
-        _logger.Log_FetchingGecode(locationQuery);
+        _logger.LogInformation("Fetching location for '{Location}'", locationQuery);
 
         try
         {
@@ -58,7 +58,7 @@ public class LocationService
         }
         catch (Exception ex)
         {
-            _logger.Log_GecodeFailure(ex, locationQuery);
+            _logger.LogError(ex, "Failed to resolve geocode: '{Location}'", locationQuery);
         }
 
         return null;
@@ -76,13 +76,4 @@ public class LocationService
             return x.Scoring.QueryScore.CompareTo(y.Scoring.QueryScore);
         }
     }
-}
-
-internal static partial class LocationServiceLogging
-{
-    [LoggerMessage(Level = LogLevel.Information, Message = "Fetching location for '{Location}'")]
-    public static partial void Log_FetchingGecode(this ILogger logger, string location);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to resolve geocode: '{Location}'")]
-    public static partial void Log_GecodeFailure(this ILogger logger, Exception ex, string location);
 }

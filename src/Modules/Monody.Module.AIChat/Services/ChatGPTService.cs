@@ -29,7 +29,7 @@ understanding, but do not reveal the raw context unless explicitly asked.";
 
     public async Task<ChatCompletion> GetChatCompletionAsync(List<ChatMessage> messages, string prompt)
     {
-        _logger.Log_ChatMessageRequest(prompt);
+        _logger.LogInformation("New chat request: {Prompt}", prompt);
 
         var completionMessages = new List<ChatMessage> { new SystemChatMessage(_systemPrompt) };
         completionMessages.AddRange(messages);
@@ -40,7 +40,7 @@ understanding, but do not reveal the raw context unless explicitly asked.";
 
     public async Task<GeneratedImage> GetImageGenerationAsync(string prompt, GeneratedImageSize genSize)
     {
-        _logger.Log_ImageGenerationRequest(prompt);
+        _logger.LogInformation("New image generation request: {Prompt}", prompt);
 
         var options = new ImageGenerationOptions
         {
@@ -80,7 +80,7 @@ understanding, but do not reveal the raw context unless explicitly asked.";
 
     private Exception HandleError(ClientResultException ex)
     {
-        _logger.Log_ChatCompletionError(ex.Message, ex);
+        _logger.LogError(ex, "Failed to get chat completion: {ErrorMessage}", ex.Message);
 
         var statusText = ex.Status.ToString() ?? string.Empty;
 
@@ -92,16 +92,4 @@ understanding, but do not reveal the raw context unless explicitly asked.";
 
         return new InvalidOperationException(ex.Message);
     }
-}
-
-internal static partial class ChatGPTServiceLogging
-{
-    [LoggerMessage(Level = LogLevel.Information, Message = "New chat request: {Prompt}")]
-    public static partial void Log_ChatMessageRequest(this ILogger logger, string prompt);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "New image generation request: {Prompt}")]
-    public static partial void Log_ImageGenerationRequest(this ILogger logger, string prompt);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to get chat completion: {ErrorMessage}")]
-    public static partial void Log_ChatCompletionError(this ILogger logger, string errorMessage, Exception ex);
 }

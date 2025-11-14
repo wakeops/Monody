@@ -4,7 +4,6 @@
     <PackageReference Include="Discord.Addons.Hosting" />
     <PackageReference Include="Geo.Here" />
     <PackageReference Include="DarkSkyCore" />
-    <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="TimeZoneNames" />
     <PackageReference Include="ZiggyCreatures.FusionCache" />
   </ItemGroup>

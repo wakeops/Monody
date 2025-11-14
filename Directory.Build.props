@@ -7,9 +7,4 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" PrivateAssets="all" />
   </ItemGroup>
-    
-  <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Monody.Module.'))">
-    <EnableDynamicLoading>true</EnableDynamicLoading>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-  </PropertyGroup>
 </Project>

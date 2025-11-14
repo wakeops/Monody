@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <UserSecretsId>077b85ad-36dd-4042-885d-4dfa282db9f6</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,12 +13,18 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
     <PackageReference Include="Discord.Addons.Hosting" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Formatting.Compact" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+    <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="ZiggyCreatures.FusionCache" />
     <PackageReference Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis" />
   </ItemGroup>
     
   <ItemGroup>
       <ProjectReference Include="..\Monody.Domain\Monody.Domain.csproj" />
+      <ProjectReference Include="..\Modules\**\*.csproj" />
   </ItemGroup>
 
   <ItemGroup>

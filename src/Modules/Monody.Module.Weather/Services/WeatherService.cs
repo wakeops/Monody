@@ -134,7 +134,7 @@ public class WeatherService
 
     private async Task<Forecast> GetForecastFromApiAsync(double latitude, double longitude)
     {
-        _logger.Log_FetchingForecast(latitude, longitude);
+        _logger.LogInformation("Fetching forecast for {Latitude}, {Longitude}.", latitude, longitude);
 
         var result = await _darkSky.GetForecast(latitude, longitude, new OptionalParameters
         {
@@ -144,7 +144,7 @@ public class WeatherService
 
         if (result?.IsSuccessStatus != true)
         {
-            _logger.Log_ForecastFailure(latitude, longitude, result?.ResponseReasonPhrase);
+            _logger.LogError("Failed to fetch forecast for '{Latitude}, {Longitude}': {ResponseReason}.", latitude, longitude, result?.ResponseReasonPhrase);
             return null;
         }
 
@@ -173,13 +173,4 @@ public class WeatherService
                 };
             });
     }
-}
-
-internal static partial class WeatherServiceLogging
-{
-    [LoggerMessage(Level = LogLevel.Information, Message = "Fetching forecast for {Latitude}, {Longitude}.")]
-    public static partial void Log_FetchingForecast(this ILogger logger, double latitude, double longitude);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to fetch forecast for '{Latitude}, {Longitude}': {ResponseReason}.")]
-    public static partial void Log_ForecastFailure(this ILogger logger, double latitude, double longitude, string responseReason);
 }
