@@ -8,13 +8,13 @@ using OpenAI.Images;
 
 namespace Monody.Module.AIChat;
 
-public class Initializer : ModuleInitializer
+public class InjectionHandler : ModuleInjectionHandler
 {
     public override void AddModuleServices(IServiceCollection services, IConfiguration configuration)
     {
         services
             .AddOptions<OpenAIOptions>()
-            .BindConfiguration("OpenAI")
+            .BindConfiguration("Module:OpenAI")
             .ValidateDataAnnotations()
             .ValidateOnStart()
             .Configure(opts =>

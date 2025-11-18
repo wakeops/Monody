@@ -2,7 +2,7 @@
 
 namespace Monody.Module.AIChat;
 
-public sealed class OpenAIOptions
+internal class OpenAIOptions
 {
     [Required(AllowEmptyStrings = false, ErrorMessage = "OpenAI:ApiKey is required")]
     public string ApiKey { get; set; }

@@ -1,13 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 
-namespace Monody.Bot;
+namespace Monody.Bot.ModuleBuilder;
 
 public sealed class ModuleLoadContext : AssemblyLoadContext
 {
     private readonly AssemblyDependencyResolver _resolver;
+
+    private readonly List<string> _sharedDependencyPrefixes =
+    [
+        "Discord."
+    ];
 
     public ModuleLoadContext(string modulePath)
     {
@@ -16,14 +22,17 @@ public sealed class ModuleLoadContext : AssemblyLoadContext
 
     protected override Assembly Load(AssemblyName assemblyName)
     {
-        if (assemblyName.Name!.StartsWith("Discord.", StringComparison.OrdinalIgnoreCase)
-            || Default.Assemblies.Any(x => assemblyName.Name!.Equals(x.GetName().Name, StringComparison.OrdinalIgnoreCase)))
+        if (!_sharedDependencyPrefixes.Any(depPrefix => assemblyName.Name!.StartsWith(depPrefix, StringComparison.OrdinalIgnoreCase))
+            && !Default.Assemblies.Any(x => assemblyName.Name!.Equals(x.GetName().Name, StringComparison.OrdinalIgnoreCase)))
         {
-            return null; // fallback to Default context
+            var path = _resolver.ResolveAssemblyToPath(assemblyName);
+            if (path != null)
+            {
+                return LoadFromAssemblyPath(path);
+            }
         }
-
-        var path = _resolver.ResolveAssemblyToPath(assemblyName);
-        return path is null ? null : LoadFromAssemblyPath(path);
+        
+        return null; // fallback to Default context
     }
 
     protected override nint LoadUnmanagedDll(string unmanagedDllName)

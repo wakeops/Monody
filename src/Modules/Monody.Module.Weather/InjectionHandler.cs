@@ -9,13 +9,13 @@ using Monody.Module.Weather.Services;
 
 namespace Monody.Module.Weather;
 
-public class Initializer : ModuleInitializer
+public class InjectionHandler : ModuleInjectionHandler
 {
     public override void AddModuleServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.RegisterOptions<WeatherOptions>("Weather");
+        services.RegisterOptions<WeatherOptions>("Module:Weather");
 
-        var opts = configuration.GetRequiredOptions<WeatherOptions>("Weather");
+        var opts = configuration.GetRequiredOptions<WeatherOptions>("Module:Weather");
 
         services.AddHereGeocoding()
             .AddKey(opts.HereApiKey);

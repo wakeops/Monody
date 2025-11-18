@@ -47,7 +47,8 @@ internal static class ServiceCollectionExtensions
 
         services
             .AddHostedService<InteractionHandler>()
-            .AddHostedService<BotStatusService>();
+            .AddHostedService<BotStatusService>()
+            .AddHostedService<ModuleLoaderService>();
 
         return services;
     }

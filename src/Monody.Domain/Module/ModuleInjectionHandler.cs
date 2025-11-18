@@ -3,7 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Monody.Domain.Module;
 
-public abstract class ModuleInitializer
+/// <summary>
+/// Any assemblies that contain Discord modules must implement a class derived from this abstract base class.
+/// </summary>
+public abstract class ModuleInjectionHandler
 {
     public abstract void AddModuleServices(IServiceCollection services, IConfiguration configuration);
 }

@@ -11,6 +11,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Monody.Bot.ModuleBuilder.Models;
 using Monody.Bot.Options;
 
 namespace Monody.Bot.Services;
@@ -19,22 +20,27 @@ internal partial class ModuleLoaderService : IHostedService
 {
     private readonly DiscordSocketClient _client;
     private readonly InteractionService _interactionService;
-    private readonly DiscordOptions _options;
     private readonly IServiceProvider _serviceProvider;
+    private readonly DiscordOptions _options;
+    private readonly ModuleLoaderConfig _moduleLoaderConfig;
     private readonly ILogger<ModuleLoaderService> _logger;
 
-    public ModuleLoaderService(DiscordSocketClient client, InteractionService interactionService, IOptions<DiscordOptions> options, IServiceProvider serviceProvider, ILogger<ModuleLoaderService> logger)
+    public ModuleLoaderService(DiscordSocketClient client, InteractionService interactionService, IServiceProvider serviceProvider,
+        IOptions<DiscordOptions> options, IOptions<ModuleLoaderConfig> moduleLoaderConfig, ILogger<ModuleLoaderService> logger)
     {
         _client = client;
         _interactionService = interactionService;
-        _options = options.Value;
         _serviceProvider = serviceProvider;
+        _options = options.Value;
+        _moduleLoaderConfig = moduleLoaderConfig.Value;
         _logger = logger;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        foreach (var assembly in ModuleLoader.GetModuleAssemblies())
+        var moduleAssemblies = _moduleLoaderConfig.ModuleConfigs.Select(x => x.Assembly).Distinct();
+
+        foreach (var assembly in moduleAssemblies)
         {
             await _interactionService.AddModulesAsync(assembly, _serviceProvider);
         }
