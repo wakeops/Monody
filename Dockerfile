@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages dotnet restore --nologo
 COPY . .
 
 RUN --mount=type=cache,target=/root/.nuget/packages \
-    dotnet publish -c Release -o /app/publish --no-restore
+    dotnet publish -c Release -o /app/publish --no-restore ./src/Monody.Bot/Monody.Bot.csproj
 
 # --- Runtime ---
 FROM mcr.microsoft.com/dotnet/runtime:8.0
