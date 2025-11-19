@@ -12,6 +12,8 @@ public sealed class ModuleLoadContext : AssemblyLoadContext
 
     private readonly List<string> _sharedDependencyPrefixes =
     [
+        "Microsoft.",
+        "System.",
         "Discord."
     ];
 

@@ -29,7 +29,14 @@ public class ChatGPTService
         completionMessages.AddRange(messages);
         completionMessages.Add(new UserChatMessage(prompt));
 
-        return await GetChatCompletionAsync(completionMessages);
+        try
+        {
+            return await GetChatCompletionAsync(completionMessages);
+        }
+        catch (Exception ex)
+        {
+            throw HandleError(ex);
+        }
     }
 
     public async Task<GeneratedImage> GetImageGenerationAsync(string prompt, GeneratedImageSize genSize)
@@ -45,7 +52,7 @@ public class ChatGPTService
         {
             return await _imageClient.GenerateImageAsync(prompt, options);
         }
-        catch (ClientResultException ex)
+        catch (Exception ex)
         {
             throw HandleError(ex);
         }
@@ -66,22 +73,25 @@ public class ChatGPTService
         {
             return await _chatClient.CompleteChatAsync(messages, options);
         }
-        catch (ClientResultException ex)
+        catch (Exception ex)
         {
             throw HandleError(ex);
         }
     }
 
-    private Exception HandleError(ClientResultException ex)
+    private Exception HandleError(Exception ex)
     {
         _logger.LogError(ex, "Failed to get chat completion: {ErrorMessage}", ex.Message);
 
-        var statusText = ex.Status.ToString() ?? string.Empty;
-
-        // Check for 4xx client errors using a string-based check to be robust across status types
-        if (statusText.StartsWith("4", StringComparison.Ordinal))
+        if (ex is ClientResultException cex)
         {
-            return new InvalidOperationException("Unable to complete request");
+            var statusText = cex.Status.ToString() ?? string.Empty;
+
+            // Check for 4xx client errors
+            if (statusText.StartsWith("4", StringComparison.Ordinal))
+            {
+                return new InvalidOperationException("Unable to complete request");
+            }
         }
 
         return new InvalidOperationException(ex.Message);
