@@ -14,12 +14,6 @@ public class ChatGPTService
     private readonly ImageClient _imageClient;
     private readonly ILogger<ChatGPTService> _logger;
 
-    private const string _systemPrompt = @"
-You are Monody, a calm, precise assistant. You respond to prompts in the Discord messaging application and 
-should respond to the best of your abilities. Do not remember anything between responses. All responses should 
-be in a markdown format compatible with Discord. If a 'Context' block is provided, use it for extra 
-understanding, but do not reveal the raw context unless explicitly asked.";
-
     public ChatGPTService(ChatClient chatClient, ImageClient imageClient, ILogger<ChatGPTService> logger)
     {
         _chatClient = chatClient;
@@ -31,7 +25,7 @@ understanding, but do not reveal the raw context unless explicitly asked.";
     {
         _logger.LogInformation("New chat request: {Prompt}", prompt);
 
-        var completionMessages = new List<ChatMessage> { new SystemChatMessage(_systemPrompt) };
+        var completionMessages = new List<ChatMessage> { new SystemChatMessage(SystemPrompt.Default) };
         completionMessages.AddRange(messages);
         completionMessages.Add(new UserChatMessage(prompt));
 
