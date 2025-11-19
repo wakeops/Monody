@@ -7,6 +7,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using Monody.Bot.Utils;
+using Serilog.Context;
 
 namespace Monody.Bot.Services;
 
@@ -32,28 +33,34 @@ internal class InteractionHandler : DiscordClientService
 
     private async Task HandleInteractionAsync(SocketInteraction interaction)
     {
-        _commandLogger.LogInteraction(interaction);
-
-        try
+        using (LogContext.PushProperty("InteractionId", interaction.Id))
+        using (LogContext.PushProperty("Guild", new { Id = interaction.GuildId }))
+        using (LogContext.PushProperty("Channel", new { interaction.Channel?.Id, Type = interaction.Channel?.GetChannelType() } ))
+        using (LogContext.PushProperty("User", new { interaction.User.Id, interaction.User.Username }))
         {
-            var context = new SocketInteractionContext(Client, interaction);
+            _commandLogger.LogInteraction(interaction);
 
-            var result = await _interactionService.ExecuteCommandAsync(context, _serviceProvider);
-
-            if (!result.IsSuccess && result.Error != InteractionCommandError.UnknownCommand)
+            try
             {
-                Logger.LogWarning("Unable to execute interaction: [{Error}] {ErrorReason}", result.Error, result.ErrorReason);
+                var context = new SocketInteractionContext(Client, interaction);
 
-                await context.Interaction.RespondAsync("Something went wrong processing this request.");
+                var result = await _interactionService.ExecuteCommandAsync(context, _serviceProvider);
+
+                if (!result.IsSuccess && result.Error != InteractionCommandError.UnknownCommand)
+                {
+                    Logger.LogWarning("Unable to execute interaction: [{Error}] {ErrorReason}", result.Error, result.ErrorReason);
+
+                    await context.Interaction.RespondAsync("Something went wrong processing this request.");
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Exception occurred whilst attempting to handle interaction.");
-
-            if (interaction.Type is InteractionType.ApplicationCommand)
+            catch (Exception ex)
             {
-                await interaction.GetOriginalResponseAsync().ContinueWith(async (msg) => await msg.Result.DeleteAsync());
+                Logger.LogError(ex, "Exception occurred whilst attempting to handle interaction.");
+
+                if (interaction.Type is InteractionType.ApplicationCommand)
+                {
+                    await interaction.GetOriginalResponseAsync().ContinueWith(async (msg) => await msg.Result.DeleteAsync());
+                }
             }
         }
     }

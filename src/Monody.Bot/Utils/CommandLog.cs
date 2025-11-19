@@ -19,40 +19,33 @@ internal class CommandLogger
 
     public void LogInteraction(SocketInteraction interaction)
     {
-        using (LogContext.PushProperty("InteractionId", interaction.Id))
-        using (LogContext.PushProperty("GuildId", interaction.GuildId))
-        using (LogContext.PushProperty("ChannelId", interaction.Channel?.Id))
-        using (LogContext.PushProperty("ChannelType", interaction.Channel?.GetChannelType()))
-        using (LogContext.PushProperty("User", new { interaction.User.Id, interaction.User.Username }))
+        try
         {
-            try
+            switch (interaction)
             {
-                switch (interaction)
-                {
-                    case SocketSlashCommand slash:
-                        LogSlashCommand(slash);
-                        break;
+                case SocketSlashCommand slash:
+                    LogSlashCommand(slash);
+                    break;
 
-                    case SocketUserCommand userCmd:
-                        LogUserCommand(userCmd);
-                        break;
+                case SocketUserCommand userCmd:
+                    LogUserCommand(userCmd);
+                    break;
 
-                    case SocketMessageCommand msgCmd:
-                        LogMessageCommand(msgCmd);
-                        break;
+                case SocketMessageCommand msgCmd:
+                    LogMessageCommand(msgCmd);
+                    break;
 
-                    case SocketMessageComponent component:
-                        LogComponentInteraction(component);
-                        break;
+                case SocketMessageComponent component:
+                    LogComponentInteraction(component);
+                    break;
 
-                    default:
-                        throw new NotImplementedException($"Unkonwn Interaction: {interaction.GetType().Name}");
-                }
+                default:
+                    throw new NotImplementedException($"Unkonwn Interaction: {interaction.GetType().Name}");
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to log interaction");
-            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to log interaction");
         }
     }
 
