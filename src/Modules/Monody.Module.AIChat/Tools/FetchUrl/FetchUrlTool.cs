@@ -8,6 +8,13 @@ namespace Monody.Module.AIChat.Tools.FetchUrl;
 
 internal class FetchUrlTool : IChatToolBase
 {
+    private readonly HttpClient _httpClient;
+
+    public FetchUrlTool()
+    {
+        _httpClient = new HttpClient();
+    }
+
     public string Name => "fetch_url";
 
     public string SystemDescription => @"""
@@ -42,10 +49,8 @@ internal class FetchUrlTool : IChatToolBase
             return ChatMessage.CreateToolMessage(toolFn.Id, "Error: Missing or invalid URL.");
         }
 
-        using var httpClient = new HttpClient();
-
         // Fetch the URL server-side
-        var resp = await httpClient.GetAsync(args.Url);
+        var resp = await _httpClient.GetAsync(args.Url);
 
         if (!resp.IsSuccessStatusCode)
         {

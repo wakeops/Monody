@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Monody.Module.AIChat.Tools;
+using Monody.Module.AIChat.Tools.FetchBluesky;
 using Monody.Module.AIChat.Tools.FetchUrl;
 using OpenAI.Chat;
 using OpenAI.Images;
@@ -19,7 +20,8 @@ public class ChatGPTService
 
     private readonly List<IChatToolBase> _availableTools =
     [
-        new FetchUrlTool()
+        new FetchUrlTool(),
+        new FetchBlueskyTool()
     ];
 
     public ChatGPTService(ChatClient chatClient, ImageClient imageClient, ILogger<ChatGPTService> logger)
@@ -76,7 +78,8 @@ public class ChatGPTService
             MaxOutputTokenCount = 1000,
             FrequencyPenalty = 0f,
             Tools = {
-                new FetchUrlTool().Tool
+                new FetchUrlTool().Tool,
+                new FetchBlueskyTool().Tool
             },
             ToolChoice = ChatToolChoice.CreateAutoChoice(),
             AllowParallelToolCalls = true
