@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Monody.Module.AIChat;
 
-internal class OpenAIOptions
+public class OpenAIOptions
 {
     [Required(AllowEmptyStrings = false, ErrorMessage = "OpenAI:ApiKey is required")]
     public string ApiKey { get; set; }
@@ -10,4 +11,6 @@ internal class OpenAIOptions
     public string ChatModel { get; set; }
 
     public string ImageModel { get; set; }
+
+    public List<string> Tools { get; set; } = []; 
 }

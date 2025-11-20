@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading.Tasks;
+using Monody.Module.AIChat.Tools.Abstractions;
+using Monody.Module.AIChat.Tools.Attributes;
 using OpenAI.Chat;
 
-namespace Monody.Module.AIChat.Tools.FetchUrl;
+namespace Monody.Module.AIChat.Tools.Definitions.FetchUrl;
 
-internal class FetchUrlTool : IChatToolBase
+[ChatToolRunner(Name = "fetch_url", SystemDescription = "You have access to a tool named fetch_url that returns the raw content of a URL. Whenever the user asks you to summarize, analyze, or read from a URL, you should call fetch_url with that URL before answering.")]
+[ChatToolFunction("Fetches the raw content of a given URL for the assistant to analyze.")]
+internal class FetchUrlTool : ChatToolRunner<FetchUrlToolRequest>
 {
     private readonly HttpClient _httpClient;
 
@@ -15,34 +18,8 @@ internal class FetchUrlTool : IChatToolBase
         _httpClient = new HttpClient();
     }
 
-    public string Name => "fetch_url";
-
-    public string SystemDescription => @"""
-    You have access to a tool named fetch_url that returns the raw content of a URL.
-    Whenever the user asks you to summarize, analyze, or read from a URL, you should call fetch_url with that URL before answering.
-    """;
-
-    public ChatTool Tool => ChatTool.CreateFunctionTool(Name,
-        "Fetches the raw content of a given URL for the assistant to analyze.",
-        BinaryData.FromString("""
-        {
-          "type": "object",
-          "properties": {
-            "url": {
-              "type": "string",
-              "description": "The full URL to fetch (http or https)."
-            }
-          },
-          "required": ["url"]
-        }
-        """)
-    );
-
-    public async Task<ToolChatMessage> ExecuteAsync(ChatToolCall toolFn)
+    public override async Task<ToolChatMessage> ExecuteAsync(ChatToolCall toolFn, FetchUrlToolRequest args)
     {
-        var argsJson = toolFn.FunctionArguments;
-        var args = JsonSerializer.Deserialize<FetchUrlToolRequest>(argsJson);
-
         if (args is null || string.IsNullOrWhiteSpace(args.Url))
         {
             // Defensive: if bad args, provide an error payload

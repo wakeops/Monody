@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Monody.Domain.Module;
 using Monody.Module.AIChat.Services;
+using Monody.Module.AIChat.Tools;
 using OpenAI.Chat;
 using OpenAI.Images;
 
@@ -37,6 +38,8 @@ public class InjectionHandler : ModuleInjectionHandler
             return new ImageClient(model: opts.ImageModel, apiKey: opts.ApiKey);
         });
 
-        services.AddTransient<ChatGPTService>();
+        services.AddSingleton<ChatGPTService>();
+
+        services.RegisterChatTools();
     }
 }

@@ -1,12 +1,11 @@
 ﻿using System;
 using System.ClientModel;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Monody.Module.AIChat.Tools;
-using Monody.Module.AIChat.Tools.FetchBluesky;
-using Monody.Module.AIChat.Tools.FetchUrl;
 using OpenAI.Chat;
 using OpenAI.Images;
 
@@ -16,26 +15,30 @@ public class ChatGPTService
 {
     private readonly ChatClient _chatClient;
     private readonly ImageClient _imageClient;
-    private readonly ILogger<ChatGPTService> _logger;
+    private readonly ChatToolProvider _chatToolProvider;
+    private readonly OpenAIOptions _options;
+    private readonly ILogger _logger;
 
-    private readonly List<IChatToolBase> _availableTools =
-    [
-        new FetchUrlTool(),
-        new FetchBlueskyTool()
-    ];
+    private readonly string _systemPrompt;
+    private readonly List<ChatTool> _chatTools;
 
-    public ChatGPTService(ChatClient chatClient, ImageClient imageClient, ILogger<ChatGPTService> logger)
+    public ChatGPTService(ChatClient chatClient, ImageClient imageClient, ChatToolProvider chatToolProvider, IOptions<OpenAIOptions> options, ILogger<ChatGPTService> logger)
     {
         _chatClient = chatClient;
         _imageClient = imageClient;
+        _chatToolProvider = chatToolProvider;
+        _options = options.Value;
         _logger = logger;
+
+        _chatTools = [.. GetChatTools()];
+        _systemPrompt = GetSystemPrompt();
     }
 
     public async Task<ChatCompletion> GetChatCompletionAsync(List<ChatMessage> messages, string prompt)
     {
         _logger.LogInformation("New chat request: {Prompt}", prompt);
 
-        var completionMessages = new List<ChatMessage> { new SystemChatMessage(GetSystemPrompt()) };
+        var completionMessages = new List<ChatMessage> { new SystemChatMessage(_systemPrompt) };
         completionMessages.AddRange(messages);
         completionMessages.Add(new UserChatMessage(prompt));
 
@@ -77,13 +80,11 @@ public class ChatGPTService
             TopP = 1f,
             MaxOutputTokenCount = 1000,
             FrequencyPenalty = 0f,
-            Tools = {
-                new FetchUrlTool().Tool,
-                new FetchBlueskyTool().Tool
-            },
             ToolChoice = ChatToolChoice.CreateAutoChoice(),
             AllowParallelToolCalls = true
         };
+
+        _chatTools.ForEach(options.Tools.Add);
 
         try
         {
@@ -95,9 +96,27 @@ public class ChatGPTService
         }
     }
 
+    private IEnumerable<ChatTool> GetChatTools()
+    {
+        foreach (var toolName in _options.Tools)
+        {
+            var tool = _chatToolProvider.GetChatTool(toolName);
+            yield return tool.GetFunctionTool();
+        }
+    }
+
     private string GetSystemPrompt()
     {
-        return string.Join("\n\n", [SystemPrompt.Default, .._availableTools.Select(t => t.SystemDescription)]);
+        var sb = new StringBuilder(SystemPrompt.Default);
+
+        foreach (var toolName in _options.Tools)
+        {
+            var tool = _chatToolProvider.GetChatTool(toolName);
+            sb.Append("\n\n");
+            sb.Append(tool);
+        }
+
+        return sb.ToString();
     }
 
     private async Task<ChatCompletion> ExecuteChatCompletionAsync(List<ChatMessage> messages, ChatCompletionOptions options)
@@ -117,12 +136,8 @@ public class ChatGPTService
                         continue;
                     }
 
-                    var tool = _availableTools.FirstOrDefault(t => t.Name == toolFn.FunctionName);
-                    if (tool == null)
-                    {
-                        _logger.LogError("Unknown tool function: {FunctionName}", toolFn.FunctionName);
-                        throw new InvalidOperationException("Unavailable tool requested");
-                    }
+                    var tool = _chatToolProvider.GetChatTool(toolCall.FunctionName)
+                        ?? throw new InvalidOperationException("Unavailable tool requested");
 
                     _logger.LogInformation("Executing tool function: {FunctionName}", toolFn.FunctionName);
 

@@ -2,74 +2,22 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Monody.Module.AIChat.Tools.FetchUrl;
-using OpenAI.Chat;
 
-namespace Monody.Module.AIChat.Tools.FetchBluesky;
+namespace Monody.Module.AIChat.Tools.Definitions.FetchBlueSky;
 
-internal class FetchBlueskyTool : IChatToolBase
+internal class BlueSkyService
 {
     private readonly HttpClient _httpClient;
 
-    public FetchBlueskyTool()
+    public BlueSkyService()
     {
         _httpClient = new HttpClient();
     }
 
-    public string Name => "fetch_bluesky";
-
-    public string SystemDescription => @"""
-    You have access to a tool named fetch_bluesky that returns information about a bsky post.
-    Whenever the user asks you to summarize, analyze, or read from a bsky.app URL, you should call fetch_bluesky with that URL before answering.
-    """;
-
-    public ChatTool Tool => ChatTool.CreateFunctionTool(Name,
-        "Fetches the raw content of a given URL for the assistant to analyze.",
-        BinaryData.FromString("""
-        {
-          "type": "object",
-          "properties": {
-            "url": {
-              "type": "string",
-              "description": "The full https://bsky.app/profile/.../post/... URL of the post."
-            }
-          },
-          "required": ["url"]
-        }
-        """)
-    );
-
-    public async Task<ToolChatMessage> ExecuteAsync(ChatToolCall toolFn)
-    {
-        var argsJson = toolFn.FunctionArguments;
-        var args = JsonSerializer.Deserialize<FetchUrlToolRequest>(argsJson);
-
-        if (args is null || string.IsNullOrWhiteSpace(args.Url))
-        {
-            // Defensive: if bad args, provide an error payload
-            return ChatMessage.CreateToolMessage(toolFn.Id, "Error: Missing or invalid URL.");
-        }
-
-        var content = await FetchThreadTextAsync(args.Url);
-
-        // Send the tool result back to the model
-        return ChatMessage.CreateToolMessage(toolFn.Id, content);
-    }
-
-    private static bool IsBlueskyUrl(string url)
-        => Uri.TryCreate(url, UriKind.Absolute, out var uri)
-           && uri.Host is "bsky.app";
-
     public async Task<string> FetchThreadTextAsync(string bskyUrl)
     {
-        if (!IsBlueskyUrl(bskyUrl))
-        {
-            throw new ArgumentException("URL is not a valid bsky.app URL.", nameof(bskyUrl));
-        }
-
         var (handleOrDid, rkey) = ParseBlueskyPostUrl(bskyUrl);
 
         // 1. Resolve handle -> DID if necessary
@@ -161,53 +109,4 @@ internal class FetchBlueskyTool : IChatToolBase
             }
         }
     }
-}
-
-public sealed class BlueskyThreadResponse
-{
-    [JsonPropertyName("thread")]
-    public ThreadViewPost? Thread { get; set; }
-
-    // Optional: capture error payloads
-    [JsonPropertyName("error")]
-    public string? Error { get; set; }
-
-    [JsonPropertyName("message")]
-    public string? Message { get; set; }
-}
-
-public sealed class ThreadViewPost
-{
-    [JsonPropertyName("post")]
-    public BlueskyPost Post { get; set; } = default!;
-
-    [JsonPropertyName("replies")]
-    public List<ThreadViewPost>? Replies { get; set; }
-}
-
-public sealed class BlueskyPost
-{
-    [JsonPropertyName("uri")]
-    public string Uri { get; set; } = default!;
-
-    [JsonPropertyName("author")]
-    public BlueskyAuthor Author { get; set; } = default!;
-
-    [JsonPropertyName("record")]
-    public BlueskyRecord Record { get; set; } = default!;
-}
-
-public sealed class BlueskyAuthor
-{
-    [JsonPropertyName("handle")]
-    public string Handle { get; set; } = default!;
-}
-
-public sealed class BlueskyRecord
-{
-    [JsonPropertyName("text")]
-    public string Text { get; set; } = string.Empty;
-
-    [JsonPropertyName("createdAt")]
-    public DateTime? CreatedAt { get; set; }
 }
