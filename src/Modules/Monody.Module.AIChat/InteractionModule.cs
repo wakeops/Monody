@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
+using Microsoft.Extensions.Logging;
 using Monody.Module.AIChat.Services;
 using Monody.Module.AIChat.Utils;
 using OpenAI.Chat;
@@ -16,12 +17,14 @@ namespace Monody.Module.AIChat;
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
     private readonly ChatGPTService _chatGPTService;
+    private readonly ILogger _logger;
 
     private static readonly HttpClient _httpClient = new();
 
-    public InteractionModule(ChatGPTService chatGPTService)
+    public InteractionModule(ChatGPTService chatGPTService, ILogger<InteractionModule> logger)
     {
         _chatGPTService = chatGPTService;
+        _logger = logger;
     }
 
     [SlashCommand("ask", "Ask ChatGPT and get an answer")]
@@ -52,6 +55,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Unable to complete interaction");
             await FollowupAsync($"Sorry — the prompt request failed: `{ex.Message}`", ephemeral: ephemeral.Value);
             return;
         }
@@ -101,6 +105,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Unable to complete interaction");
             await FollowupAsync($"Image generation failed: `{ex.Message}`", ephemeral: ephemeral.Value);
             return;
         }
@@ -123,7 +128,8 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         }
         catch (Exception ex)
         {
-            await FollowupAsync($"Couldn’t fetch or upload the image: `{ex.Message}`");
+            _logger.LogError(ex, "Unable to complete interaction");
+            await FollowupAsync($"Failed to fetch or upload the image: `{ex.Message}`");
         }
     }
 }
