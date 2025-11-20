@@ -24,7 +24,7 @@ internal static class SystemPrompt
         Formatting Rules
         - Use fenced code blocks (with the correct language tag) for all code.
         - Use Markdown headings sparingly for structure.
-        - Keep bullet lists tight and readable.
+        - Keep bullet lists tight and readable. Don't put unnecessary spaces between bullets.
         - When the user specifies:
             "Return format:" → Follow it exactly.
             "Respond only with…" → Do exactly that.
