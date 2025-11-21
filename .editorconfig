@@ -25,7 +25,7 @@ dotnet_diagnostic.IDE0052.severity = warning     # Value assigned is never used
 dotnet_diagnostic.IDE0059.severity = warning     # Unnecessary assignment of a value
 dotnet_diagnostic.IDE0130.severity = warning     # Namespace must match folder structure
 
-dotnet_diagnostic.CA1062.severity = suggestion   # Validate arguments null
+dotnet_diagnostic.CA1062.severity = silent       # Validate arguments null
 dotnet_diagnostic.CA1305.severity = none         # Globalization overloads
 dotnet_diagnostic.CA1822.severity = warning      # Mark members static where possible
 dotnet_diagnostic.CA1848.severity = none         # Use LoggerMessage for structured logging

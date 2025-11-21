@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Microsoft.Extensions.Logging;
-using Monody.Module.AIChat.Services;
-using Monody.Module.AIChat.Utils;
 using OpenAI.Chat;
 using OpenAI.Images;
 
@@ -16,14 +13,14 @@ namespace Monody.Module.AIChat;
 [Group("slop", "Slop bridge")]
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
-    private readonly ChatGPTService _chatGPTService;
+    private readonly AIChatService _aiChatService;
     private readonly ILogger _logger;
 
     private static readonly HttpClient _httpClient = new();
 
-    public InteractionModule(ChatGPTService chatGPTService, ILogger<InteractionModule> logger)
+    public InteractionModule(AIChatService aiChatService, ILogger<InteractionModule> logger)
     {
-        _chatGPTService = chatGPTService;
+        _aiChatService = aiChatService;
         _logger = logger;
     }
 
@@ -39,24 +36,23 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         bool? ephemeral = false
         )
     {
+        if (lookbackCount > 0 && Context.Channel == null)
+        {
+            await RespondAsync("Insufficient permissions. Unable to perform message lookback.", ephemeral: true);
+            return;
+        }
+
         await DeferAsync(ephemeral: ephemeral.Value);
 
         ChatCompletion completion;
         try
         {
-            var messages = new List<ChatMessage>();
-
-            if (lookbackCount > 0)
-            {
-                await DiscordHelper.AddContextBlockAsync(Context.Channel, lookbackCount.Value, messages);
-            }
-
-            completion = await _chatGPTService.GetChatCompletionAsync(messages, prompt);
+            completion = await _aiChatService.GetChatCompletionAsync(Context.Guild, Context.Channel, Context.User, prompt, lookbackCount.GetValueOrDefault());
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unable to complete interaction");
-            await FollowupAsync($"Sorry — the prompt request failed: `{ex.Message}`", ephemeral: ephemeral.Value);
+            await FollowupAsync("Sorry — the prompt request failed", ephemeral: ephemeral.Value);
             return;
         }
 
@@ -101,12 +97,13 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         GeneratedImage img;
         try
         {
-            img = await _chatGPTService.GetImageGenerationAsync(prompt, genSize);
+            img = await _aiChatService.GetImageGenerationAsync(prompt, genSize);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unable to complete interaction");
-            await FollowupAsync($"Image generation failed: `{ex.Message}`", ephemeral: ephemeral.Value);
+
+            await FollowupAsync("Image generation failed", ephemeral: ephemeral.Value);
             return;
         }
 

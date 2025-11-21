@@ -1,13 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Monody.Module.AIChat;
+namespace Monody.OpenAI;
 
-public class OpenAIOptions
+public class OpenAIConfiguration
 {
-    [Required(AllowEmptyStrings = false, ErrorMessage = "OpenAI:ApiKey is required")]
+    [Required(AllowEmptyStrings = false)]
     public string ApiKey { get; set; }
-
+    
     public string ChatModel { get; set; }
-
+    
     public string ImageModel { get; set; }
 }

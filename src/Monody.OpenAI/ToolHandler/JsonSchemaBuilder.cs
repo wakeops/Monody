@@ -6,12 +6,13 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace Monody.Module.AIChat.Tools;
+namespace Monody.OpenAI.ToolHandler;
 
-internal static class JsonSchemaGenerator
+public static class JsonSchemaBuilder
 {
-    public static string GenerateSchemaFor<TSchemaType>()
-        where TSchemaType : class
+    public static JsonDocument FromType<T>() => FromType(typeof(T));
+
+    public static JsonDocument FromType(Type schemaType)
     {
         var schema = new JsonObject
         {
@@ -21,7 +22,7 @@ internal static class JsonSchemaGenerator
         var propertiesObj = new JsonObject();
         var requiredList = new JsonArray();
 
-        foreach (var prop in typeof(TSchemaType).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        foreach (var prop in schemaType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             // Determine JSON property name
             var jsonName = prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name
@@ -56,10 +57,7 @@ internal static class JsonSchemaGenerator
             schema["required"] = requiredList;
         }
 
-        return schema.ToJsonString(new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
+        return JsonDocument.Parse(schema.ToJsonString());
     }
 
     private static string MapDotNetTypeToJsonType(Type t)

@@ -1,11 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+using Monody.Domain.Extensions;
 using Monody.Domain.Module;
-using Monody.Module.AIChat.Services;
-using Monody.Module.AIChat.Tools;
-using OpenAI.Chat;
-using OpenAI.Images;
+using Monody.OpenAI;
 
 namespace Monody.Module.AIChat;
 
@@ -13,33 +10,15 @@ public class InjectionHandler : ModuleInjectionHandler
 {
     public override void AddModuleServices(IServiceCollection services, IConfiguration configuration)
     {
-        services
-            .AddOptions<OpenAIOptions>()
-            .BindConfiguration("Module:OpenAI")
-            .ValidateDataAnnotations()
-            .ValidateOnStart()
-            .Configure(opts =>
-            {
-                (opts.ChatModel, opts.ImageModel) = (
-                    string.IsNullOrWhiteSpace(opts.ChatModel) ? Constants.DefaultChatModel : opts.ChatModel,
-                    string.IsNullOrWhiteSpace(opts.ImageModel) ? Constants.DefaultImageModel : opts.ImageModel
-                );
-            });
+        var options = configuration.GetRequiredOptions<OpenAIOptions>("Module:OpenAI");
 
-        services.AddSingleton<ChatClient>(sp =>
+        services.AddOpenAI(config =>
         {
-            var opts = sp.GetRequiredService<IOptions<OpenAIOptions>>().Value;
-            return new ChatClient(model: opts.ChatModel, apiKey: opts.ApiKey);
+            config.ApiKey = options.ApiKey;
+            config.ChatModel = options.ChatModel;
+            config.ImageModel = options.ImageModel;
         });
 
-        services.AddSingleton<ImageClient>(sp =>
-        {
-            var opts = sp.GetRequiredService<IOptions<OpenAIOptions>>().Value;
-            return new ImageClient(model: opts.ImageModel, apiKey: opts.ApiKey);
-        });
-
-        services.AddSingleton<ChatGPTService>();
-
-        services.RegisterChatTools();
+        services.AddSingleton<AIChatService>();
     }
 }

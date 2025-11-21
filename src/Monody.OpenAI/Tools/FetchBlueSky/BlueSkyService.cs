@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Monody.Module.AIChat.Tools.Definitions.FetchBlueSky;
+namespace Monody.OpenAI.Tools.FetchBlueSky;
 
 internal class BlueSkyService
 {

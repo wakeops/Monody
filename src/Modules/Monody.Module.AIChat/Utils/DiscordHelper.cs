@@ -10,8 +10,35 @@ namespace Monody.Module.AIChat.Utils;
 
 public static class DiscordHelper
 {
-    public static async Task AddContextBlockAsync(IMessageChannel channel, int lookbackCount, List<ChatMessage> messageList)
+    public static void EnrichWithInteractionContext(List<ChatMessage> messages, IGuild guild, IChannel channel, IUser user)
     {
+        var parts = new[]
+        {
+            "[Context: data related to the initiating discord interaction.]",
+
+            guild != null
+                ? $"Discord Guild: Id = '{guild.Id}', Name = '{guild.Name}'"
+                : "Discord Guild: unknown, you may not have sufficient permissions to access this data.",
+
+            channel != null
+                ? $"Discord Channel: Id = '{channel.Id}', Name = '{channel.Name}', Type = '{channel.GetChannelType()}'"
+                : "Discord Channel: unknown, you may not have sufficient permissions to access this data.",
+
+            user != null
+                ? $"Discord User: Id = '{user.Id}', Name = '{user.GlobalName}'"
+                : "Discord User: unknown, you may not have sufficient permissions to access this data."
+        };
+
+        messages.Add(new UserChatMessage(string.Join('\n', parts)));
+    }
+
+    public static async Task EnrichWithMessageHistoryAsync(List<ChatMessage> messages, IMessageChannel channel, int lookbackCount)
+    {
+        if (lookbackCount == 0)
+        {
+            return;
+        }
+
         // Build optional channel context
         string contextBlock = null;
 
@@ -31,7 +58,7 @@ public static class DiscordHelper
 
         if (!string.IsNullOrEmpty(contextBlock))
         {
-            messageList.Add(new UserChatMessage($"Context:\n{contextBlock}"));
+            messages.Add(new UserChatMessage($"Context:\n{contextBlock}"));
         }
     }
 

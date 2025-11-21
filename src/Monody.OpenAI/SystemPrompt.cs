@@ -1,4 +1,4 @@
-﻿namespace Monody.Module.AIChat;
+﻿namespace Monody.OpenAI;
 
 internal static class SystemPrompt
 {

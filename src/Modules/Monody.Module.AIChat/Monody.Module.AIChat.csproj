@@ -2,11 +2,11 @@
 
   <ItemGroup>
     <PackageReference Include="Discord.Addons.Hosting" />
-    <PackageReference Include="OpenAI" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Monody.Domain\Monody.Domain.csproj" />
+    <ProjectReference Include="..\..\Monody.OpenAI\Monody.OpenAI.csproj" />
   </ItemGroup>
 
 </Project>

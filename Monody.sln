@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11205.157 d18.0
+VisualStudioVersion = 18.0.11205.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monody.Bot", "src\Monody.Bot\Monody.Bot.csproj", "{7700117D-489B-4B3A-B389-22771EFC83DD}"
 EndProject
@@ -35,6 +35,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{
 		.github\workflows\02-publish-on-release.yaml = .github\workflows\02-publish-on-release.yaml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.OpenAI", "src\Monody.OpenAI\Monody.OpenAI.csproj", "{D53DCD23-0791-4676-AD47-258634F0BD30}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{55AF6A54-EF00-452E-8B34-32D33DE85303}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55AF6A54-EF00-452E-8B34-32D33DE85303}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55AF6A54-EF00-452E-8B34-32D33DE85303}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D53DCD23-0791-4676-AD47-258634F0BD30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D53DCD23-0791-4676-AD47-258634F0BD30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D53DCD23-0791-4676-AD47-258634F0BD30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D53DCD23-0791-4676-AD47-258634F0BD30}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -68,6 +74,7 @@ Global
 		{BDB0A987-658F-4CAF-99CD-F3961B8FC114} = {7647D9FD-931E-4C9E-ADE5-8D225ED410FD}
 		{55AF6A54-EF00-452E-8B34-32D33DE85303} = {BDB0A987-658F-4CAF-99CD-F3961B8FC114}
 		{4CFEB703-866E-4E40-95E5-9F25AAFC0B92} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{D53DCD23-0791-4676-AD47-258634F0BD30} = {7647D9FD-931E-4C9E-ADE5-8D225ED410FD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5711E48B-ED9A-4635-86B1-31D50B663FAE}

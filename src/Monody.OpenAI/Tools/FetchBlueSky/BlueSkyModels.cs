@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Monody.Module.AIChat.Tools.Definitions.FetchBlueSky;
+namespace Monody.OpenAI.Tools.FetchBlueSky;
 
 public sealed class BlueskyThreadResponse
 {
