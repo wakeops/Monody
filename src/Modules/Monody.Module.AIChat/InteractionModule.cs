@@ -36,7 +36,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         bool? ephemeral = false
         )
     {
-        if (lookbackCount > 0 && Context.Channel == null)
+        var channel = Context.Interaction?.InteractionChannel ?? Context.Interaction?.Channel ?? Context.Channel;
+
+        if (lookbackCount > 0 && channel == null)
         {
             await RespondAsync("Insufficient permissions. Unable to perform message lookback.", ephemeral: true);
             return;
@@ -47,7 +49,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         ChatCompletion completion;
         try
         {
-            completion = await _aiChatService.GetChatCompletionAsync(Context.Guild, Context.Channel, Context.User, prompt, lookbackCount.GetValueOrDefault());
+            completion = await _aiChatService.GetChatCompletionAsync(Context.Guild, channel, Context.User, prompt, lookbackCount.GetValueOrDefault());
         }
         catch (Exception ex)
         {

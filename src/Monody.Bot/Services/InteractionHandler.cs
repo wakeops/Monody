@@ -35,7 +35,7 @@ internal class InteractionHandler : DiscordClientService
     {
         using (LogContext.PushProperty("InteractionId", interaction.Id))
         using (LogContext.PushProperty("Guild", new { Id = interaction.GuildId }))
-        using (LogContext.PushProperty("Channel", new { interaction.Channel?.Id, Type = interaction.Channel?.GetChannelType() } ))
+        using (LogContext.PushProperty("Channel", new { interaction.ChannelId, Type = interaction.InteractionChannel?.GetChannelType() } ))
         using (LogContext.PushProperty("User", new { interaction.User.Id, interaction.User.Username }))
         {
             _commandLogger.LogInteraction(interaction);
