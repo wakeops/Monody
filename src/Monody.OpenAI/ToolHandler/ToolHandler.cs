@@ -13,7 +13,6 @@ public abstract class ToolHandler<TRequest, TResponse> : IToolHandler
     {
         _serializerOptions = serializerOptions ?? new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         };
 

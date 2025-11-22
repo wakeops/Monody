@@ -36,7 +36,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         bool? ephemeral = false
         )
     {
-        var channel = Context.Interaction?.InteractionChannel ?? Context.Interaction?.Channel ?? Context.Channel;
+        var channel = Context.Interaction?.InteractionChannel;
 
         if (lookbackCount > 0 && channel == null)
         {
@@ -49,7 +49,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         ChatCompletion completion;
         try
         {
-            completion = await _aiChatService.GetChatCompletionAsync(Context.Guild, channel, Context.User, prompt, lookbackCount.GetValueOrDefault());
+            completion = await _aiChatService.GetChatCompletionAsync(Context.Interaction.Id, Context.Guild, channel, Context.User, prompt, lookbackCount.GetValueOrDefault());
         }
         catch (Exception ex)
         {

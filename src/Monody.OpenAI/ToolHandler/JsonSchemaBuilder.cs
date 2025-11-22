@@ -67,7 +67,7 @@ public static class JsonSchemaBuilder
             return "string";
         }
 
-        if (t == typeof(int) || t == typeof(long) || t == typeof(short) ||
+        if (t == typeof(int) || t == typeof(long) || t == typeof(ulong) || t == typeof(ulong?) || t == typeof(short) ||
             t == typeof(float) || t == typeof(double) || t == typeof(decimal))
         {
             return "number";

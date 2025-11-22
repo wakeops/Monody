@@ -17,11 +17,11 @@ public class AIChatService
         _openAIService = openAIService;
     }
 
-    public async Task<ChatCompletion> GetChatCompletionAsync(IGuild guild, IMessageChannel channel, IUser user, string prompt, int lookbackCount)
+    public async Task<ChatCompletion> GetChatCompletionAsync(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user, string prompt, int lookbackCount)
     {
         var messages = new List<ChatMessage>();
 
-        DiscordHelper.EnrichWithInteractionContext(messages, guild, channel, user);
+        DiscordHelper.EnrichWithInteractionContext(messages, interactionId, guild, channel, user);
 
         await DiscordHelper.EnrichWithMessageHistoryAsync(messages, channel, lookbackCount);
 

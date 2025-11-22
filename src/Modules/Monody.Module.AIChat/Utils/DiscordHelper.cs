@@ -10,11 +10,12 @@ namespace Monody.Module.AIChat.Utils;
 
 public static class DiscordHelper
 {
-    public static void EnrichWithInteractionContext(List<ChatMessage> messages, IGuild guild, IChannel channel, IUser user)
+    public static void EnrichWithInteractionContext(List<ChatMessage> messages, ulong interactionId, IGuild guild, IChannel channel, IUser user)
     {
         var parts = new[]
         {
             "[Context: data related to the initiating discord interaction.]",
+            $"Discord Interaction: Id = '{interactionId}'",
 
             guild != null
                 ? $"Discord Guild: Id = '{guild.Id}', Name = '{guild.Name}'"
