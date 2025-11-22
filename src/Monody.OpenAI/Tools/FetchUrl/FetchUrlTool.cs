@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Monody.OpenAI.ToolHandler;
 
 namespace Monody.OpenAI.Tools.FetchUrl;
+
 internal class FetchUrlTool : ToolHandler<FetchUrlToolRequest, FetchUrlToolResponse>
 {
     private const int _maxBodyLength = 20_000;
