@@ -6,6 +6,7 @@ using Discord.Addons.Hosting;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
+using Monody.Bot.LogEnrichers;
 using Monody.Bot.Utils;
 using Serilog.Context;
 
@@ -15,14 +16,14 @@ internal class InteractionHandler : DiscordClientService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly InteractionService _interactionService;
-    private readonly CommandLogger _commandLogger;
+    private readonly InteractionLogger _interactionLogger;
 
-    public InteractionHandler(DiscordSocketClient client, ILogger<DiscordClientService> logger, IServiceProvider provider, InteractionService interactionService) : base(client, logger)
+    public InteractionHandler(DiscordSocketClient client, ILogger<InteractionHandler> logger, IServiceProvider provider, InteractionService interactionService) : base(client, logger)
     {
         _serviceProvider = provider;
         _interactionService = interactionService;
 
-        _commandLogger = new CommandLogger(logger);
+        _interactionLogger = new InteractionLogger(logger);
     }
 
     protected override Task ExecuteAsync(CancellationToken cancellationToken)
@@ -33,12 +34,9 @@ internal class InteractionHandler : DiscordClientService
 
     private async Task HandleInteractionAsync(SocketInteraction interaction)
     {
-        using (LogContext.PushProperty("InteractionId", interaction.Id))
-        using (LogContext.PushProperty("Guild", new { Id = interaction.GuildId }))
-        using (LogContext.PushProperty("Channel", new { interaction.ChannelId, Type = interaction.InteractionChannel?.GetChannelType() } ))
-        using (LogContext.PushProperty("User", new { interaction.User.Id, interaction.User.Username }))
+        using (LogContext.Push(new SocketInteractionEnricher(interaction)))
         {
-            _commandLogger.LogInteraction(interaction);
+            _interactionLogger.LogInteraction(interaction);
 
             try
             {

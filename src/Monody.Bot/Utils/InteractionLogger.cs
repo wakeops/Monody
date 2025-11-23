@@ -8,11 +8,11 @@ using Serilog.Context;
 
 namespace Monody.Bot.Utils;
 
-internal class CommandLogger
+internal class InteractionLogger
 {
     private readonly ILogger _logger;
 
-    public CommandLogger(ILogger logger)
+    public InteractionLogger(ILogger logger)
     {
         _logger = logger;
     }
