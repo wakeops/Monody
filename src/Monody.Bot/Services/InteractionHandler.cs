@@ -44,11 +44,14 @@ internal class InteractionHandler : DiscordClientService
 
                 var result = await _interactionService.ExecuteCommandAsync(context, _serviceProvider);
 
-                if (!result.IsSuccess && result.Error != InteractionCommandError.UnknownCommand)
+                if (!result.IsSuccess)
                 {
                     Logger.LogWarning("Unable to execute interaction: [{Error}] {ErrorReason}", result.Error, result.ErrorReason);
 
-                    await context.Interaction.RespondAsync("Something went wrong processing this request.");
+                    if (result.Error != InteractionCommandError.UnknownCommand)
+                    {
+                        await context.Interaction.RespondAsync("Something went wrong processing this request.");
+                    }
                 }
             }
             catch (Exception ex)

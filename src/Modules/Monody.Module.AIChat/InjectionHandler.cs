@@ -19,6 +19,7 @@ public class InjectionHandler : ModuleInjectionHandler
             config.ImageModel = options.ImageModel;
         });
 
+        services.AddSingleton<ConversationStore>();
         services.AddSingleton<AIChatService>();
     }
 }

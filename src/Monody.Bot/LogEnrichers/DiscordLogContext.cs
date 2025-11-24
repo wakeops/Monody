@@ -8,5 +8,5 @@ internal static class DiscordLogContext
        ("User", new { user.Id, user.Username, user.IsBot });
 
     public static (string, object) Channel(IChannel channel) =>
-        ("Channel", new { channel.Id, channel.Name, Type = channel.GetChannelType() });
+        ("Channel", new { channel?.Id, channel?.Name, Type = channel?.GetChannelType() });
 }

@@ -10,7 +10,7 @@ namespace Monody.Module.AIChat.Utils;
 
 public static class DiscordHelper
 {
-    public static void EnrichWithInteractionContext(List<ChatMessage> messages, ulong interactionId, IGuild guild, IChannel channel, IUser user)
+    public static void EnrichWithInteractionContext(List<ChatMessage> messages, ulong interactionId, IGuild guild, IChannel channel)
     {
         var parts = new[]
         {
@@ -24,10 +24,6 @@ public static class DiscordHelper
             channel != null
                 ? $"Discord Channel: Id = '{channel.Id}', Name = '{channel.Name}', Type = '{channel.GetChannelType()}'"
                 : "Discord Channel: unknown, you may not have sufficient permissions to access this data.",
-
-            user != null
-                ? $"Discord User: Id = '{user.Id}', Name = '{user.GlobalName}'"
-                : "Discord User: unknown, you may not have sufficient permissions to access this data."
         };
 
         messages.Add(new UserChatMessage(string.Join('\n', parts)));

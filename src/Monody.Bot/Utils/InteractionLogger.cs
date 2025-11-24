@@ -39,6 +39,10 @@ internal class InteractionLogger
                     LogComponentInteraction(component);
                     break;
 
+                case SocketModal modal:
+                    LogModalInteraction(modal);
+                    break;
+
                 default:
                     throw new NotImplementedException($"Unkonwn Interaction: {interaction.GetType().Name}");
             }
@@ -83,7 +87,17 @@ internal class InteractionLogger
         _logger.LogInformation("Component Interaction: {Id} | Invoker: {@User} | Value: {Value}",
             component.Data.CustomId,
             new { component.User.Id, component.User.Username },
-            string.Join(", ", component.Data.Values ?? []));
+            component.Data.Values);
+    }
+
+    private void LogModalInteraction(SocketModal modal)
+    {
+        var values = modal.Data.Components.Select(c => $"{c.CustomId}: {c.Value}");
+
+        _logger.LogInformation("Modal Interaction: {Id} | Invoker: {@User} | Values: {Values}",
+            modal.Data.CustomId,
+            new { modal.User.Id, modal.User.Username },
+            values);
     }
 
     private static string BuildSlashCommandName(SocketSlashCommandData data)

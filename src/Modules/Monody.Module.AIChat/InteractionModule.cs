@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Microsoft.Extensions.Logging;
+using Monody.Module.AIChat.Modals;
 using OpenAI.Chat;
 using OpenAI.Images;
 
@@ -14,13 +15,15 @@ namespace Monody.Module.AIChat;
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
     private readonly AIChatService _aiChatService;
+    private readonly ConversationStore _conversationStore;
     private readonly ILogger _logger;
 
     private static readonly HttpClient _httpClient = new();
 
-    public InteractionModule(AIChatService aiChatService, ILogger<InteractionModule> logger)
+    public InteractionModule(AIChatService aiChatService, ConversationStore conversationStore, ILogger<InteractionModule> logger)
     {
         _aiChatService = aiChatService;
+        _conversationStore = conversationStore;
         _logger = logger;
     }
 
@@ -30,49 +33,51 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         [Summary("Prompt", "What do you want to ask?")]
         [MaxLength(1800)]
         string prompt,
-        [Summary("LookbackCount", "Optional: include last N messages from this channel (1–100)")]
-        [MinValue(1), MaxValue(100)]
-        int? lookbackCount = null,
         bool? ephemeral = false
         )
     {
-        var channel = Context.Interaction?.InteractionChannel;
-
-        if (lookbackCount > 0 && channel == null)
-        {
-            await RespondAsync("Insufficient permissions. Unable to perform message lookback.", ephemeral: true);
-            return;
-        }
-
         await DeferAsync(ephemeral: ephemeral.Value);
 
-        ChatCompletion completion;
-        try
+        var interactionId = Context.Interaction.Id;
+
+        await ExecuteChatCompletion(interactionId, ephemeral.Value, prompt);
+    }
+
+    [ComponentInteraction("monody_followup:*:*", true)]
+    public async Task Ask_OpenModalAsync(string originInteractionId, bool isEphemeral)
+    {
+        var conversation = _conversationStore.GetConversation(originInteractionId);
+        if (conversation is null)
         {
-            completion = await _aiChatService.GetChatCompletionAsync(Context.Interaction.Id, Context.Guild, channel, Context.User, prompt, lookbackCount.GetValueOrDefault());
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unable to complete interaction");
-            await FollowupAsync("Sorry — the prompt request failed", ephemeral: ephemeral.Value);
+            await RespondAsync("Sorry, I lost this conversation’s context.", ephemeral: true);
             return;
         }
 
-        var text = completion?.Content?[0]?.Text?.Trim();
-        if (string.IsNullOrEmpty(text))
+        await RespondWithModalAsync<SlopFollowupModal>($"monody_followup_modal:{originInteractionId}:{isEphemeral}");
+    }
+
+    [ModalInteraction("monody_followup_modal:*:*", true)]
+    public async Task Ask_HandleModalAsync(ulong originInteractionId, bool isEphemeral, SlopFollowupModal modal)
+    {
+        var conversation = _conversationStore.GetConversation(originInteractionId.ToString());
+        if (conversation is null)
         {
-            await FollowupAsync("I didn’t get any text back from the model.", ephemeral: ephemeral.Value);
+            await RespondAsync("Sorry, I lost this conversation’s context.", ephemeral: true);
             return;
         }
 
-        // Discord messages cap at 2000 chars; trim if needed
-        const int cap = 1900; // leave headroom for code fences etc.
-        if (text.Length > cap)
-        {
-            text = text[..cap] + "…";
-        }
+        await DeferAsync();
 
-        await FollowupAsync(text);
+        await ExecuteChatCompletion(originInteractionId, isEphemeral, modal.FollowupText);
+
+        if (isEphemeral)
+        {
+            await ModifyOriginalResponseAsync(f => f.Components = new ComponentBuilder().Build());
+        }
+        else
+        {
+            await DeleteOriginalResponseAsync();
+        }
     }
 
     [SlashCommand("image", "Ask ChatGPT and get an image")]
@@ -129,6 +134,54 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         {
             _logger.LogError(ex, "Unable to complete interaction");
             await FollowupAsync($"Failed to fetch or upload the image: `{ex.Message}`");
+        }
+    }
+
+    private async Task ExecuteChatCompletion(ulong interactionId, bool isEphemeral, string prompt)
+    {
+        var channel = Context.Interaction?.InteractionChannel;
+
+        ChatCompletion completion;
+        try
+        {
+            completion = await _aiChatService.GetChatCompletionAsync(interactionId, Context.Guild, channel, Context.User, prompt);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unable to complete interaction");
+            await FollowupAsync("Sorry — the prompt request failed", ephemeral: isEphemeral);
+            return;
+        }
+
+        var text = completion?.Content?[0]?.Text?.Trim();
+        if (string.IsNullOrEmpty(text))
+        {
+            await FollowupAsync("I didn’t get any text back from the model.", ephemeral: isEphemeral);
+            return;
+        }
+
+        // Discord messages cap at 2000 chars; trim if needed
+        const int cap = 1950;
+        if (text.Length > cap)
+        {
+            text = text[..cap] + "…";
+        }
+
+        var components = new ComponentBuilder()
+            .WithButton(
+                label: "Follow up",
+                customId: $"monody_followup:{interactionId}:{isEphemeral}",
+                style: ButtonStyle.Primary);
+
+        if (isEphemeral)
+        {
+            await FollowupAsync(text, components: components.Build(), ephemeral: true);
+        }
+        else
+        {
+            await FollowupAsync(text);
+
+            await FollowupAsync("You can follow up on this reply here:", components: components.Build(), ephemeral: true);
         }
     }
 }

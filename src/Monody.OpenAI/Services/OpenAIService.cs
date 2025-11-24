@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ClientModel;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,15 +26,8 @@ public class OpenAIService
         _logger = logger;
     }
 
-    public async Task<ChatCompletion> GetChatCompletionAsync(IReadOnlyList<ChatMessage> promptMessages, CancellationToken cancellationToken = default)
+    public async Task<ChatCompletion> GetChatCompletionAsync(List<ChatMessage> messages, CancellationToken cancellationToken = default)
     {
-        var completionMessages = new List<ChatMessage>(promptMessages);
-
-        if (!completionMessages.Any(m => m is SystemChatMessage))
-        {
-            completionMessages.Prepend(new SystemChatMessage(SystemPrompt.Default));
-        }
-
         var options = new ChatCompletionOptions
         {
             PresencePenalty = 0f,
@@ -54,7 +46,32 @@ public class OpenAIService
 
         try
         {
-            return await ExecuteChatCompletionAsync(completionMessages, options, cancellationToken);
+            var inProcessMessages = new List<ChatMessage>();
+
+            ChatCompletion content;
+
+            do
+            {
+                List<ChatMessage> completionMessages = [SystemPrompt.Default, .. messages, .. inProcessMessages];
+
+                var response = await _chatClient.CompleteChatAsync(completionMessages, options, cancellationToken);
+                content = response.Value;
+
+                inProcessMessages.Add(new AssistantChatMessage(content));
+
+                switch (content.FinishReason)
+                {
+                    case ChatFinishReason.ToolCalls:
+
+                        var toolResults = await ProcessToolsAsync(content.ToolCalls, cancellationToken);
+                        inProcessMessages.AddRange(toolResults);
+                        break;
+                }
+            } while (content.FinishReason != ChatFinishReason.Stop);
+
+            messages.AddRange(inProcessMessages);
+
+            return content;
         }
         catch (Exception ex)
         {
@@ -88,38 +105,18 @@ public class OpenAIService
         }
     }
 
-    private async Task<ChatCompletion> ExecuteChatCompletionAsync(List<ChatMessage> messages, ChatCompletionOptions options, CancellationToken cancellationToken)
+    private async Task<IEnumerable<ToolChatMessage>> ProcessToolsAsync(IReadOnlyList<ChatToolCall> toolCalls, CancellationToken cancellationToken)
     {
-        var response = await _chatClient.CompleteChatAsync(messages, options, cancellationToken);
-        var content = response.Value;
+        var toolTasks = new List<Task<ToolChatMessage>>();
 
-        switch (content.FinishReason)
+        foreach (var toolCall in toolCalls)
         {
-            case ChatFinishReason.ToolCalls:
-                messages.Add(new AssistantChatMessage(content));
+            var toolTask = HandleToolCallAsync(toolCall, cancellationToken);
 
-                var toolTasks = new List<Task<ToolChatMessage>>();
-
-                foreach (var toolCall in content.ToolCalls)
-                {
-                    if (toolCall is not ChatToolCall)
-                    {
-                        continue;
-                    }
-
-                    var toolTask = HandleToolCallAsync(toolCall, cancellationToken);
-
-                    toolTasks.Add(toolTask);
-                }
-
-                var toolResults = await Task.WhenAll(toolTasks);
-
-                messages.AddRange(toolResults);
-
-                return await ExecuteChatCompletionAsync(messages, options, cancellationToken);
-            default:
-                return content;
+            toolTasks.Add(toolTask);
         }
+
+        return await Task.WhenAll(toolTasks);
     }
 
     private async Task<ToolChatMessage> HandleToolCallAsync(ChatToolCall toolCall, CancellationToken cancellationToken)
