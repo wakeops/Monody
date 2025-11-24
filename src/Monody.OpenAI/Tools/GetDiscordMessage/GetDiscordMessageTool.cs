@@ -23,12 +23,6 @@ internal sealed class GetDiscordMessageHandler : ToolHandler<GetDiscordMessageRe
 
     protected override async Task<GetDiscordMessageResponse> HandleAsync(GetDiscordMessageRequest request, CancellationToken cancellationToken)
     {
-        IGuild guild = null;
-        if (request.GuildId.HasValue)
-        {
-            guild = _client.GetGuild(request.GuildId.Value);
-        }
-
         // Resolve channel
         if (_client.GetChannel(request.ChannelId) is not IMessageChannel channel)
         {
@@ -43,21 +37,14 @@ internal sealed class GetDiscordMessageHandler : ToolHandler<GetDiscordMessageRe
 
         return new GetDiscordMessageResponse
         {
-            GuildId = guild?.Id,
-            GuildName = guild?.Name,
-
             ChannelId = channel.Id,
-            ChannelName = channel.Name,
             ChannelType = channel.GetChannelType().ToString(),
-
             MessageId = message.Id,
             Content = message.Content ?? "",
             Timestamp = message.Timestamp,
-
             AuthorId = author.Id,
             AuthorUsername = author.Username,
             AuthorGlobalName = author.GlobalName,
-
             Attachments = [.. message.Attachments.Select(a => a.Url)],
             Embeds = [.. message.Embeds.Select(e => e.Title ?? "(embed)")]
         };
