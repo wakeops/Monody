@@ -70,14 +70,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         await ExecuteChatCompletion(originInteractionId, isEphemeral, modal.FollowupText);
 
-        if (isEphemeral)
-        {
-            await ModifyOriginalResponseAsync(f => f.Components = new ComponentBuilder().Build());
-        }
-        else
-        {
-            await DeleteOriginalResponseAsync();
-        }
+        await ModifyOriginalResponseAsync(f => f.Components = new ComponentBuilder().Build());
     }
 
     [SlashCommand("image", "Ask ChatGPT and get an image")]
