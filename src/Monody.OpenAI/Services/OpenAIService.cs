@@ -88,7 +88,7 @@ public class OpenAIService
 
         try
         {
-            return await _imageClient.GenerateImageAsync(prompt, options);
+            return await _imageClient.GenerateImageAsync(prompt, options, cancellationToken);
         }
         catch (Exception ex)
         {
