@@ -18,6 +18,8 @@ COPY ./src/Monody.AI/Monody.AI.Provider/*.csproj ./src/Monody.AI/Monody.AI.Provi
 COPY ./src/Monody.AI/Monody.AI.Provider.OpenAI/*.csproj ./src/Monody.AI/Monody.AI.Provider.OpenAI/
 COPY ./src/Monody.AI/Monody.AI.Tools/*.csproj ./src/Monody.AI/Monody.AI.Tools/
 
+COPY ./test/Monody.AI.Tools.Tests/*.csproj ./test/Monody.AI.Tools.Tests/
+
 
 RUN --mount=type=cache,target=/root/.nuget/packages dotnet restore --nologo
 
