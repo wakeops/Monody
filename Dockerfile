@@ -8,9 +8,16 @@ COPY Directory.Packages.props ./
 
 COPY ./src/Monody.Bot/*.csproj ./src/Monody.Bot/
 COPY ./src/Monody.Domain/*.csproj ./src/Monody.Domain/
-COPY ./src/Monody.OpenAI/*.csproj ./src/Monody.OpenAI/
+
 COPY ./src/Modules/Monody.Module.AIChat/*.csproj ./src/Modules/Monody.Module.AIChat/
 COPY ./src/Modules/Monody.Module.Weather/*.csproj ./src/Modules/Monody.Module.Weather/
+
+COPY ./src/Monody.AI/*.csproj ./src/Monody.AI/
+COPY ./src/Monody.AI.Domain/*.csproj ./src/Monody.AI.Domain/
+COPY ./src/Monody.AI.Provider/*.csproj ./src/Monody.AI.Provider/
+COPY ./src/Monody.AI.Provider.OpenAI/*.csproj ./src/Monody.AI.Provider.OpenAI/
+COPY ./src/Monody.AI.Tools/*.csproj ./src/Monody.AI.Tools/
+
 
 RUN --mount=type=cache,target=/root/.nuget/packages dotnet restore --nologo
 
