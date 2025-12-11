@@ -4,13 +4,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using Monody.AI.Domain.Models;
 using OpenAI.Chat;
 
 namespace Monody.Module.AIChat.Utils;
 
 public static class DiscordHelper
 {
-    public static void EnrichWithInteractionContext(List<ChatMessage> messages, ulong interactionId, IGuild guild, IChannel channel)
+    public static void EnrichWithInteractionContext(List<ChatMessageDto> messages, ulong interactionId, IGuild guild, IChannel channel)
     {
         var parts = new[]
         {
@@ -26,7 +27,7 @@ public static class DiscordHelper
                 : "Discord Channel: unknown, you may not have sufficient permissions to access this data.",
         };
 
-        messages.Add(new UserChatMessage(string.Join('\n', parts)));
+        messages.Add(new ChatMessageDto { Role = ChatRole.User, Content = string.Join('\n', parts) });
     }
 
     public static async Task EnrichWithMessageHistoryAsync(List<ChatMessage> messages, IMessageChannel channel, int lookbackCount)

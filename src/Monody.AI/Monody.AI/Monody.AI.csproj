@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Monody.Domain\Monody.Domain.csproj" />
+    <ProjectReference Include="..\Monody.AI.Domain\Monody.AI.Domain.csproj" />
+    <ProjectReference Include="..\Monody.AI.Provider.OpenAI\Monody.AI.Provider.OpenAI.csproj" />
+    <ProjectReference Include="..\Monody.AI.Provider\Monody.AI.Provider.csproj" />
+    <ProjectReference Include="..\Monody.AI.Tools\Monody.AI.Tools.csproj" />
+  </ItemGroup>
+
+</Project>

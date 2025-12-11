@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using OpenAI.Chat;
+using Monody.AI.Domain.Models;
 
 namespace Monody.Module.AIChat.Models;
 
@@ -13,9 +13,9 @@ public class DiscordConversation
 
     public ulong InitialUserId { get; set; }
 
-    public List<ChatMessage> Messages { get; set; }
+    public List<ChatMessageDto> Messages { get; set; }
 
-    public DiscordConversation(string conversationId, ulong? guildId, ulong? channelId, ulong userId, List<ChatMessage> messages)
+    public DiscordConversation(string conversationId, ulong? guildId, ulong? channelId, ulong userId, List<ChatMessageDto> messages)
     {
         Id = conversationId;
         GuildId = guildId;

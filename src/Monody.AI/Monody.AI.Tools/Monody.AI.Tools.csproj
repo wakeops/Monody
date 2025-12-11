@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    
+  <ItemGroup>
+    <PackageReference Include="AngleSharp" />
+    <PackageReference Include="Discord.Addons.Hosting" />
+    <PackageReference Include="Google.Apis.CustomSearchAPI.v1" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+    <PackageReference Include="SmartReader" />
+    <PackageReference Include="System.Memory.Data" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <ProjectReference Include="..\Monody.AI.Domain\Monody.AI.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

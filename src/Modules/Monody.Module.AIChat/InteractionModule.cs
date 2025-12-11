@@ -1,13 +1,13 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Microsoft.Extensions.Logging;
+using Monody.AI.Domain.Models;
 using Monody.Module.AIChat.Modals;
-using OpenAI.Chat;
-using OpenAI.Images;
 
 namespace Monody.Module.AIChat;
 
@@ -79,25 +79,15 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         [Summary("Prompt", "What do you want to generate?")]
         [MaxLength(800)]
         string prompt,
-        [Summary("Size", "Image size")]
-        [Choice("1024×1024", "1024"), Choice("512×512", "512"), Choice("256×256", "256")]
-        string size = "1024",
         bool? ephemeral = false
         )
     {
         await DeferAsync(ephemeral: ephemeral.Value);
 
-        var genSize = size switch
-        {
-            "256" => GeneratedImageSize.W256xH256,
-            "512" => GeneratedImageSize.W512xH512,
-            _ => GeneratedImageSize.W1024xH1024
-        };
-
-        GeneratedImage img;
+        ImageGenerationResult img;
         try
         {
-            img = await _aiChatService.GetImageGenerationAsync(prompt, genSize);
+            img = await _aiChatService.GetImageGenerationAsync(prompt);
         }
         catch (Exception ex)
         {
@@ -134,7 +124,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     {
         var channel = Context.Interaction?.InteractionChannel;
 
-        ChatCompletion completion;
+        ChatCompletionResult completion;
         try
         {
             completion = await _aiChatService.GetChatCompletionAsync(interactionId, Context.Guild, channel, Context.User, prompt);
@@ -146,7 +136,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var text = completion?.Content?[0]?.Text?.Trim();
+        var text = completion?.Messages?.Last().Content?.Trim();
         if (string.IsNullOrEmpty(text))
         {
             await FollowupAsync("I didn’t get any text back from the model.", ephemeral: isEphemeral);

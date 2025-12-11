@@ -3,7 +3,6 @@ using DarkSky.Services;
 using Geo.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Monody.Domain.Extensions;
 using Monody.Domain.Module;
 using Monody.Module.Weather.Services;
 
@@ -13,9 +12,11 @@ public class InjectionHandler : ModuleInjectionHandler
 {
     public override void AddModuleServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.RegisterOptions<WeatherOptions>("Module:Weather");
+        services.AddOptionsWithValidateOnStart<WeatherOptions>()
+            .BindConfiguration("Module:Weather");
 
-        var opts = configuration.GetRequiredOptions<WeatherOptions>("Module:Weather");
+        var opts = configuration.GetSection("Module:Weather")
+            .Get<WeatherOptions>();
 
         services.AddHereGeocoding()
             .AddKey(opts.HereApiKey);

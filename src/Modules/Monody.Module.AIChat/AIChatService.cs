@@ -1,43 +1,46 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
+using Monody.AI.Domain.Abstractions;
+using Monody.AI.Domain.Models;
+using Monody.AI.Provider;
 using Monody.Module.AIChat.Models;
 using Monody.Module.AIChat.Utils;
-using Monody.OpenAI.Services;
-using OpenAI.Chat;
-using OpenAI.Images;
 
 namespace Monody.Module.AIChat;
 
 public class AIChatService
 {
-    private readonly OpenAIService _openAIService;
+    private readonly IMonodyAgent _monodyAgent;
+    private readonly IChatCompletionProvider _chatCompletionProvider;
     private readonly ConversationStore _conversationStore;
 
-    public AIChatService(OpenAIService openAIService, ConversationStore conversationStore)
+    public AIChatService(IMonodyAgent monodyAgent, IChatCompletionProvider chatCompletionProvider, ConversationStore conversationStore)
     {
-        _openAIService = openAIService;
+        _monodyAgent = monodyAgent;
+        _chatCompletionProvider = chatCompletionProvider;
         _conversationStore = conversationStore;
     }
 
-    public async Task<ChatCompletion> GetChatCompletionAsync(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user, string prompt)
+    public async Task<ChatCompletionResult> GetChatCompletionAsync(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user, string prompt)
     {
         var conversation = GetOrCreateConversation(interactionId, guild, channel, user);
 
         var payload = new DiscordUserPrompt(user, prompt);
 
-        conversation.Messages.Add(new UserChatMessage(payload.ToString()));
+        conversation.Messages.Add(new ChatMessageDto { Role = ChatRole.User, Content = payload.ToString() });
 
-        var response = await _openAIService.GetChatCompletionAsync(conversation.Messages);
+        var response = await _monodyAgent.GetResultAsync(conversation.Messages);
 
         _conversationStore.SaveConversation(interactionId.ToString(), conversation);
 
         return response;
     }
 
-    public async Task<GeneratedImage> GetImageGenerationAsync(string prompt, GeneratedImageSize genSize)
+    public async Task<ImageGenerationResult> GetImageGenerationAsync(string prompt)
     {
-        return await _openAIService.GetImageGenerationAsync(prompt, genSize);
+        return await _chatCompletionProvider.GenerateImageAsync(prompt);
     }
 
     private DiscordConversation GetOrCreateConversation(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user)
@@ -48,7 +51,7 @@ public class AIChatService
             return conversation; 
         }
 
-        var messages = new List<ChatMessage>();
+        var messages = new List<ChatMessageDto>();
 
         DiscordHelper.EnrichWithInteractionContext(messages, interactionId, guild, channel);
 
