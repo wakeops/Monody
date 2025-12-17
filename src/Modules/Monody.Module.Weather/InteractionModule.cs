@@ -273,7 +273,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         var unit = paramUnits ?? GuessMeasurementUnit(weatherLocation);
 
-        var forecastData = await _weatherService.GetWeeklyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, Constants.MaxForecastDays, unit);
+        var forecastData = await _weatherService.GetDailyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, Constants.MaxForecastDays, unit);
         if (forecastData == null)
         {
             await ModifyOriginalResponseAsync(properties =>
