@@ -28,10 +28,26 @@ public static class ToolJsonSchemaBuilder
                 ["type"] = param.JsonType
             };
 
-            propSchema["description"] ??= param.Description;
-            propSchema["default"] ??= GetDefaultValue(param.DefaultValue);
-            propSchema["minimum"] ??= param.MinValue;
-            propSchema["maximum"] ??= param.MaxValue;
+            if (param.Description != null)
+            {
+                propSchema["description"] = param.Description;
+            }
+
+            var defaultValue = GetDefaultValue(param.DefaultValue);
+            if (defaultValue != null)
+            {
+                propSchema["default"] = defaultValue;
+            }
+
+            if (param.MaxValue != null)
+            {
+                propSchema["maximum"] = param.MaxValue;
+            }
+            
+            if (param.MinValue != null)
+            {
+                propSchema["minimum"] = param.MinValue;
+            }
 
             if (param.RequiredGroupId.HasValue)
             {
