@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Monody.Bot;
 using Monody.Bot.ModuleBuilder;
+using Monody.Services;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -19,6 +20,7 @@ builder.Logging
 
 // Services
 builder.Services
+    .AddServices(builder.Configuration)
     .AddModules(builder.Configuration)
     .AddCache(builder.Configuration)
     .AddDiscord();

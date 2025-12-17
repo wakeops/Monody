@@ -1,7 +1,7 @@
 ﻿using System;
 using DarkSky.Models;
 
-namespace Monody.Module.Weather.Models;
+namespace Monody.Services.Weather.Models;
 
 public class ForecastHour
 {
@@ -14,6 +14,7 @@ public class ForecastHour
     public double Humidity { get; set; }
     public double WindSpeed { get; set; }
     public int? WindBearing { get; set; }
+    public string CardinalWindBearing { get; set; }
     public Icon Icon { get; set; }
     public string Summary { get; set; }
 }

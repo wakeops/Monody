@@ -8,21 +8,23 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using TimeZoneNames;
-using Monody.Module.Weather.Models;
-using Monody.Module.Weather.Services;
 using Monody.Module.Weather.Utils;
+using Monody.Services.Geocode;
+using Monody.Services.Weather;
+using Monody.Services.Geocode.Models;
+using Monody.Services.Weather.Models;
 
 namespace Monody.Module.Weather;
 
 [Group("weather", "Weather commands")]
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
-    private readonly LocationService _locationService;
+    private readonly GeocodeService _geocodeService;
     private readonly WeatherService _weatherService;
 
-    public InteractionModule(LocationService locationService, WeatherService weatherService)
+    public InteractionModule(GeocodeService geocodeService, WeatherService weatherService)
     {
-        _locationService = locationService;
+        _geocodeService = geocodeService;
         _weatherService = weatherService;
     }
 
@@ -41,7 +43,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var forecastData = await _weatherService.GetCurrentForecastAsync(weatherLocation.Coordinates);
+        var forecastData = await _weatherService.GetCurrentForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude);
         if (forecastData == null)
         {
             await ModifyOriginalResponseAsync(properties =>
@@ -105,15 +107,15 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         }
 
         fieldBuilders.AddRange([
-                new EmbedFieldBuilder()
-                    .WithIsInline(true)
-                    .WithName("Wind")
-                    .WithValue(string.Format("{0:F1} MpH with gusts up to {1:F1} MpH", forecast.WindSpeed, forecast.WindGust)),
-                new EmbedFieldBuilder()
-                    .WithIsInline(true)
-                    .WithName("Humidity")
-                    .WithValue(string.Format("{0:N0}%", forecast.Humidity))
-            ]);
+            new EmbedFieldBuilder()
+                .WithIsInline(true)
+                .WithName("Wind")
+                .WithValue(string.Format("{0:F1} MpH with gusts up to {1:F1} MpH", forecast.WindSpeed, forecast.WindGust)),
+            new EmbedFieldBuilder()
+                .WithIsInline(true)
+                .WithName("Humidity")
+                .WithValue(string.Format("{0:N0}%", forecast.Humidity))
+        ]);
 
         if (forecast.Temperature >= 80 && forecast.Humidity >= 40)
         {
@@ -142,15 +144,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
                     .WithValue(string.Format("({0}) {1}", forecast.UVIndex, GetUvIndexString(forecast.UVIndex))));
         }
 
-        var embed = new EmbedBuilder()
-            .WithAuthor(GetLocationString(weatherLocation))
-            .WithTitle(Constants.TitleSeeMoreText)
-            .WithUrl(string.Format(Constants.TitleSeeMoreUrlFormat, weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude))
-            .WithColor(Constants.DefaultEmbedColor)
-            .WithDescription(descriptionBuilder.ToString())
-            .WithFields(fieldBuilders)
-            .WithFooter(Constants.FooterPoweredByText)
-            .Build();
+        var embed = BuildEmbed(weatherLocation, fieldBuilders, descriptionBuilder.ToString());
 
         await ModifyOriginalResponseAsync(properties => properties.Embed = embed);
     }
@@ -192,7 +186,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var forecastData = await _weatherService.GetHourlyForecastAsync(weatherLocation.Coordinates);
+        var forecastData = await _weatherService.GetHourlyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude);
         if (forecastData == null)
         {
             await ModifyOriginalResponseAsync(properties =>
@@ -221,7 +215,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
                     a.PrecipitationProbability,
                     a.PrecipitationIntensity,
                     a.WindSpeed,
-                    WindBearingConverter.ConvertToWindDirection(a.WindBearing));
+                    a.CardinalWindBearing);
 
                 return new EmbedFieldBuilder()
                     .WithIsInline(false)
@@ -229,14 +223,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
                     .WithValue(fieldValue);
             });
 
-        var embed = new EmbedBuilder()
-            .WithAuthor(GetLocationString(weatherLocation))
-            .WithTitle(Constants.TitleSeeMoreText)
-            .WithUrl(string.Format(Constants.TitleSeeMoreUrlFormat, weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude))
-            .WithColor(Constants.DefaultEmbedColor)
-            .WithFields(fieldBuilders)
-            .WithFooter(Constants.FooterPoweredByText)
-            .Build();
+        var embed = BuildEmbed(weatherLocation, fieldBuilders);
 
         var encodedLocation = string.IsNullOrEmpty(location) ? null : Uri.EscapeDataString(location);
 
@@ -274,7 +261,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var forecastData = await _weatherService.GetWeeklyForecastAsync(weatherLocation.Coordinates);
+        var forecastData = await _weatherService.GetWeeklyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude);
         if (forecastData == null)
         {
             await ModifyOriginalResponseAsync(properties =>
@@ -292,21 +279,14 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
                     .WithValue(GetWeatherDailyString(a, weatherLocation));
             });
 
-        var embed = new EmbedBuilder()
-            .WithAuthor(GetLocationString(weatherLocation))
-            .WithTitle(Constants.TitleSeeMoreText)
-            .WithUrl(string.Format(Constants.TitleSeeMoreUrlFormat, weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude))
-            .WithColor(new Color(Constants.DefaultEmbedColor))
-            .WithFields(fieldBuilders)
-            .WithFooter(Constants.FooterPoweredByText)
-            .Build();
+        var embed = BuildEmbed(weatherLocation, fieldBuilders);
 
         await ModifyOriginalResponseAsync(properties => properties.Embed = embed);
     }
 
     private async Task<LocationDetails> ResolveUserLocationAsync(string location)
     {
-        var weatherLocation = await _locationService.GetGeocodeForLocationStringAsync(location);
+        var weatherLocation = await _geocodeService.GetGeocodeForLocationStringAsync(location);
         if (weatherLocation == null || weatherLocation.Coordinates == null)
         {
             await ModifyOriginalResponseAsync(properties =>
@@ -385,5 +365,27 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         {
             return null;
         }
+    }
+
+    private static Embed BuildEmbed(LocationDetails location, IEnumerable<EmbedFieldBuilder> fields, string description = null)
+    {
+        var eb = new EmbedBuilder()
+            .WithAuthor(GetLocationString(location))
+            .WithTitle(Constants.TitleSeeMoreText)
+            .WithUrl(string.Format(Constants.TitleSeeMoreUrlFormat, location.Coordinates.Latitude, location.Coordinates.Longitude))
+            .WithColor(new Color(Constants.DefaultEmbedColor))
+            .WithFooter(Constants.FooterPoweredByText);
+
+        if (!string.IsNullOrEmpty(description))
+        {
+            eb.WithDescription(description);
+        }
+
+        if (fields != null)
+        {
+            eb.WithFields(fields);
+        }
+
+        return eb.Build();
     }
 }

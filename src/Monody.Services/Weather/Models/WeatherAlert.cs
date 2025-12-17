@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Monody.Module.Weather.Models;
+namespace Monody.Services.Weather.Models;
 
 public class WeatherAlert
 {

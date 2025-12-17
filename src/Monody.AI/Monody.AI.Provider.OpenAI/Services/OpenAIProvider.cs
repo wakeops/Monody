@@ -74,7 +74,8 @@ public class OpenAIProvider : IChatCompletionProvider
     {
         foreach (var toolMetadata in _toolDispatcher.GetAllMetadata())
         {
-            var schemaJson = toolMetadata.ParametersSchema.RootElement.GetRawText();
+            var toolJsonSchema = ToolJsonSchemaBuilder.FromParameters(toolMetadata.Parameters);
+            var schemaJson = toolJsonSchema.RootElement.GetRawText();
             yield return ChatTool.CreateFunctionTool(toolMetadata.Name, toolMetadata.Description, BinaryData.FromString(schemaJson));
         }
     }

@@ -6,20 +6,20 @@ using Geo.Here;
 using Geo.Here.Models.Parameters;
 using Geo.Here.Models.Responses;
 using Microsoft.Extensions.Logging;
-using Monody.Module.Weather.Models;
+using Monody.Services.Geocode.Models;
 using ZiggyCreatures.Caching.Fusion;
 
-namespace Monody.Module.Weather.Services;
+namespace Monody.Services.Geocode;
 
-public class LocationService
+public class GeocodeService
 {
     private readonly IHereGeocoding _hereGeocoding;
     private readonly IFusionCache _cache;
-    private readonly ILogger<LocationService> _logger;
+    private readonly ILogger<GeocodeService> _logger;
 
     private readonly TimeSpan _geocodeCacheExpiration = TimeSpan.FromHours(1);
 
-    public LocationService(IHereGeocoding hereGeocoding, IFusionCache cache, ILogger<LocationService> logger)
+    public GeocodeService(IHereGeocoding hereGeocoding, IFusionCache cache, ILogger<GeocodeService> logger)
     {
         _hereGeocoding = hereGeocoding;
         _cache = cache;

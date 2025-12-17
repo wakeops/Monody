@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,14 +14,11 @@ public interface IToolHandler
     /// <summary>Human-readable description.</summary>
     string Description { get; }
 
-    /// <summary>JSON Schema describing the tool parameters.</summary>
-    JsonDocument ParametersSchema { get; }
+    /// <summary>Schema describing the tool parameters.</summary>
+    List<ToolParameterSchema> Parameters { get; }
 
     /// <summary>
     /// Executes the tool from raw JSON arguments and returns a JSON result.
     /// </summary>
     Task<JsonDocument> ExecuteAsync(BinaryData arguments, CancellationToken cancellationToken = default);
-
-    /// <summary>Metadata you can send to an LLM provider.</summary>
-    ToolMetadata ToMetadata();
 }

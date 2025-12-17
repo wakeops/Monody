@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Generic;
 
 namespace Monody.AI.Tools.ToolHandler;
 
@@ -8,12 +8,12 @@ public sealed class ToolMetadata
 
     public string Description { get; }
 
-    public JsonDocument ParametersSchema { get; }
+    public List<ToolParameterSchema> Parameters { get; }
 
-    public ToolMetadata(string name, string description, JsonDocument parametersSchema)
+    public ToolMetadata(string name, string description, List<ToolParameterSchema> parameters)
     {
         Name = name;
         Description = description;
-        ParametersSchema = parametersSchema;
+        Parameters = parameters;
     }
 }

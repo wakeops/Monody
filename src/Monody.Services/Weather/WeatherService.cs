@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 using DarkSky.Models;
 using DarkSky.Services;
 using Microsoft.Extensions.Logging;
-using Monody.Module.Weather.Models;
-using Monody.Module.Weather.Utils;
+using Monody.Services.Weather.Models;
+using Monody.Services.Weather.Utils;
 using ZiggyCreatures.Caching.Fusion;
 
-namespace Monody.Module.Weather.Services;
+namespace Monody.Services.Weather;
 
 public class WeatherService
 {
@@ -26,9 +26,9 @@ public class WeatherService
         _logger = logger;
     }
 
-    public async Task<ForecastData<ForecastNow>> GetCurrentForecastAsync(Coordinates coordinates)
+    public async Task<ForecastData<ForecastNow>> GetCurrentForecastAsync(double latitude, double longitude)
     {
-        var forecast = await GetForecastAsync(coordinates.Latitude, coordinates.Longitude);
+        var forecast = await GetForecastAsync(latitude, longitude);
         if (forecast == null)
         {
             return null;
@@ -41,6 +41,7 @@ public class WeatherService
         var windSpeed = forecast.Currently.WindSpeed.GetValueOrDefault();
         var heatIndex = HeatIndexCalculator.Calculate(temp, humidity);
         var windChill = WindChillCalculator.Calculate(temp, windSpeed);
+        var cardinalWindBearing = WindBearingConverter.ConvertToWindDirection(forecast.Currently.WindBearing);
 
         var currentDay = forecast.Daily.Data[0];
 
@@ -55,6 +56,8 @@ public class WeatherService
                 WindChill = windChill,
                 WindSpeed = windSpeed,
                 WindGust = currentDay.WindGust.GetValueOrDefault(),
+                WindBearing = forecast.Currently.WindBearing.GetValueOrDefault(),
+                CardinalWindBearing = cardinalWindBearing,
                 ForecastHigh = currentDay.TemperatureHigh.GetValueOrDefault(),
                 ForecastLow = currentDay.TemperatureLow.GetValueOrDefault(),
                 HeatIndex = heatIndex,
@@ -70,9 +73,9 @@ public class WeatherService
         };
     }
 
-    public async Task<ForecastData<List<ForecastHour>>> GetHourlyForecastAsync(Coordinates coordinates)
+    public async Task<ForecastData<List<ForecastHour>>> GetHourlyForecastAsync(double latitude, double longitude)
     {
-        var forecast = await GetForecastAsync(coordinates.Latitude, coordinates.Longitude);
+        var forecast = await GetForecastAsync(latitude, longitude);
         if (forecast == null)
         {
             return null;
@@ -93,6 +96,7 @@ public class WeatherService
                     Humidity = a.Humidity.GetValueOrDefault() * 100,
                     WindSpeed = a.WindSpeed.GetValueOrDefault(),
                     WindBearing = a.WindBearing,
+                    CardinalWindBearing = WindBearingConverter.ConvertToWindDirection(a.WindBearing),
                     Icon = a.Icon,
                     Summary = a.Summary
                 }
@@ -100,9 +104,9 @@ public class WeatherService
         };
     }
 
-    public async Task<ForecastData<List<ForecastDay>>> GetWeeklyForecastAsync(Coordinates coordinates)
+    public async Task<ForecastData<List<ForecastDay>>> GetWeeklyForecastAsync(double latitude, double longitude)
     {
-        var forecast = await GetForecastAsync(coordinates.Latitude, coordinates.Longitude);
+        var forecast = await GetForecastAsync(latitude, longitude);
         if (forecast == null)
         {
             return null;

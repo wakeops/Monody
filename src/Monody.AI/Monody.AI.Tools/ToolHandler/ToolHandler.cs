@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,17 +17,14 @@ internal abstract class ToolHandler<TRequest, TResponse> : IToolHandler
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         };
 
-        ParametersSchema = JsonSchemaBuilder.FromType<TRequest>();
+        Parameters = ToolSchema.ParametersFromType<TRequest>();
     }
 
     public abstract string Name { get; }
 
     public abstract string Description { get; }
 
-    public JsonDocument ParametersSchema { get; }
-
-    public ToolMetadata ToMetadata()
-        => new(Name, Description, ParametersSchema);
+    public List<ToolParameterSchema> Parameters { get; }
 
     public async Task<JsonDocument> ExecuteAsync(BinaryData arguments, CancellationToken cancellationToken = default)
     {

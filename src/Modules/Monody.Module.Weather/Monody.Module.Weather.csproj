@@ -2,14 +2,12 @@
 
   <ItemGroup>
     <PackageReference Include="Discord.Addons.Hosting" />
-    <PackageReference Include="Geo.Here" />
-    <PackageReference Include="DarkSkyCore" />
     <PackageReference Include="TimeZoneNames" />
-    <PackageReference Include="ZiggyCreatures.FusionCache" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Monody.Domain\Monody.Domain.csproj" />
+    <ProjectReference Include="..\..\Monody.Services\Monody.Services.csproj" />
   </ItemGroup>
 
 </Project>

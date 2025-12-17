@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.AI.Provider", "src\M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.AI.Domain", "src\Monody.AI\Monody.AI.Domain\Monody.AI.Domain.csproj", "{F5BDC281-E741-469B-9AF5-497F6937FD43}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monody.Services", "src\Monody.Services\Monody.Services.csproj", "{6CAB4A7C-6EA0-4150-8DE1-0F133AAA86DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,10 @@ Global
 		{F5BDC281-E741-469B-9AF5-497F6937FD43}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5BDC281-E741-469B-9AF5-497F6937FD43}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5BDC281-E741-469B-9AF5-497F6937FD43}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CAB4A7C-6EA0-4150-8DE1-0F133AAA86DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CAB4A7C-6EA0-4150-8DE1-0F133AAA86DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CAB4A7C-6EA0-4150-8DE1-0F133AAA86DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CAB4A7C-6EA0-4150-8DE1-0F133AAA86DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -115,6 +121,7 @@ Global
 		{86FA0972-C883-45DA-878C-61D12E5FAC88} = {BE8D5B73-F4D6-4000-8618-B47B9A0EFA4C}
 		{67C438C3-8EA9-4F37-BD1A-A43FB8D94030} = {BE8D5B73-F4D6-4000-8618-B47B9A0EFA4C}
 		{F5BDC281-E741-469B-9AF5-497F6937FD43} = {BE8D5B73-F4D6-4000-8618-B47B9A0EFA4C}
+		{6CAB4A7C-6EA0-4150-8DE1-0F133AAA86DE} = {7647D9FD-931E-4C9E-ADE5-8D225ED410FD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5711E48B-ED9A-4635-86B1-31D50B663FAE}

@@ -1,7 +1,7 @@
 ﻿using System;
 using DarkSky.Models;
 
-namespace Monody.Module.Weather.Models;
+namespace Monody.Services.Weather.Models;
 
 public class ForecastDay
 {

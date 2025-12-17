@@ -37,7 +37,8 @@ public sealed class ToolDispatcher : IToolDispatcher
     public IReadOnlyList<ToolMetadata> GetAllMetadata()
     {
         EnsureHandlers();
-        return _handlers.Values.Select(h => h.ToMetadata()).ToList();
+
+        return [.. _handlers.Values.Select(h => new ToolMetadata(h.Name, h.Description, h.Parameters))];
     }
 
     public async Task<string> ExecuteAsync(string toolName, BinaryData arguments, CancellationToken cancellationToken)

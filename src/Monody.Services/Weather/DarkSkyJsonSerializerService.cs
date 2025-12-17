@@ -5,7 +5,7 @@ using DarkSky.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Monody.Module.Weather.Services;
+namespace Monody.Services.Weather;
 
 internal class DarkSkyJsonSerializerService : IJsonSerializerService
 {
