@@ -11,6 +11,7 @@
   </ItemGroup>
     
   <ItemGroup>
+    <ProjectReference Include="..\..\Monody.Services\Monody.Services.csproj" />
     <ProjectReference Include="..\Monody.AI.Domain\Monody.AI.Domain.csproj" />
   </ItemGroup>
 

@@ -52,6 +52,8 @@ public sealed class ToolDispatcher : IToolDispatcher
 
         try
         {
+            _logger.LogInformation("Executing tool '{ToolName}' with arguments: {Arguments}", toolName, arguments.ToString());
+
             var result = await handler.ExecuteAsync(arguments, cancellationToken);
             return result?.RootElement.GetRawText() ?? "{}";
         }

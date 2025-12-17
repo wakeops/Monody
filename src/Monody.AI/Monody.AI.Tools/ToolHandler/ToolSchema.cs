@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using Monody.AI.Tools.Attributes;
 
 namespace Monody.AI.Tools.ToolHandler;
 
@@ -18,7 +19,13 @@ public sealed class ToolParameterSchema
 
     public string Description { get; init; }
 
-    public bool IsRequired { get; init; }
+    public int? RequiredGroupId { get; init; }
+
+    public object DefaultValue { get; init; }
+
+    public int? MinValue { get; init; }
+
+    public int? MaxValue { get; init; }
 }
 
 public static class ToolSchema
@@ -39,8 +46,14 @@ public static class ToolSchema
             var descAttr = prop.GetCustomAttribute<DescriptionAttribute>();
             var description = descAttr?.Description ?? string.Empty;
 
-            // Required attribute
-            var isRequired = prop.GetCustomAttribute<RequiredAttribute>() != null;
+            // Required or OneOfRequiredAttribute attribute
+            var requiredGroupId = prop.GetCustomAttribute<RequiredAttribute>() != null ? 0 : prop.GetCustomAttribute<OneOfRequiredAttribute>()?.GroupId;
+
+            // Default attribute
+            var defaultValue = prop.GetCustomAttribute<DefaultValueAttribute>()?.Value;
+
+            // Default attribute
+            var rangeValue = prop.GetCustomAttribute<RangeAttribute>();
 
             parameters.Add(new ToolParameterSchema
             {
@@ -48,7 +61,10 @@ public static class ToolSchema
                 Type = prop.PropertyType,
                 JsonType = MapDotNetTypeToJsonType(prop.PropertyType),
                 Description = description,
-                IsRequired = isRequired
+                RequiredGroupId = requiredGroupId,
+                DefaultValue = defaultValue,
+                MinValue = rangeValue?.Minimum as int?,
+                MaxValue = rangeValue?.Maximum as int?
             });
         }
 
@@ -62,7 +78,11 @@ public static class ToolSchema
         // Unwrap Nullable<T>
         t = Nullable.GetUnderlyingType(t) ?? t;
 
-        // Boolean
+        if (t.IsEnum)
+        {
+            return "string";
+        }
+
         if (t == typeof(bool))
         {
             return "boolean";

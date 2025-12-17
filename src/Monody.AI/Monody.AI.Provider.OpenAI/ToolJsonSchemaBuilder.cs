@@ -1,11 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Monody.AI.Tools.ToolHandler;
 
 namespace Monody.AI.Provider.OpenAI;
 
-internal static class ToolJsonSchemaBuilder
+public static class ToolJsonSchemaBuilder
 {
     public static JsonDocument FromParameters(List<ToolParameterSchema> parameters)
     {
@@ -15,7 +17,7 @@ internal static class ToolJsonSchemaBuilder
         };
 
         var propertiesObj = new JsonObject();
-        var requiredList = new JsonArray();
+        var requiredList = new Dictionary<int, JsonArray>();
 
         foreach (var param in parameters)
         {
@@ -27,10 +29,28 @@ internal static class ToolJsonSchemaBuilder
             };
 
             propSchema["description"] ??= param.Description;
+            propSchema["default"] ??= GetDefaultValue(param.DefaultValue);
+            propSchema["minimum"] ??= param.MinValue;
+            propSchema["maximum"] ??= param.MaxValue;
 
-            if (param.IsRequired)
+            if (param.RequiredGroupId.HasValue)
             {
-                requiredList.Add(jsonName);
+                if (!requiredList.ContainsKey(param.RequiredGroupId.Value))
+                {
+                    requiredList[param.RequiredGroupId.Value] = [];
+                }
+
+                requiredList[param.RequiredGroupId.Value].Add(jsonName);
+            }
+
+            if (param.Type.IsEnum)
+            {
+                var enumValues = new JsonArray();
+                foreach (var enumName in Enum.GetNames(param.Type))
+                {
+                    enumValues.Add(enumName);
+                }
+                propSchema["enum"] = enumValues;
             }
 
             propertiesObj[jsonName] = propSchema;
@@ -38,11 +58,41 @@ internal static class ToolJsonSchemaBuilder
 
         schema["properties"] = propertiesObj;
 
-        if (requiredList.Count > 0)
+        if (requiredList.Count == 1)
         {
-            schema["required"] = requiredList;
+            schema["required"] = requiredList.First().Value;
+        }
+        else if (requiredList.Count > 1)
+        {
+            var oneOfArray = new JsonArray();
+            foreach (var reqGroup in requiredList.Values)
+            {
+                var reqObj = new JsonObject
+                {
+                    ["required"] = reqGroup
+                };
+                oneOfArray.Add(reqObj);
+            }
+            schema["oneOf"] = oneOfArray;
         }
 
         return JsonDocument.Parse(schema.ToJsonString());
+    }
+
+    private static string GetDefaultValue(object value)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+
+        var valueType = value.GetType();
+
+        if (valueType.IsEnum)
+        {
+            return Enum.GetName(valueType, value) ?? string.Empty;
+        }
+
+        return JsonSerializer.Serialize(value);
     }
 }

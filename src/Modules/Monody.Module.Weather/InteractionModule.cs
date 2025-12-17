@@ -33,7 +33,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     public async Task GetWeatherNowAsync(
         [Summary("Location", "Where would like to forecast?")]
         [MaxLength(Constants.MaxLocationNameLength)]
-        string location)
+        string location,
+        [Summary("Units", "Units type")]
+        MeasurementUnits? paramUnits)
     {
         await DeferAsync();
 
@@ -43,7 +45,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var forecastData = await _weatherService.GetCurrentForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude);
+        var unit = paramUnits ?? GuessMeasurementUnit(weatherLocation);
+
+        var forecastData = await _weatherService.GetCurrentForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, unit);
         if (forecastData == null)
         {
             await ModifyOriginalResponseAsync(properties =>
@@ -58,10 +62,10 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         descriptionBuilder.Append(
             string.Format("{0} Currently {1} and {2} with a high of {3} and a low of {4}.",
                 EmojiIconMap.Resolve(forecast.Icon),
-                ConvertToTempString(forecast.Temperature, weatherLocation),
+                ConvertToTempString(unit, forecast.Temperature),
                 forecast.Condition,
-                ConvertToTempString(forecast.ForecastHigh, weatherLocation),
-                ConvertToTempString(forecast.ForecastLow, weatherLocation)));
+                ConvertToTempString(unit, forecast.ForecastHigh),
+                ConvertToTempString(unit, forecast.ForecastLow)));
 
         if (forecast.Alerts != null && forecast.Alerts.Any())
         {
@@ -123,7 +127,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
                 new EmbedFieldBuilder()
                     .WithIsInline(true)
                     .WithName("Heat Index")
-                    .WithValue(ConvertToTempString(forecast.HeatIndex, weatherLocation)));
+                    .WithValue(ConvertToTempString(unit, forecast.HeatIndex)));
         }
 
         if (forecast.Temperature <= 50 && forecast.WindGust >= 3)
@@ -132,7 +136,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
                 new EmbedFieldBuilder()
                     .WithIsInline(true)
                     .WithName("Wind Chill")
-                    .WithValue(ConvertToTempString(forecast.WindChill, weatherLocation)));
+                    .WithValue(ConvertToTempString(unit, forecast.WindChill)));
         }
 
         if (forecast.UVIndex > 0)
@@ -154,14 +158,16 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     public async Task GetWeatherHourlyAsync(
         [Summary("Location", "Where would like to forecast?")]
         [MaxLength(Constants.MaxLocationNameLength)]
-        string location)
+        string location,
+        [Summary("Units", "Units type")]
+        MeasurementUnits? paramUnits)
     {
-        await ProcessGetWeatherHourly(0, location);
+        await ProcessGetWeatherHourly(0, location, paramUnits);
     }
 
-    [ComponentInteraction("forecast_hourly_*_(*)", true)]
+    [ComponentInteraction("forecast_hourly_*_(*)_*", true)]
     [CommandContextType(InteractionContextType.PrivateChannel, InteractionContextType.BotDm, InteractionContextType.Guild)]
-    public async Task GetWeatherHourly_ButtonAsync(int page, string encodedLocation)
+    public async Task GetWeatherHourly_ButtonAsync(int page, string encodedLocation, MeasurementUnits? unit)
     {
         var originalUserId = (Context.Interaction as SocketMessageComponent).Message.Interaction.User.Id;
 
@@ -173,10 +179,10 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         var location = string.IsNullOrEmpty(encodedLocation) ? null : Uri.UnescapeDataString(encodedLocation);
 
-        await ProcessGetWeatherHourly(page, location);
+        await ProcessGetWeatherHourly(page, location, unit);
     }
 
-    private async Task ProcessGetWeatherHourly(int page, string location)
+    private async Task ProcessGetWeatherHourly(int page, string location, MeasurementUnits? paramUnits)
     {
         await DeferAsync();
 
@@ -186,7 +192,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var forecastData = await _weatherService.GetHourlyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude);
+        var unit = paramUnits ?? GuessMeasurementUnit(weatherLocation);
+
+        var forecastData = await _weatherService.GetHourlyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, unit);
         if (forecastData == null)
         {
             await ModifyOriginalResponseAsync(properties =>
@@ -211,7 +219,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
                 var fieldValue = string.Format(
                     "{0} | :droplet: {1:N0}% ({2:F2} in) | :dash: {3:N0} mph {4}",
-                    ConvertToTempString(a.Temperature, weatherLocation),
+                    ConvertToTempString(unit, a.Temperature),
                     a.PrecipitationProbability,
                     a.PrecipitationIntensity,
                     a.WindSpeed,
@@ -229,11 +237,11 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         var component = new ComponentBuilder()
             .WithButton(
-                customId: $"forecast_hourly_{page - 1}_({encodedLocation})",
+                customId: $"forecast_hourly_{page - 1}_({encodedLocation})_{unit}",
                 emote: new Emoji("⬅️"),
                 disabled: page == 0)
             .WithButton(
-                customId: $"forecast_hourly_{page + 1}_({encodedLocation})",
+                customId: $"forecast_hourly_{page + 1}_({encodedLocation})_{unit}",
                 emote: new Emoji("➡️"),
                 disabled: page >= Constants.MaxForecastHours / Constants.ForecastHoursPerPageLimit - 1)
             .Build();
@@ -251,7 +259,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     public async Task GetWeatherWeekAsync(
         [Summary("Location", "Where would like to forecast?")]
         [MaxLength(Constants.MaxLocationNameLength)]
-        string location)
+        string location,
+        [Summary("Units", "Units type")]
+        MeasurementUnits? paramUnits)
     {
         await DeferAsync();
 
@@ -261,7 +271,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var forecastData = await _weatherService.GetWeeklyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude);
+        var unit = paramUnits ?? GuessMeasurementUnit(weatherLocation);
+
+        var forecastData = await _weatherService.GetWeeklyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, Constants.MaxForecastDays, unit);
         if (forecastData == null)
         {
             await ModifyOriginalResponseAsync(properties =>
@@ -270,13 +282,12 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         }
 
         var fieldBuilders = forecastData.Data
-            .Take(Constants.MaxForecastDays)
             .Select(a =>
             {
                 return new EmbedFieldBuilder()
                     .WithIsInline(false)
                     .WithName(a.Date.ToString("dddd MMMM d"))
-                    .WithValue(GetWeatherDailyString(a, weatherLocation));
+                    .WithValue(GetWeatherDailyString(unit, a, weatherLocation));
             });
 
         var embed = BuildEmbed(weatherLocation, fieldBuilders);
@@ -313,21 +324,23 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         }
     }
 
-    private static string ConvertToTempString(double temperature, LocationDetails location)
+    private static MeasurementUnits GuessMeasurementUnit(LocationDetails location)
     {
-        var tempCelsius = ConvertToCelsius(temperature);
-
         if (location.Country == "United States" || location.Country == "USA")
         {
-            return string.Format("{0:N0} °F ({1:N0} °C)", temperature, tempCelsius);
+            return MeasurementUnits.Imperial;
         }
-
-        return string.Format("{0:N0} °C ({1:N0} °F)", tempCelsius, temperature);
+        return MeasurementUnits.Metric;
     }
 
-    private static double ConvertToCelsius(double temperature)
+    private static string ConvertToTempString(MeasurementUnits unit, double temperature)
     {
-        return (temperature - 32.0) / 1.8;
+        if (unit == MeasurementUnits.Imperial)
+        {
+            return string.Format("{0:N0} °F", temperature);
+        }
+
+        return string.Format("{0:N0} °C", temperature);
     }
 
     private static string GetLocationString(LocationDetails location)
@@ -349,9 +362,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         return sb.ToString();
     }
 
-    private static string GetWeatherDailyString(ForecastDay d, LocationDetails location)
+    private static string GetWeatherDailyString(MeasurementUnits unit, ForecastDay d, LocationDetails location)
     {
-        return $"{EmojiIconMap.Resolve(d.Icon)} {ConvertToTempString(d.High, location)} / {ConvertToTempString(d.Low, location)} - {d.Summary}";
+        return $"{EmojiIconMap.Resolve(d.Icon)} {ConvertToTempString(unit, d.High)} / {ConvertToTempString(unit, d.Low)} - {d.Summary}";
     }
 
     private static string GetTimeZoneCode(string timezone)

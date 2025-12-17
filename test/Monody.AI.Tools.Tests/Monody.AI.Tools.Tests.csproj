@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Monody.AI\Monody.AI.Tools\Monody.AI.Tools.csproj" />
+    <ProjectReference Include="..\..\src\Monody.AI\Monody.AI.Provider.OpenAI\Monody.AI.Provider.OpenAI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

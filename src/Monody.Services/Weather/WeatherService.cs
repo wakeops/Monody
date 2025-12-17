@@ -26,7 +26,7 @@ public class WeatherService
         _logger = logger;
     }
 
-    public async Task<ForecastData<ForecastNow>> GetCurrentForecastAsync(double latitude, double longitude)
+    public async Task<ForecastData<ForecastNow>> GetCurrentForecastAsync(double latitude, double longitude, MeasurementUnits units = MeasurementUnits.Imperial)
     {
         var forecast = await GetForecastAsync(latitude, longitude);
         if (forecast == null)
@@ -51,16 +51,16 @@ public class WeatherService
             Data = new ForecastNow
             {
                 Condition = forecast.Currently.Summary,
-                Temperature = temp,
+                Temperature = ConvertTempUnit(units, temp),
                 Humidity = humidity,
-                WindChill = windChill,
+                WindChill = ConvertTempUnit(units, windChill),
                 WindSpeed = windSpeed,
                 WindGust = currentDay.WindGust.GetValueOrDefault(),
                 WindBearing = forecast.Currently.WindBearing.GetValueOrDefault(),
                 CardinalWindBearing = cardinalWindBearing,
-                ForecastHigh = currentDay.TemperatureHigh.GetValueOrDefault(),
-                ForecastLow = currentDay.TemperatureLow.GetValueOrDefault(),
-                HeatIndex = heatIndex,
+                ForecastHigh = ConvertTempUnit(units, currentDay.TemperatureHigh.GetValueOrDefault()),
+                ForecastLow = ConvertTempUnit(units, currentDay.TemperatureLow.GetValueOrDefault()),
+                HeatIndex = ConvertTempUnit(units, heatIndex),
                 Icon = forecast.Currently.Icon,
                 UVIndex = currentDay.UvIndex.GetValueOrDefault(),
                 PrecipitationProbability = currentDay.PrecipProbability.GetValueOrDefault(),
@@ -73,7 +73,7 @@ public class WeatherService
         };
     }
 
-    public async Task<ForecastData<List<ForecastHour>>> GetHourlyForecastAsync(double latitude, double longitude)
+    public async Task<ForecastData<List<ForecastHour>>> GetHourlyForecastAsync(double latitude, double longitude, MeasurementUnits units = MeasurementUnits.Imperial)
     {
         var forecast = await GetForecastAsync(latitude, longitude);
         if (forecast == null)
@@ -88,8 +88,8 @@ public class WeatherService
                 new ForecastHour
                 {
                     Date = a.DateTime,
-                    Temperature = a.Temperature.GetValueOrDefault(),
-                    FeelsLikeTemperature = a.ApparentTemperature.GetValueOrDefault(),
+                    Temperature = ConvertTempUnit(units, a.Temperature.GetValueOrDefault()),
+                    FeelsLikeTemperature = ConvertTempUnit(units, a.ApparentTemperature.GetValueOrDefault()),
                     PrecipitationProbability = a.PrecipProbability.GetValueOrDefault() * 100,
                     PrecipitationIntensity = a.PrecipIntensity.GetValueOrDefault(),
                     CloudCover = a.CloudCover.GetValueOrDefault() * 100,
@@ -104,7 +104,7 @@ public class WeatherService
         };
     }
 
-    public async Task<ForecastData<List<ForecastDay>>> GetWeeklyForecastAsync(double latitude, double longitude)
+    public async Task<ForecastData<List<ForecastDay>>> GetDailyForecastAsync(double latitude, double longitude, int dayCount = 5, MeasurementUnits units = MeasurementUnits.Imperial)
     {
         var forecast = await GetForecastAsync(latitude, longitude);
         if (forecast == null)
@@ -115,17 +115,29 @@ public class WeatherService
         return new ForecastData<List<ForecastDay>>
         {
             TimeZone = forecast.TimeZone,
-            Data = [.. forecast.Daily.Data.Select(a =>
-                new ForecastDay
-                {
-                    Date = a.DateTime,
-                    High = a.TemperatureHigh.GetValueOrDefault(),
-                    Low = a.TemperatureLow.GetValueOrDefault(),
-                    Icon = a.Icon,
-                    Summary = a.Summary
-                }
+            Data = [.. forecast.Daily.Data
+                .Take(dayCount)
+                .Select(a =>
+                    new ForecastDay
+                    {
+                        Date = a.DateTime,
+                        High = ConvertTempUnit(units, a.TemperatureHigh.GetValueOrDefault()),
+                        Low = ConvertTempUnit(units, a.TemperatureLow.GetValueOrDefault()),
+                        Icon = a.Icon,
+                        Summary = a.Summary
+                    }
             )]
         };
+    }
+
+    private static double ConvertTempUnit(MeasurementUnits units, double temperature)
+    {
+        if (units == MeasurementUnits.Imperial)
+        {
+            return temperature;
+        }
+
+        return (temperature - 32.0) / 1.8;
     }
 
     private async Task<Forecast> GetForecastAsync(double latitude, double longitude)
