@@ -8,6 +8,7 @@ COPY Directory.Packages.props ./
 
 COPY ./src/Monody.Bot/*.csproj ./src/Monody.Bot/
 COPY ./src/Monody.Domain/*.csproj ./src/Monody.Domain/
+COPY ./src/Monody.Services/*.csproj ./src/Monody.Services/
 
 COPY ./src/Modules/Monody.Module.AIChat/*.csproj ./src/Modules/Monody.Module.AIChat/
 COPY ./src/Modules/Monody.Module.Weather/*.csproj ./src/Modules/Monody.Module.Weather/
