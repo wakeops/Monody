@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,7 +15,12 @@ internal abstract class ToolHandler<TRequest, TResponse> : IToolHandler
     {
         _serializerOptions = serializerOptions ?? new JsonSerializerOptions
         {
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            PropertyNameCaseInsensitive = true,
+            Converters =
+            {
+                new JsonStringEnumConverter()
+            }
         };
 
         Parameters = ToolSchema.ParametersFromType<TRequest>();
