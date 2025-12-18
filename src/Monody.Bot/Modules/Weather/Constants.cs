@@ -8,6 +8,5 @@ internal static class Constants
     public const int MaxForecastDays = 5;
     public const int MaxForecastHours = 24;
     public const int ForecastHoursPerPageLimit = 4;
-    public const uint DefaultEmbedColor = 0x6DC8C2;
     public const int MaxLocationNameLength = 100;
 }

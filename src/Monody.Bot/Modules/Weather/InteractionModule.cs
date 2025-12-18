@@ -386,7 +386,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             .WithAuthor(GetLocationString(location))
             .WithTitle(Constants.TitleSeeMoreText)
             .WithUrl(string.Format(Constants.TitleSeeMoreUrlFormat, location.Coordinates.Latitude, location.Coordinates.Longitude))
-            .WithColor(new Color(Constants.DefaultEmbedColor))
+            .WithColor(new Color(MonodyConstants.DefaultEmbedColor))
             .WithFooter(Constants.FooterPoweredByText);
 
         if (!string.IsNullOrEmpty(description))
