@@ -67,22 +67,5 @@ public sealed class ToolJsonSchemaBuilderTests
         var days = properties.GetProperty("Days");
         Assert.True(days.TryGetProperty("minimum", out var daysMin)); Assert.Equal(1, daysMin.GetDouble());
         Assert.True(days.TryGetProperty("maximum", out var daysMax)); Assert.Equal(14, daysMax.GetDouble());
-
-        // Required groups -> should be represented as "oneOf" with two groups:
-        // - group 1: ["LocationQuery"]
-        // - group 2: ["Latitude", "Longitude"]
-        Assert.True(root.TryGetProperty("oneOf", out var oneOf));
-        Assert.Equal(2, oneOf.GetArrayLength());
-
-        var groups = oneOf.EnumerateArray()
-            .Select(el => el.GetProperty("required").EnumerateArray().Select(x => x.GetString()).OrderBy(s => s).ToArray())
-            .ToArray();
-
-        // Normalize expected groups for comparison
-        var expectedGroupA = new[] { "LocationQuery" }.OrderBy(s => s).ToArray();
-        var expectedGroupB = new[] { "Latitude", "Longitude" }.OrderBy(s => s).ToArray();
-
-        Assert.Contains(groups, g => g.SequenceEqual(expectedGroupA));
-        Assert.Contains(groups, g => g.SequenceEqual(expectedGroupB));
     }
 }

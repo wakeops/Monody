@@ -1,23 +1,19 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using Monody.AI.Tools.Attributes;
 using Monody.Services.Weather.Models;
 
 namespace Monody.AI.Tools.Capabilities.Weather;
 
 public sealed class WeatherToolRequest
 {
-    [Description("Free-form location query such as a city name, ZIP/postal code, or place name (e.g., 'Raleigh NC', '90210').")]
-    [OneOfRequired(1)]
+    [Description("Free-form location like 'Raleigh, NC' or '90210'. Use this OR lat/lon.")]
     public string LocationQuery { get; set; }
 
-    [Description("Latitude in decimal degrees.")]
-    [OneOfRequired(2)]
+    [Description("Latitude in decimal degrees. Use with longitude, instead of location_query.")]
     [Range(-90, 90)]
     public double? Latitude { get; set; }
 
-    [Description("Longitude in decimal degrees.")]
-    [OneOfRequired(2)]
+    [Description("Longitude in decimal degrees. Use with latitude, instead of location_query.")]
     [Range(-180, 180)]
     public double? Longitude { get; set; }
 
@@ -29,7 +25,7 @@ public sealed class WeatherToolRequest
     [Range(1, 14)]
     public int? Days { get; set; }
 
-    [Description("Units for temperature and wind speed.")]
+    [Description("Units for temperature.")]
     [DefaultValue(MeasurementUnits.Imperial)]
     public MeasurementUnits Units { get; set; }
 }

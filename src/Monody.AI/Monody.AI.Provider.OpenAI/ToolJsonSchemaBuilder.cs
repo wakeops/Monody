@@ -17,7 +17,7 @@ public static class ToolJsonSchemaBuilder
         };
 
         var propertiesObj = new JsonObject();
-        var requiredList = new Dictionary<int, JsonArray>();
+        var requiredList = new JsonArray();
 
         foreach (var param in parameters)
         {
@@ -49,14 +49,9 @@ public static class ToolJsonSchemaBuilder
                 propSchema["minimum"] = param.MinValue;
             }
 
-            if (param.RequiredGroupId.HasValue)
+            if (param.IsRequired)
             {
-                if (!requiredList.ContainsKey(param.RequiredGroupId.Value))
-                {
-                    requiredList[param.RequiredGroupId.Value] = [];
-                }
-
-                requiredList[param.RequiredGroupId.Value].Add(jsonName);
+                requiredList.Add(jsonName);
             }
 
             if (param.Type.IsEnum)
@@ -74,22 +69,9 @@ public static class ToolJsonSchemaBuilder
 
         schema["properties"] = propertiesObj;
 
-        if (requiredList.Count == 1)
+        if (requiredList.Count > 0)
         {
-            schema["required"] = requiredList.First().Value;
-        }
-        else if (requiredList.Count > 1)
-        {
-            var oneOfArray = new JsonArray();
-            foreach (var reqGroup in requiredList.Values)
-            {
-                var reqObj = new JsonObject
-                {
-                    ["required"] = reqGroup
-                };
-                oneOfArray.Add(reqObj);
-            }
-            schema["oneOf"] = oneOfArray;
+            schema["required"] = requiredList;
         }
 
         return JsonDocument.Parse(schema.ToJsonString());

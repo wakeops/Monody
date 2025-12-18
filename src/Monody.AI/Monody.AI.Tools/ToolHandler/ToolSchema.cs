@@ -5,7 +5,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using System.Reflection;
 using System.Text.Json.Serialization;
-using Monody.AI.Tools.Attributes;
 
 namespace Monody.AI.Tools.ToolHandler;
 
@@ -19,7 +18,7 @@ public sealed class ToolParameterSchema
 
     public string Description { get; init; }
 
-    public int? RequiredGroupId { get; init; }
+    public bool IsRequired { get; init; }
 
     public object DefaultValue { get; init; }
 
@@ -46,8 +45,8 @@ public static class ToolSchema
             var descAttr = prop.GetCustomAttribute<DescriptionAttribute>();
             var description = descAttr?.Description ?? string.Empty;
 
-            // Required or OneOfRequiredAttribute attribute
-            var requiredGroupId = prop.GetCustomAttribute<RequiredAttribute>() != null ? 0 : prop.GetCustomAttribute<OneOfRequiredAttribute>()?.GroupId;
+            // Required attribute
+            var isRequired = prop.GetCustomAttribute<RequiredAttribute>() != null;
 
             // Default attribute
             var defaultValue = prop.GetCustomAttribute<DefaultValueAttribute>()?.Value;
@@ -61,7 +60,7 @@ public static class ToolSchema
                 Type = prop.PropertyType,
                 JsonType = MapDotNetTypeToJsonType(prop.PropertyType),
                 Description = description,
-                RequiredGroupId = requiredGroupId,
+                IsRequired = isRequired,
                 DefaultValue = defaultValue,
                 MinValue = rangeValue?.Minimum as int?,
                 MaxValue = rangeValue?.Maximum as int?
