@@ -3,6 +3,7 @@ using DarkSky.Services;
 using Geo.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Monody.Domain.Extensions;
 using Monody.Services.Geocode;
 using Monody.Services.Weather;
 
@@ -22,31 +23,20 @@ public static class ServiceCollectionExtensions
 
     private static void AddGeocodingServices(this IServiceCollection services, IConfiguration configuration)
     {
-        var optPath = "Services:Geocode";
-
-        services.AddOptionsWithValidateOnStart<GeocodeOptions>()
-           .BindConfiguration(optPath);
-
-        var opts = configuration.GetSection(optPath)
-            .Get<GeocodeOptions>();
-
-        services.AddSingleton<GeocodeService>();
+        var opts = services.ApplyValidatedOptions<GeocodeOptions>(configuration, "Services:Geocode");
 
         services.AddHereGeocoding()
             .AddKey(opts.HereApiKey);
+
+        services.AddSingleton<GeocodeService>();
     }
 
     private static void AddWeatherServices(this IServiceCollection services, IConfiguration configuration)
     {
-        var optPath = "Services:Weather";
+        var opts = services.ApplyValidatedOptions<WeatherOptions>(configuration, "Services:Weather");
 
-        services.AddOptionsWithValidateOnStart<WeatherOptions>()
-           .BindConfiguration(optPath);
-
-        var opts = configuration.GetSection(optPath)
-            .Get<WeatherOptions>();
-
-        services.AddTransient(sp => new DarkSkyService(
+        services.AddTransient(sp =>
+            new DarkSkyService(
                 opts.PirateWeatherApiKey,
                 baseUri: new Uri(_pirateWeatherApi),
                 jsonSerializerService: new DarkSkyJsonSerializerService()));

@@ -5,4 +5,7 @@
         <PackageReference Include="DarkSkyCore" />
         <PackageReference Include="ZiggyCreatures.FusionCache" />
     </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Monody.Domain\Monody.Domain.csproj" />
+    </ItemGroup>
 </Project>

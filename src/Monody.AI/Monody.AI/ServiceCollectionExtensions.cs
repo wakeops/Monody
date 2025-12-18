@@ -1,14 +1,15 @@
 ﻿using System;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Monody.AI.Agents;
-using Monody.AI.Tools;
+using Monody.AI.Domain.Abstractions;
+using Monody.AI.Options;
 using Monody.AI.Provider;
 using Monody.AI.Provider.OpenAI;
-using Monody.AI.Options;
-using Monody.AI.Services.Abstractions;
 using Monody.AI.Services;
-using Monody.AI.Domain.Abstractions;
+using Monody.AI.Services.Abstractions;
+using Monody.AI.Tools;
+using Monody.Domain.Extensions;
 
 namespace Monody.AI;
 
@@ -35,13 +36,9 @@ public static class ServiceCollectionExtensions
 
     private static void AddProvider(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptionsWithValidateOnStart<AIOptions>()
-            .BindConfiguration("AIOptions");
+        var aiOpts = services.ApplyValidatedOptions<AIOptions>(configuration, "AIOptions");
 
         services.AddAIProviderServices();
-
-        var aiOpts = configuration.GetSection("AIOptions")
-            .Get<AIOptions>();
 
         switch (aiOpts.ChatCompletionProvider.ToLowerInvariant())
         {
@@ -52,13 +49,9 @@ public static class ServiceCollectionExtensions
         }
     }
 
-    private static IServiceCollection AddOpenAIProvider(this IServiceCollection services, IConfiguration config)
+    private static IServiceCollection AddOpenAIProvider(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptionsWithValidateOnStart<OpenAIConfiguration>()
-            .BindConfiguration("AIOptions:Providers:OpenAI");
-
-        var openAiConfig = config.GetSection("AIOptions:Providers:OpenAI")
-            .Get<OpenAIConfiguration>();
+        var openAiConfig = services.ApplyValidatedOptions<OpenAIConfiguration>(configuration, "AIOptions:Providers:OpenAI");
 
         services.AddOpenAI(options =>
         {

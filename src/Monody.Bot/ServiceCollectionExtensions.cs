@@ -56,7 +56,7 @@ internal static class ServiceCollectionExtensions
 
     public static IServiceCollection AddCache(this IServiceCollection services, IConfiguration configuration)
     {
-        var cacheOptions = configuration.GetRequiredOptions<CacheOptions>("Cache");
+        var cacheOptions = services.ApplyValidatedOptions<CacheOptions>(configuration, "Cache");
 
         var cacheBuilder = services
             .AddFusionCache()
