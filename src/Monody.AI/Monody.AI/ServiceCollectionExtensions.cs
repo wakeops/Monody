@@ -6,8 +6,6 @@ using Monody.AI.Domain.Abstractions;
 using Monody.AI.Options;
 using Monody.AI.Provider;
 using Monody.AI.Provider.OpenAI;
-using Monody.AI.Services;
-using Monody.AI.Services.Abstractions;
 using Monody.AI.Tools;
 using Monody.Domain.Extensions;
 
@@ -23,14 +21,11 @@ public static class ServiceCollectionExtensions
         
         services.AddAgents();
 
-        services.AddSingleton<IChatCompletionService, ChatCompletionService>();
-
         return services;
     }
 
     private static void AddAgents(this IServiceCollection services)
     {
-        services.AddTransient<IMonodyAgent, MonodyAgent>();
         services.AddTransient<IResearchAgent, ResearchAgent>();
     }
 

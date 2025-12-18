@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Linq;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Monody.Bot.ModuleBuilder.Models;
@@ -11,7 +12,7 @@ internal static class ServiceCollectionExtensions
     {
         var builder = new ModuleBuilder(services);
 
-        var moduleConfigs = builder.LoadModulesFromAssembly(configuration, assembly);
+        var moduleConfigs = builder.LoadModulesFromAssembly(configuration, assembly).ToList();
 
         services.Configure<ModuleLoaderConfig>(options =>
         {

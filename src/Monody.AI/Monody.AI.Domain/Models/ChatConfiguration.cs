@@ -1,14 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Monody.AI.Domain.Models;
 
-public sealed class ChatCompletionRequest
+public class ChatConfiguration
 {
-    public List<ChatMessageDto> Messages { get; init; } = [];
+    public float Temperature { get; set; } = 0.7f;
 
-    public double? Temperature { get; init; }
+    public int MaxOutputTokens { get; set; } = 1000;
 
-    public int? MaxOutputTokens { get; init; }
+    public Type StructuredOutputType { get; set; } = null;
 
     // Optional: enable tools, RAG, etc.
     public bool EnableTools { get; init; } = true;

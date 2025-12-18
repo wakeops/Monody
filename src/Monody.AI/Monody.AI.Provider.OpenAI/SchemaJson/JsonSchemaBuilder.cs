@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Monody.AI.Tools.ToolHandler;
 
-namespace Monody.AI.Provider.OpenAI;
+namespace Monody.AI.Provider.OpenAI.SchemaJson;
 
-public static class ToolJsonSchemaBuilder
+public static class JsonSchemaBuilder
 {
     public static JsonDocument FromParameters(List<ToolParameterSchema> parameters)
     {

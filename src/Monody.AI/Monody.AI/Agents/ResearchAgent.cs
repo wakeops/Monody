@@ -24,12 +24,7 @@ public class ResearchAgent : IResearchAgent
             new ChatMessageDto { Role = ChatRole.User, Content = prompt }
         ];
 
-        var agentRequest = new ChatCompletionRequest
-        {
-            Messages = messages
-        };
-
-        var completion = await _provider.CompleteAsync(agentRequest, cancellationToken);
+        var completion = await _provider.CompleteAsync(messages, cancellationToken: cancellationToken);
 
         return completion.Messages.Last().Content.Trim();
     }

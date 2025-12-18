@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
@@ -8,6 +7,7 @@ using Discord.Interactions;
 using Microsoft.Extensions.Logging;
 using Monody.AI.Domain.Models;
 using Monody.Bot.Modules.Slop.Modals;
+using Monody.Bot.Modules.Slop.Models;
 
 namespace Monody.Bot.Modules.Slop;
 
@@ -124,7 +124,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     {
         var channel = Context.Interaction?.InteractionChannel;
 
-        ChatCompletionResult completion;
+        DiscordCompletionResponse completion;
         try
         {
             completion = await _aiChatService.GetChatCompletionAsync(interactionId, Context.Guild, channel, Context.User, prompt);
@@ -136,35 +136,71 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var text = completion?.Messages?.Last().Content?.Trim();
-        if (string.IsNullOrEmpty(text))
-        {
-            await FollowupAsync("I didn’t get any text back from the model.", ephemeral: isEphemeral);
-            return;
-        }
-
-        // Discord messages cap at 2000 chars; trim if needed
-        const int cap = 1950;
-        if (text.Length > cap)
-        {
-            text = text[..cap] + "…";
-        }
-
         var components = new ComponentBuilder()
             .WithButton(
                 label: "Follow up",
                 customId: $"monody_followup:{interactionId}:{isEphemeral}",
                 style: ButtonStyle.Primary);
 
-        if (isEphemeral)
+        string text = null;
+        Embed embed = null;
+
+        if (completion?.Kind == DiscordResponseKind.Embed && completion?.Embed != null)
         {
-            await FollowupAsync(text, components: components.Build(), ephemeral: true);
+            embed = BuildEmbedFromResponse(completion.Embed);
+        }
+        else if (completion?.Kind == DiscordResponseKind.Text && !string.IsNullOrEmpty(completion?.Text))
+        {
+            text = completion?.Text;
+
+            // Discord messages cap at 2000 chars; trim if needed
+            const int cap = 1950;
+            if (text.Length > cap)
+            {
+                text = text[..cap] + "…";
+            }
         }
         else
         {
-            await FollowupAsync(text);
+            await FollowupAsync("I didn’t get any text back from the model.", ephemeral: isEphemeral);
+            return;
+        }
 
+        if (isEphemeral)
+        {
+            await FollowupAsync(text: text, embed: embed, components: components.Build(), ephemeral: true);
+        }
+        else
+        {
+            await FollowupAsync(text: text, embed: embed, ephemeral: false);
             await FollowupAsync("You can follow up on this reply here:", components: components.Build(), ephemeral: true);
         }
+    }
+
+    public static Embed BuildEmbedFromResponse(DiscordEmbed model)
+    {
+        var builder = new EmbedBuilder()
+            .WithTitle(model.Title)
+            .WithDescription(model.Description)
+            .WithColor(new Color(MonodyConstants.DefaultEmbedColor));
+
+        if (model.Fields != null)
+        {
+            foreach (var field in model.Fields)
+            {
+                builder.AddField(field.Name, field.Value, field.Inline);
+            }
+        }
+
+        if (model.Footer != null)
+        {
+            var fb = new EmbedFooterBuilder()
+                .WithText(model.Footer.Text)
+                .WithIconUrl(model.Footer.IconUrl);
+
+            builder.WithFooter(fb);
+        }
+
+        return builder.Build();
     }
 }

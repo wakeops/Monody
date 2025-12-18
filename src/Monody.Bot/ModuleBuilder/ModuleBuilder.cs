@@ -26,7 +26,7 @@ internal class ModuleBuilder
 
     public IEnumerable<ModuleConfig> LoadModulesFromAssembly(IConfiguration configuration, Assembly assembly)
     {
-        var moduleTypes = assembly.GetTypes().Where(t => typeof(ModuleInjectionHandler).IsAssignableFrom(t));
+        var moduleTypes = assembly.GetTypes().Where(t => !t.IsAbstract && !t.IsInterface && typeof(ModuleInjectionHandler).IsAssignableFrom(t));
 
         foreach (var type in moduleTypes)
         {

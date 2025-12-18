@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Monody.AI.Domain.Models;
+using Monody.AI.Provider.OpenAI.SchemaJson;
 using Monody.AI.Provider.Services.Abstractions;
 using OpenAI.Chat;
 using OpenAI.Images;
@@ -24,24 +25,34 @@ public class OpenAIProvider : IChatCompletionProvider
         _openAIService = openAIService;
     }
 
-    public async Task<ChatCompletionResult> CompleteAsync(ChatCompletionRequest request, CancellationToken cancellationToken = default)
+    public async Task<ChatCompletionResult> CompleteAsync(List<ChatMessageDto> requestMessages, ChatConfiguration configuration = default, CancellationToken cancellationToken = default)
     {
-        var messages = request.Messages
+        var messages = requestMessages
             .Select(MapToOpenAiMessage)
             .ToList();
 
         var options = new ChatCompletionOptions
         {
             PresencePenalty = 0f,
-            Temperature = (float?)request.Temperature ?? 0.7f,
+            Temperature = configuration.Temperature,
             TopP = 1f,
-            MaxOutputTokenCount = request.MaxOutputTokens ?? 1000,
+            MaxOutputTokenCount = configuration.MaxOutputTokens,
             FrequencyPenalty = 0f,
             ToolChoice = ChatToolChoice.CreateAutoChoice(),
-            AllowParallelToolCalls = true
+            AllowParallelToolCalls = true,
         };
 
-        if (request.EnableTools)
+        if (configuration.StructuredOutputType is not null)
+        {
+            var typeName = configuration.StructuredOutputType.Name;
+
+            var schemaJson = StructuredOutputSchema.GenerateJsonSchema(configuration.StructuredOutputType);
+            var schemaData = BinaryData.FromString(schemaJson);
+
+            options.ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(typeName, schemaData, jsonSchemaIsStrict: true);
+        }
+
+        if (configuration.EnableTools)
         {
             foreach (var tool in GetFunctionTools())
             {
@@ -74,7 +85,7 @@ public class OpenAIProvider : IChatCompletionProvider
     {
         foreach (var toolMetadata in _toolDispatcher.GetAllMetadata())
         {
-            var toolJsonSchema = ToolJsonSchemaBuilder.FromParameters(toolMetadata.Parameters);
+            var toolJsonSchema = JsonSchemaBuilder.FromParameters(toolMetadata.Parameters);
             var schemaJson = toolJsonSchema.RootElement.GetRawText();
             yield return ChatTool.CreateFunctionTool(toolMetadata.Name, toolMetadata.Description, BinaryData.FromString(schemaJson));
         }
