@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Monody.AI;
-using Monody.Domain.Module;
 
-namespace Monody.Module.AIChat;
+namespace Monody.Bot.Modules.Slop;
 
 public class InjectionHandler : ModuleInjectionHandler
 {

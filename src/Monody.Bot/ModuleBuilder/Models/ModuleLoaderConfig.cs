@@ -4,5 +4,5 @@ namespace Monody.Bot.ModuleBuilder.Models;
 
 internal class ModuleLoaderConfig
 {
-    public IEnumerable<ModuleConfig> ModuleConfigs { get; set; }
+    public List<ModuleConfig> ModuleConfigs { get; set; }
 }

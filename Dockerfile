@@ -10,9 +10,6 @@ COPY ./src/Monody.Bot/*.csproj ./src/Monody.Bot/
 COPY ./src/Monody.Domain/*.csproj ./src/Monody.Domain/
 COPY ./src/Monody.Services/*.csproj ./src/Monody.Services/
 
-COPY ./src/Modules/Monody.Module.AIChat/*.csproj ./src/Modules/Monody.Module.AIChat/
-COPY ./src/Modules/Monody.Module.Weather/*.csproj ./src/Modules/Monody.Module.Weather/
-
 COPY ./src/Monody.AI/Monody.AI/*.csproj ./src/Monody.AI/Monody.AI/
 COPY ./src/Monody.AI/Monody.AI.Domain/*.csproj ./src/Monody.AI/Monody.AI.Domain/
 COPY ./src/Monody.AI/Monody.AI.Provider/*.csproj ./src/Monody.AI/Monody.AI.Provider/

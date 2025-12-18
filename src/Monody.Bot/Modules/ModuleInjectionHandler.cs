@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Monody.Domain.Module;
+namespace Monody.Bot.Modules;
 
 /// <summary>
 /// Any assemblies that contain Discord modules must implement a class derived from this abstract base class.

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Monody.AI.Domain.Models;
 
-namespace Monody.Module.AIChat.Models;
+namespace Monody.Bot.Modules.Slop.Models;
 
 public class DiscordConversation
 {

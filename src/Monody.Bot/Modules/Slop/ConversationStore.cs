@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
-using Monody.Module.AIChat.Models;
+using Monody.Bot.Modules.Slop.Models;
 
-namespace Monody.Module.AIChat;
+namespace Monody.Bot.Modules.Slop;
 
 public class ConversationStore
 {

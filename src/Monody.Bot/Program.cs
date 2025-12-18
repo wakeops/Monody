@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Reflection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Monody.Bot;
@@ -21,7 +22,7 @@ builder.Logging
 // Services
 builder.Services
     .AddServices(builder.Configuration)
-    .AddModules(builder.Configuration)
+    .AddModulesFromAssembly(builder.Configuration, Assembly.GetExecutingAssembly())
     .AddCache(builder.Configuration)
     .AddDiscord();
 

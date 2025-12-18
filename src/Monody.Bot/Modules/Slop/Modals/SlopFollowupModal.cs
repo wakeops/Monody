@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 
-namespace Monody.Module.AIChat.Modals;
+namespace Monody.Bot.Modules.Slop.Modals;
 
 public class SlopFollowupModal : IModal
 {

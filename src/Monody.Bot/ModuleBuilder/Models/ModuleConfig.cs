@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using Monody.Domain.Module;
+using Monody.Bot.Modules;
 
 namespace Monody.Bot.ModuleBuilder.Models;
 

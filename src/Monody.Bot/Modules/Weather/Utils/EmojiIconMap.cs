@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using DarkSky.Models;
 
-namespace Monody.Module.Weather.Utils;
+namespace Monody.Bot.Modules.Weather.Utils;
 
 internal static class EmojiIconMap
 {

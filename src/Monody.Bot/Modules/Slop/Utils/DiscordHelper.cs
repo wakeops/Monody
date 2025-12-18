@@ -7,7 +7,7 @@ using Discord.WebSocket;
 using Monody.AI.Domain.Models;
 using OpenAI.Chat;
 
-namespace Monody.Module.AIChat.Utils;
+namespace Monody.Bot.Modules.Slop.Utils;
 
 public static class DiscordHelper
 {

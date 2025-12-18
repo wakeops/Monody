@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
 using Monody.AI.Domain.Abstractions;
 using Monody.AI.Domain.Models;
 using Monody.AI.Provider;
-using Monody.Module.AIChat.Models;
-using Monody.Module.AIChat.Utils;
+using Monody.Bot.Modules.Slop.Models;
+using Monody.Bot.Modules.Slop.Utils;
 
-namespace Monody.Module.AIChat;
+namespace Monody.Bot.Modules.Slop;
 
 public class AIChatService
 {

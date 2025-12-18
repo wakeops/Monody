@@ -2,7 +2,7 @@
 using System.Text.Json.Serialization;
 using Discord;
 
-namespace Monody.Module.AIChat.Models;
+namespace Monody.Bot.Modules.Slop.Models;
 
 internal class DiscordUserPrompt
 {

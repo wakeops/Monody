@@ -7,9 +7,9 @@ using Discord;
 using Discord.Interactions;
 using Microsoft.Extensions.Logging;
 using Monody.AI.Domain.Models;
-using Monody.Module.AIChat.Modals;
+using Monody.Bot.Modules.Slop.Modals;
 
-namespace Monody.Module.AIChat;
+namespace Monody.Bot.Modules.Slop;
 
 [Group("slop", "Slop bridge")]
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>

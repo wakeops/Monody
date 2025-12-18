@@ -8,13 +8,13 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using TimeZoneNames;
-using Monody.Module.Weather.Utils;
 using Monody.Services.Geocode;
 using Monody.Services.Weather;
 using Monody.Services.Geocode.Models;
 using Monody.Services.Weather.Models;
+using Monody.Bot.Modules.Weather.Utils;
 
-namespace Monody.Module.Weather;
+namespace Monody.Bot.Modules.Weather;
 
 [Group("weather", "Weather commands")]
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
