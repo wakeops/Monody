@@ -11,9 +11,6 @@ COPY ./src/Monody.Domain/*.csproj ./src/Monody.Domain/
 COPY ./src/Monody.Services/*.csproj ./src/Monody.Services/
 
 COPY ./src/Monody.AI/Monody.AI/*.csproj ./src/Monody.AI/Monody.AI/
-COPY ./src/Monody.AI/Monody.AI.Domain/*.csproj ./src/Monody.AI/Monody.AI.Domain/
-COPY ./src/Monody.AI/Monody.AI.Provider/*.csproj ./src/Monody.AI/Monody.AI.Provider/
-COPY ./src/Monody.AI/Monody.AI.Provider.OpenAI/*.csproj ./src/Monody.AI/Monody.AI.Provider.OpenAI/
 COPY ./src/Monody.AI/Monody.AI.Tools/*.csproj ./src/Monody.AI/Monody.AI.Tools/
 
 COPY ./test/Monody.AI.Tools.Tests/*.csproj ./test/Monody.AI.Tools.Tests/
