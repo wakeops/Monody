@@ -49,6 +49,7 @@ public class AIChatService
 
         var settings = new OpenAIPromptExecutionSettings
         {
+            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
             FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
             ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
                 "discord_completion_response",
