@@ -1,0 +1,45 @@
+name: Build, Test, Tag, and Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-test:
+    name: Verify build, tests and Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+      - name: Build Dockerfile
+        run: docker build -t monody-ci-test -f Dockerfile .
+
+  tag:
+    needs: build-and-test
+    uses: wakeops/ci/.github/workflows/auto-tag.yaml@main
+
+  release:
+    needs: tag
+    uses: wakeops/ci/.github/workflows/create-release.yaml@main
+    with:
+      release_name_prefix: "${{ github.event.repository.name }} "
+      release_tag: ${{ needs.tag.outputs.new_tag }}
+    secrets: inherit
