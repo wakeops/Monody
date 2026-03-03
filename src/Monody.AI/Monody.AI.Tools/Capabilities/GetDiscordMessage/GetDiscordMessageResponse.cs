@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Monody.AI.Tools.Capabilities.GetDiscordMessage;
 
-internal sealed class GetDiscordMessageResponse
+public sealed class GetDiscordMessageResponse
 {
     public ulong? GuildId { get; set; }
 

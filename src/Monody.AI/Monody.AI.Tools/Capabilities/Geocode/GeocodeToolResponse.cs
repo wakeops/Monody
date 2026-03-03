@@ -2,7 +2,7 @@
 
 namespace Monody.AI.Tools.Capabilities.Geocode;
 
-internal sealed class GeocodeToolResponse
+public sealed class GeocodeToolResponse
 {
     [Description("The JSON geocode of the location")]
     public string Response { get; set; }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Monody.AI.Tools.Capabilities.GetDiscordMessageHistory;
 
-internal sealed class GetDiscordMessageHistoryResponse
+public sealed class GetDiscordMessageHistoryResponse
 {
     public ulong? GuildId { get; set; }
     public ulong ChannelId { get; set; }
@@ -12,7 +12,7 @@ internal sealed class GetDiscordMessageHistoryResponse
     public List<GetDiscordMessageHistoryMessage> Messages = [];
 }
 
-internal sealed class GetDiscordMessageHistoryMessage
+public sealed class GetDiscordMessageHistoryMessage
 {
     public ulong MessageId { get; set; }
     public string Content { get; set; }

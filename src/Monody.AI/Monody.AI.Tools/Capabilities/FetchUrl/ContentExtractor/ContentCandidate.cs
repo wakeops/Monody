@@ -4,7 +4,7 @@ using AngleSharp.Dom;
 
 namespace Monody.AI.Tools.Capabilities.FetchUrl.ContentExtractor;
 
-internal class ContentCandidate
+public class ContentCandidate
 {
     public IElement Node { get; }
     public int Score { get; }

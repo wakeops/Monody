@@ -1,11 +1,16 @@
 ﻿using System;
 using DarkSky.Services;
 using Geo.Extensions.DependencyInjection;
+using Google.Apis.CustomSearchAPI.v1;
+using Google.Apis.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Monody.Domain.Extensions;
+using Monody.Services.BlueSky;
 using Monody.Services.Geocode;
 using Monody.Services.Weather;
+using Monody.Services.WebSearch;
 
 namespace Monody.Services;
 
@@ -17,6 +22,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddGeocodingServices(configuration);
         services.AddWeatherServices(configuration);
+        services.AddBlueSkyServices();
+        services.AddWebSearchServices(configuration);
 
         return services;
     }
@@ -40,7 +47,31 @@ public static class ServiceCollectionExtensions
                 opts.PirateWeatherApiKey,
                 baseUri: new Uri(_pirateWeatherApi),
                 jsonSerializerService: new DarkSkyJsonSerializerService()));
-        
+
         services.AddSingleton<WeatherService>();
+    }
+
+    private static void AddBlueSkyServices(this IServiceCollection services)
+    {
+        services.AddHttpClient();
+        services.AddSingleton<BlueSkyService>();
+    }
+
+    private static void AddWebSearchServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptionsWithValidateOnStart<WebSearchOptions>()
+            .BindConfiguration("Services:WebSearch");
+
+        services.AddSingleton<CustomSearchAPIService>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<WebSearchOptions>>().Value;
+
+            return new CustomSearchAPIService(new BaseClientService.Initializer
+            {
+                ApiKey = options.GoogleApiKey
+            });
+        });
+
+        services.AddTransient<GoogleSearchService>();
     }
 }

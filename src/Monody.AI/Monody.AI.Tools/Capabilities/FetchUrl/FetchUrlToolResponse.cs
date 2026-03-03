@@ -2,7 +2,7 @@
 
 namespace Monody.AI.Tools.Capabilities.FetchUrl;
 
-internal sealed class FetchUrlToolResponse
+public sealed class FetchUrlToolResponse
 {
     [Description("HTTP status code returned by the server.")]
     public int StatusCode { get; set; }

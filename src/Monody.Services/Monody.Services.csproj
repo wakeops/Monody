@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
+        <PackageReference Include="Google.Apis.CustomSearchAPI.v1" />
         <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
+        <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
         <PackageReference Include="Geo.Here" />
         <PackageReference Include="DarkSkyCore" />
         <PackageReference Include="ZiggyCreatures.FusionCache" />

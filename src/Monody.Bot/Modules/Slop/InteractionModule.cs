@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Microsoft.Extensions.Logging;
-using Monody.AI.Domain.Models;
 using Monody.Bot.Modules.Slop.Modals;
 using Monody.Bot.Modules.Slop.Models;
 
@@ -84,10 +83,10 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     {
         await DeferAsync(ephemeral: ephemeral.Value);
 
-        ImageGenerationResult img;
+        Uri imgUri;
         try
         {
-            img = await _aiChatService.GetImageGenerationAsync(prompt);
+            imgUri = await _aiChatService.GetImageGenerationAsync(prompt);
         }
         catch (Exception ex)
         {
@@ -99,9 +98,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         try
         {
-            using var stream = await _httpClient.GetStreamAsync(img.ImageUri);
+            using var stream = await _httpClient.GetStreamAsync(imgUri);
 
-            var ext = Path.GetExtension(img.ImageUri.LocalPath);
+            var ext = Path.GetExtension(imgUri.LocalPath);
             if (string.IsNullOrWhiteSpace(ext))
             {
                 ext = ".jpg";

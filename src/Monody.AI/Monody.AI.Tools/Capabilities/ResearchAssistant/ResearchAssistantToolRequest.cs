@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Monody.AI.Tools.Capabilities.ResearchAssistant;
 
-internal sealed class ResearchAssistantToolRequest
+public sealed class ResearchAssistantToolRequest
 {
     [Description("The prompt to send to the assistant agent")]
     [Required]

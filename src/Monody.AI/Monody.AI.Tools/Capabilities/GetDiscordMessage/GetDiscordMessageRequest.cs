@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Monody.AI.Tools.Capabilities.GetDiscordMessage;
 
-internal sealed class GetDiscordMessageRequest
+public sealed class GetDiscordMessageRequest
 {
     [Description("The ID of the channel that contains the message.")]
     [Required]

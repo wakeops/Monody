@@ -34,6 +34,9 @@ dotnet_diagnostic.CA2007.severity = none         # Do not directly await a Task
 dotnet_diagnostic.CA2012.severity = warning      # ValueTask usage guidance
 dotnet_diagnostic.CA2254.severity = warning      # Logging message should be constant
 
+dotnet_diagnostic.SKEXP0001.severity = warning   # Type is for evaluation purposes only and is subject to change or removal in future updates.
+dotnet_diagnostic.SKEXP0010.severity = warning   # Type is for evaluation purposes only and is subject to change or removal in future updates.
+
 
 # Naming Rules (Microsoft standard)
 dotnet_naming_rule.non_field_members_should_be_pascalcase.symbols = non_field_members

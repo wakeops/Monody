@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Monody.AI.Domain.Models;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Monody.Bot.Modules.Slop.Models;
 
@@ -13,14 +12,14 @@ public class DiscordConversation
 
     public ulong InitialUserId { get; set; }
 
-    public List<ChatMessageDto> Messages { get; set; }
+    public ChatHistory History { get; set; }
 
-    public DiscordConversation(string conversationId, ulong? guildId, ulong? channelId, ulong userId, List<ChatMessageDto> messages)
+    public DiscordConversation(string conversationId, ulong? guildId, ulong? channelId, ulong userId, ChatHistory history)
     {
         Id = conversationId;
         GuildId = guildId;
         ChannelId = channelId;
         InitialUserId = userId;
-        Messages = messages;
+        History = history;
     }
 }

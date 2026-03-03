@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Monody.AI.Tools.Capabilities.FetchUrl;
 
-internal sealed class FetchUrlToolRequest
+public sealed class FetchUrlToolRequest
 {
     [Description("The full URL to fetch (http or https).")]
     [Required]

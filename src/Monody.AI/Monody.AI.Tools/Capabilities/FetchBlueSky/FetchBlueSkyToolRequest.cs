@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Monody.AI.Tools.Capabilities.FetchBlueSky;
 
-internal class FetchBlueSkyToolRequest
+public class FetchBlueSkyToolRequest
 {
     [Description("The full URL to fetch (http or https).")]
     [Required]
