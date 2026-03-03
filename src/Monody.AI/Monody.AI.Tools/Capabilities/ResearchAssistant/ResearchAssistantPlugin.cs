@@ -2,12 +2,13 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Monody.AI.Tools.Abstractions;
 
 namespace Monody.AI.Tools.Capabilities.ResearchAssistant;
 
-public sealed class ResearchAssistantPlugin(IResearchAgent researchAgent)
+public sealed class ResearchAssistantPlugin(IServiceProvider serviceProvider)
 {
     [KernelFunction("research_assistant")]
     [Description("Use a specialized agent to investigate unknown or recent information")]
@@ -17,6 +18,8 @@ public sealed class ResearchAssistantPlugin(IResearchAgent researchAgent)
         {
             throw new ArgumentNullException(nameof(request.Prompt));
         }
+
+        var researchAgent = serviceProvider.GetRequiredService<IResearchAgent>();
 
         var response = await researchAgent.GetResultAsync(request.Prompt, cancellationToken);
 
