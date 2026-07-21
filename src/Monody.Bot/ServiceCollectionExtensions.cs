@@ -44,6 +44,7 @@ internal static class ServiceCollectionExtensions
 
             config.LogLevel = opts.LogSeverity;
             config.UseCompiledLambda = true;
+            config.DefaultRunMode = Discord.Interactions.RunMode.Async;
         });
 
         services
