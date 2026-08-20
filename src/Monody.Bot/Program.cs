@@ -8,7 +8,7 @@ using Monody.Bot;
 using Monody.Bot.ModuleBuilder;
 using Monody.Services;
 
-// Raise the ThreadPool floor so gateway bursts don't wait on slow thread injection and miss Discord's 3s defer window.
+// Avoid slow thread injection delaying interaction defers past Discord's 3s window.
 ThreadPool.SetMinThreads(Math.Max(Environment.ProcessorCount * 4, 16), Math.Max(Environment.ProcessorCount * 4, 16));
 
 var builder = Host.CreateApplicationBuilder(args);
