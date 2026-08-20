@@ -28,7 +28,11 @@ internal class InteractionHandler : DiscordClientService
 
     protected override Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        Client.InteractionCreated += HandleInteractionAsync;
+        Client.InteractionCreated += interaction =>
+        {
+            _ = Task.Run(() => HandleInteractionAsync(interaction), cancellationToken);
+            return Task.CompletedTask;
+        };
         return Task.CompletedTask;
     }
 
