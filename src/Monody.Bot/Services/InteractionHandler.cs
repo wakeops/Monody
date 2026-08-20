@@ -28,7 +28,13 @@ internal class InteractionHandler : DiscordClientService
 
     protected override Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        Client.InteractionCreated += HandleInteractionAsync;
+        // Offload so a busy gateway (e.g. GuildMembers/MessageContent traffic) can't delay
+        // dispatch of this handler and eat into Discord's 3s interaction defer window.
+        Client.InteractionCreated += interaction =>
+        {
+            _ = Task.Run(() => HandleInteractionAsync(interaction), cancellationToken);
+            return Task.CompletedTask;
+        };
         return Task.CompletedTask;
     }
 
