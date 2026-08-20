@@ -8,7 +8,6 @@ using Monody.Bot;
 using Monody.Bot.ModuleBuilder;
 using Monody.Services;
 
-// Avoid slow thread injection delaying interaction defers past Discord's 3s window.
 ThreadPool.SetMinThreads(Math.Max(Environment.ProcessorCount * 4, 16), Math.Max(Environment.ProcessorCount * 4, 16));
 
 var builder = Host.CreateApplicationBuilder(args);
