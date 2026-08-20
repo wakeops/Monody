@@ -45,7 +45,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var unit = paramUnits ?? MeasurementUnits.Imperial;
+        var unit = paramUnits ?? GuessMeasurementUnit(weatherLocation);
 
         var forecastData = await _weatherService.GetCurrentForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, unit);
         if (forecastData == null)
@@ -192,7 +192,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var unit = paramUnits ?? MeasurementUnits.Imperial;
+        var unit = paramUnits ?? GuessMeasurementUnit(weatherLocation);
 
         var forecastData = await _weatherService.GetHourlyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, unit);
         if (forecastData == null)
@@ -271,7 +271,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var unit = paramUnits ?? MeasurementUnits.Imperial;
+        var unit = paramUnits ?? GuessMeasurementUnit(weatherLocation);
 
         var forecastData = await _weatherService.GetDailyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, Constants.MaxForecastDays, unit);
         if (forecastData == null)
@@ -322,6 +322,15 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             case >= 11:
                 return "Extreme";
         }
+    }
+
+    private static MeasurementUnits GuessMeasurementUnit(LocationDetails location)
+    {
+        if (location.Country == "United States" || location.Country == "USA")
+        {
+            return MeasurementUnits.Imperial;
+        }
+        return MeasurementUnits.Metric;
     }
 
     private static string ConvertToTempString(MeasurementUnits unit, double temperature)
