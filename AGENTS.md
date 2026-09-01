@@ -204,13 +204,27 @@ a bad model tool call and `GetChatMessageContentsAsync` throwing out of `AIChatS
 failing the entire `/slop ask` with a generic "the prompt request failed" - discarding a
 message that was written for exactly this: every `ArgumentException` a plugin throws for bad
 input is worded to tell the model what to send instead, and the filter is what lets it reach
-the model to actually retry. It does two things:
+the model to actually retry. It does three things:
 
+- **Self-deserializing the `request` argument**, whenever it arrives as a string and the
+  function's real parameter type (read off `context.Function.Metadata.Parameters`, not guessed)
+  isn't `string`. **Semantic Kernel's own fallback string-to-object conversion is not reliable
+  for anything beyond the simplest shapes** - confirmed broken for a request type with an `enum`
+  property, e.g. `remember`'s `RememberToolRequest {Category, Content}`: even with a perfectly
+  well-formed JSON argument, it threw `ArgumentException: Object of type 'System.String' cannot
+  be converted to type '...'`, which the filter's own catch (below) then turned into a
+  plausible-looking string result - and the model read that as success ("I've saved that you
+  live in Raleigh NC") while nothing was actually written. Do not trust Semantic Kernel to bind
+  a JSON string argument into a complex type on its own; this filter now always does it itself
+  via `JsonSerializer.Deserialize(text, parameterType, options)` with
+  `PropertyNameCaseInsensitive = true` and a `JsonStringEnumConverter` (the default
+  `JsonSerializer` only accepts integer ordinals for enums, and the model sends string values).
+  If self-deserialization fails - the string isn't valid JSON at all, e.g. a bare value - it
+  falls through to bare-value coercion.
 - **Bare-value coercion**, for tools with one field that matters: the model sometimes sends
-  `{"request": "London"}` instead of `{"request": {"timeZone": "London"}}`, which Semantic
-  Kernel hands straight to the reflection-invoked method uncoerced. Fixed up from a hardcoded
-  map - add a new single-field request type there, never a multi-field one, since there is no
-  safe way to guess which field a bare string belongs to.
+  `{"request": "London"}` instead of `{"request": {"timeZone": "London"}}`. Fixed up from a
+  hardcoded map - add a new single-field request type there, never a multi-field one, since
+  there is no safe way to guess which field a bare string belongs to.
 - **Catching `ArgumentException`** (which covers `ArgumentNullException` and
   `ArgumentOutOfRangeException` too, and also Semantic Kernel's own `KernelException` when it
   wraps one - see below) around the call and returning its message as the tool's result instead
@@ -227,11 +241,14 @@ ArgumentException` too, for exactly this. If you add a tool whose request has no
 this is why a call with no arguments at all still needs to work, not just one with an empty
 `{}`.
 
-The coercion step only touches a string that is **not already valid JSON**. It used to touch
-every string unconditionally, which corrupted `current_time`: the model sent
+Bare-value coercion only runs when self-deserialization fails, i.e. the string is **not valid
+JSON at all**. It used to be the first and only check, keyed off "is this string already valid
+JSON" - which corrupted `current_time` before self-deserialization existed: the model sent
 `{"request": "{\"TimeZone\":\"...\"}"}` - the argument itself an already-correct, already
 JSON-encoded object - and the old filter stuffed that whole string into the `TimeZone` field
-because it never checked whether the string was already the right shape.
+because it never checked whether the string was already the right shape. Self-deserialization
+now handles that case directly (it parses into the real object), so bare-value coercion only
+ever sees genuinely bare, non-JSON strings.
 
 **The sub-agent must not be handed the whole toolbox.** `ResearchAgent` shares the
 global `Kernel`, so without restriction it can call `research_assistant` — itself —

@@ -25,6 +25,7 @@ public class ToolCallRecoveryFilterTests
         plugins.AddFromType<CurrentTimePlugin>();
         plugins.AddFromType<TwoFieldDemoPlugin>();
         plugins.AddFromType<NoRequiredFieldsDemoPlugin>();
+        plugins.AddFromType<EnumAndStringDemoPlugin>();
 
         services.AddSingleton<IFunctionInvocationFilter, ToolCallRecoveryFilter>();
 
@@ -126,6 +127,43 @@ public class ToolCallRecoveryFilterTests
     }
 
     [Fact]
+    public async Task SelfDeserializesAWellFormedJsonArgumentContainingAnEnum()
+    {
+        // The reported bug: remember's RememberToolRequest {Category, Content} has an enum
+        // property. Semantic Kernel's own fallback string-to-object conversion cannot bind that
+        // shape - it throws ArgumentException("Object of type 'System.String' cannot be converted
+        // to type '...'") even though the JSON is well-formed, because the argument arrives as a
+        // string rather than already deserialized. The old IsJsonObject check left such strings
+        // alone, trusting Semantic Kernel to convert them, so the exception propagated to this
+        // filter's catch block, and the model read the resulting message as a success ("I've saved
+        // that you live in Raleigh NC") even though the plugin method never ran. This proves the
+        // filter now deserializes the argument itself instead of relying on that fallback.
+        var kernel = BuildKernel();
+        var function = kernel.Plugins.GetFunction("EnumAndStringDemoPlugin", "enum_and_string_demo");
+
+        var result = await kernel.InvokeAsync(function, new KernelArguments
+        {
+            ["request"] = "{\"Category\":\"Location\",\"Content\":\"Lives in Raleigh, NC\"}"
+        });
+
+        Assert.Equal("Location:Lives in Raleigh, NC", result.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task SelfDeserializationIsCaseInsensitiveForEnumValues()
+    {
+        var kernel = BuildKernel();
+        var function = kernel.Plugins.GetFunction("EnumAndStringDemoPlugin", "enum_and_string_demo");
+
+        var result = await kernel.InvokeAsync(function, new KernelArguments
+        {
+            ["request"] = "{\"category\":\"location\",\"content\":\"lowercase everything\"}"
+        });
+
+        Assert.Equal("Location:lowercase everything", result.GetValue<string>());
+    }
+
+    [Fact]
     public async Task RecoversWhenTheModelOmitsARequestThatHasNothingRequired()
     {
         // The reported bug: recall's request has one property, and it isn't required (there is
@@ -173,5 +211,28 @@ public class ToolCallRecoveryFilterTests
         [KernelFunction("no_required_fields_demo")]
         [Description("test-only plugin for exercising the recovery filter")]
         public string Run(NoRequiredFieldsDemoRequest request) => "ok";
+    }
+
+    private enum DemoCategory
+    {
+        Name,
+        Location,
+        TimeZone,
+        Preference
+    }
+
+    /// <summary>Mirrors RememberToolRequest: a string field alongside an enum field.</summary>
+    private sealed class EnumAndStringDemoRequest
+    {
+        public DemoCategory Category { get; set; }
+
+        public string Content { get; set; }
+    }
+
+    private sealed class EnumAndStringDemoPlugin
+    {
+        [KernelFunction("enum_and_string_demo")]
+        [Description("test-only plugin for exercising the recovery filter")]
+        public string Run(EnumAndStringDemoRequest request) => $"{request.Category}:{request.Content}";
     }
 }
