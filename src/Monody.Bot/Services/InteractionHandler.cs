@@ -64,7 +64,15 @@ internal class InteractionHandler : DiscordClientService
 
                 if (interaction.Type is InteractionType.ApplicationCommand)
                 {
-                    await interaction.GetOriginalResponseAsync().ContinueWith(async (msg) => await msg.Result.DeleteAsync());
+                    try
+                    {
+                        var original = await interaction.GetOriginalResponseAsync();
+                        await original.DeleteAsync();
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        Logger.LogWarning(cleanupEx, "Failed to clean up original response after interaction error; the interaction may never have been acknowledged.");
+                    }
                 }
             }
         }
