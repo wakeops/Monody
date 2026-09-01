@@ -32,4 +32,9 @@ WORKDIR /app
 
 COPY --from=build /app/publish ./
 
+# The default connection string is Data Source=/data/monody.db. Create it so a plain
+# `docker run` starts, and mount a volume here to keep memories and reminders across deploys.
+RUN mkdir -p /data
+VOLUME ["/data"]
+
 ENTRYPOINT ["dotnet", "Monody.Bot.dll"]

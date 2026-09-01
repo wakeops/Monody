@@ -23,8 +23,8 @@ CDN is often blocked but Ubuntu 24.04 ships it: `apt-get install -y dotnet-sdk-1
 src/Monody.Domain      Shared DI/options helpers. No project dependencies.
 src/Monody.Services    External APIs: geocoding (HERE), weather (Pirate Weather),
                        web search (Google CSE), Bluesky. Caching lives here.
-src/Monody.Data        SQLite via EF Core: user memories and reminders, plus their
-                       stores and migrations.
+src/Monody.Data        SQLite via EF Core: conversations, user memories and reminders,
+                       plus their stores and migrations.
 src/Monody.AI.Tools    Semantic Kernel plugins (the tools the model can call).
 src/Monody.AI          Kernel/OpenAI wiring, system prompts, the research agent,
                        and the structured-output JSON Schema generator.
@@ -74,8 +74,9 @@ pass covers instances resolved later through `IOptions<T>`. If you add an option
 type, register it through this helper so it inherits both.
 
 **The SQLite file must be on a mounted volume.** Migrations run at startup, so a fresh
-container silently starts with an empty database — every saved memory and pending reminder
-gone — if the path is not persisted.
+container starts with an empty database — every saved memory, pending reminder and live
+conversation gone — if the path is not persisted. The image creates `/data` and declares it
+as a volume so a plain `docker run` works; mount it to keep anything across deploys.
 
 A well-formed but fake token gets you through the whole DI graph to
 `Gateway: Connecting` before failing on Discord auth — a useful smoke test that
@@ -131,6 +132,28 @@ accident rather than a convention, but leave it alone — normalising in passing
 a small diff into a whole-file one.
 
 ## Things that have bitten before
+
+**This app is installed on users, not only on guilds.** Every command module carries
+`[IntegrationType(UserInstall, GuildInstall)]` as well as `[CommandContextType(...)]`.
+Discord defaults `integration_types` to guild-install when it is omitted, which quietly
+makes every command unavailable to a user-installed app — nothing fails at build or
+startup, the commands simply are not there. A test asserts both on every command.
+
+Assume no guild and no bot presence: `Context.Guild` and `InteractionChannel` can be null,
+the user is usually not in the gateway cache (resolve through `Client.Rest` when a DM
+matters), and `Client.GetChannel` returns null for channels the bot cannot see. Use
+`IUserMessage.InteractionMetadata`, never the deprecated `IMessage.Interaction`, which is
+null for user-installed interactions.
+
+**Conversations are persisted, deliberately.** `/slop ask` follow-ups look the conversation
+up by the originating interaction id, so an in-memory store meant every redeploy or crash
+produced "Sorry, I lost this conversation's context". Only the spoken user and assistant
+turns are stored — tool calls and their results finish a round rather than carry the thread,
+and keeping them would mean serialising Semantic Kernel's polymorphic content.
+
+**A failing background service used to take the whole bot down.** `HostOptions`
+`BackgroundServiceExceptionBehavior` defaults to `StopHost`, and a gateway hiccup inside any
+`DiscordClientService` is enough. `Program.cs` sets it to `Ignore`; leave it that way.
 
 **Discord's 3-second acknowledgement window.** An interaction must be acknowledged
 within 3s or it dies with `Unknown interaction (10062)`. Every command calls

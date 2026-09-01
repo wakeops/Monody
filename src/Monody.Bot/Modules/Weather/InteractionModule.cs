@@ -17,6 +17,7 @@ using Monody.Bot.Modules.Weather.Utils;
 namespace Monody.Bot.Modules.Weather;
 
 [Group("weather", "Weather commands")]
+[IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
     private const string ForecastUnavailable = "Failed to find a forecast for this location.";
@@ -83,9 +84,10 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     [CommandContextType(InteractionContextType.PrivateChannel, InteractionContextType.BotDm, InteractionContextType.Guild)]
     public async Task GetWeatherHourly_ButtonAsync(int page, string encodedLocation, MeasurementUnits? unit)
     {
-        // Only the user who ran the original command may page through it.
+        // Only the user who ran the original command may page through it. InteractionMetadata
+        // replaces the deprecated Message.Interaction, which is null for user-installed apps.
         if (Context.Interaction is not SocketMessageComponent component ||
-            component.Message.Interaction.User.Id != Context.Interaction.User.Id)
+            component.Message.InteractionMetadata?.UserId != Context.Interaction.User.Id)
         {
             await RespondAsync();
             return;

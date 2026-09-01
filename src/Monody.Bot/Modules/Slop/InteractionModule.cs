@@ -8,10 +8,12 @@ using Microsoft.Extensions.Logging;
 using Monody.Bot.Modules.Slop.Modals;
 using Monody.Bot.Modules.Slop.Models;
 using Monody.Bot.Modules.Slop.Utils;
+using Monody.Data;
 
 namespace Monody.Bot.Modules.Slop;
 
 [Group("slop", "Slop bridge")]
+[IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
     private const string LostContextMessage = "Sorry, I lost this conversation's context.";
@@ -48,7 +50,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     [ComponentInteraction("monody_followup:*:*", true)]
     public async Task Ask_OpenModalAsync(ulong originInteractionId, bool isEphemeral)
     {
-        if (_conversationStore.Get(originInteractionId) is null)
+        if (!await _conversationStore.ExistsAsync(originInteractionId))
         {
             await RespondAsync(LostContextMessage, ephemeral: true);
             return;
@@ -60,18 +62,25 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     [ModalInteraction("monody_followup_modal:*:*", true)]
     public async Task Ask_HandleModalAsync(ulong originInteractionId, bool isEphemeral, SlopFollowupModal modal)
     {
-        if (_conversationStore.Get(originInteractionId) is null)
+        if (!await _conversationStore.ExistsAsync(originInteractionId))
         {
             await RespondAsync(LostContextMessage, ephemeral: true);
             return;
         }
 
-        await DeferAsync();
+        // Match the thread: an ephemeral conversation must not become public just because the
+        // follow-up came through a modal.
+        await DeferAsync(ephemeral: isEphemeral);
 
         await ExecuteChatCompletionAsync(originInteractionId, isEphemeral, modal.FollowupText);
 
-        // Retire the follow-up button now that this round has been answered.
-        await ModifyOriginalResponseAsync(f => f.Components = new ComponentBuilder().Build());
+        // The answer goes out as a followup, so resolve the deferred placeholder this modal
+        // created rather than leaving it spinning.
+        await ModifyOriginalResponseAsync(f =>
+        {
+            f.Content = "Answered below.";
+            f.Components = new ComponentBuilder().Build();
+        });
     }
 
     [SlashCommand("image", "Ask ChatGPT and get an image")]

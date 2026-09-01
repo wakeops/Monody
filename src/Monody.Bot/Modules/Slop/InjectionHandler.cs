@@ -10,7 +10,6 @@ public class InjectionHandler : ModuleInjectionHandler
     {
         services.AddMonodyAI(configuration);
 
-        services.AddSingleton<ConversationStore>();
         services.AddSingleton<AIChatService>();
     }
 }

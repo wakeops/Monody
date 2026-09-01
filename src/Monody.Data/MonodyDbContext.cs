@@ -15,6 +15,8 @@ public class MonodyDbContext : DbContext
 
     public DbSet<Reminder> Reminders => Set<Reminder>();
 
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+
     /// <summary>
     /// SQLite has no date type, and EF refuses to order or compare a DateTimeOffset stored as
     /// text. Everything here is UTC, so persist the instant as a number instead; that sorts and
@@ -40,6 +42,18 @@ public class MonodyDbContext : DbContext
             // reject a duplicate rather than relying on the caller to check first.
             entity.HasIndex(m => m.UserId);
             entity.HasIndex(m => new { m.UserId, m.Category, m.Content }).IsUnique();
+        });
+
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            // Keyed by the originating interaction id, so it is assigned rather than generated.
+            entity.Property(c => c.Id).ValueGeneratedNever();
+            entity.Property(c => c.TurnsJson).IsRequired();
+            entity.Property(c => c.CreatedAt).HasConversion(_instantConverter);
+            entity.Property(c => c.UpdatedAt).HasConversion(_instantConverter);
+
+            // The retention sweep deletes by age.
+            entity.HasIndex(c => c.UpdatedAt);
         });
 
         modelBuilder.Entity<Reminder>(entity =>
