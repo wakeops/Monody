@@ -16,10 +16,8 @@ public sealed class FetchUrlPlugin(HttpClient httpClient)
     [Description("Fetches a URL over HTTP(S) and returns the status code and body.")]
     public async Task<FetchUrlToolResponse> FetchAsync(FetchUrlToolRequest request, CancellationToken cancellationToken = default)
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Url))
-        {
-            throw new ArgumentNullException(nameof(request.Url));
-        }
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Url);
 
         var result = await httpClient.GetAsync(request.Url, cancellationToken);
 

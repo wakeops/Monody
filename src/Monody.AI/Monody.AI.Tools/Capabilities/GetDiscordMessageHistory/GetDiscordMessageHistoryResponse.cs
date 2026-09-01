@@ -9,7 +9,7 @@ public sealed class GetDiscordMessageHistoryResponse
     public ulong ChannelId { get; set; }
     public string ChannelType { get; set; }
 
-    public List<GetDiscordMessageHistoryMessage> Messages = [];
+    public List<GetDiscordMessageHistoryMessage> Messages { get; set; } = [];
 }
 
 public sealed class GetDiscordMessageHistoryMessage

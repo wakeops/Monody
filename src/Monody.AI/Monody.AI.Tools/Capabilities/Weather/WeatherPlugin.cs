@@ -17,7 +17,7 @@ public sealed class WeatherPlugin(WeatherService weatherService, GeocodeService 
     {
         ValidateRequest(request);
 
-        (double latitude, double longitude, LocationDetails geocode) = await ResolveCoordinatesAsync(request);
+        var (latitude, longitude, geocode) = await ResolveCoordinatesAsync(request);
 
         object forecast = request.Range switch
         {
@@ -36,41 +36,42 @@ public sealed class WeatherPlugin(WeatherService weatherService, GeocodeService 
 
     private async Task<(double Latitude, double Longitude, LocationDetails Geocode)> ResolveCoordinatesAsync(WeatherToolRequest request)
     {
-        if (!string.IsNullOrWhiteSpace(request.LocationQuery))
+        if (string.IsNullOrWhiteSpace(request.LocationQuery))
         {
-            LocationDetails geocode = await geocodeService.GetGeocodeForLocationStringAsync(request.LocationQuery);
-            return (geocode.Coordinates.Latitude, geocode.Coordinates.Longitude, geocode);
+            return (request.Latitude.Value, request.Longitude.Value, null);
         }
 
-        return (request.Latitude!.Value, request.Longitude!.Value, null);
+        var geocode = await geocodeService.GetGeocodeForLocationStringAsync(request.LocationQuery)
+            ?? throw new InvalidOperationException($"Could not resolve a location for '{request.LocationQuery}'.");
+
+        return (geocode.Coordinates.Latitude, geocode.Coordinates.Longitude, geocode);
     }
 
     private static void ValidateRequest(WeatherToolRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var hasLocationQuery = !string.IsNullOrWhiteSpace(request.LocationQuery);
-        var hasLatLon = request.Latitude.HasValue && request.Longitude.HasValue;
-        var hasPartialLatLon = request.Latitude.HasValue ^ request.Longitude.HasValue;
-
-        if (hasPartialLatLon)
+        if (request.Latitude.HasValue ^ request.Longitude.HasValue)
         {
-            throw new ArgumentNullException("Both Latitude and Longitude must be provided together.");
+            throw new ArgumentException("Both Latitude and Longitude must be provided together.", nameof(request));
         }
 
-        if (hasLocationQuery == hasLatLon)
+        var hasLocationQuery = !string.IsNullOrWhiteSpace(request.LocationQuery);
+        var hasCoordinates = request.Latitude.HasValue && request.Longitude.HasValue;
+
+        if (hasLocationQuery == hasCoordinates)
         {
-            throw new ArgumentNullException("Provide either LocationQuery OR Latitude+Longitude (exactly one).");
+            throw new ArgumentException("Provide either LocationQuery OR Latitude+Longitude (exactly one).", nameof(request));
         }
 
         if (request.Latitude is < -90 or > 90)
         {
-            throw new ArgumentNullException(nameof(request.Latitude), "Latitude must be between -90 and 90.");
+            throw new ArgumentOutOfRangeException(nameof(request), "Latitude must be between -90 and 90.");
         }
 
         if (request.Longitude is < -180 or > 180)
         {
-            throw new ArgumentNullException(nameof(request.Longitude), "Longitude must be between -180 and 180.");
+            throw new ArgumentOutOfRangeException(nameof(request), "Longitude must be between -180 and 180.");
         }
     }
 }

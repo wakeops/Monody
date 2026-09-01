@@ -17,7 +17,6 @@
     <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />
-    <PacakgeVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.72.0" />
     <PackageVersion Include="Discord.Addons.Hosting" Version="6.1.0" />
     <PackageVersion Include="DarkSkyCore" Version="6.0.2" />

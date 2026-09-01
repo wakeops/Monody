@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Geo.Here;
 using Geo.Here.Models.Parameters;
-using Geo.Here.Models.Responses;
 using Microsoft.Extensions.Logging;
 using Monody.Services.Geocode.Models;
 using ZiggyCreatures.Caching.Fusion;
@@ -42,7 +40,17 @@ public class GeocodeService
         {
             var geocodeResponse = await _hereGeocoding.GeocodingAsync(new GeocodeParameters { Query = locationQuery });
 
-            var location = geocodeResponse.Items.OrderByDescending(a => a, new GeocodeComparer()).ToList().First();
+            // Best match wins; US results break ties, since most users are searching US locations.
+            var location = geocodeResponse.Items
+                .OrderByDescending(a => a.Scoring.QueryScore)
+                .ThenByDescending(a => a.Address.CountryCode == "USA")
+                .FirstOrDefault();
+
+            if (location == null)
+            {
+                _logger.LogWarning("No geocode results for '{Location}'", locationQuery);
+                return null;
+            }
 
             return new LocationDetails
             {
@@ -62,18 +70,5 @@ public class GeocodeService
         }
 
         return null;
-    }
-
-    private class GeocodeComparer : IComparer<GeocodeLocation>
-    {
-        public int Compare(GeocodeLocation x, GeocodeLocation y)
-        {
-            if (x.Scoring.QueryScore == y.Scoring.QueryScore && x.Address.CountryCode != y.Address.CountryCode && x.Address.CountryCode == "USA")
-            {
-                return 1;
-            }
-
-            return x.Scoring.QueryScore.CompareTo(y.Scoring.QueryScore);
-        }
     }
 }

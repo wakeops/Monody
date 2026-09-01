@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,6 +19,9 @@ namespace Monody.Bot.Modules.Weather;
 [Group("weather", "Weather commands")]
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
+    private const string ForecastUnavailable = "Failed to find a forecast for this location.";
+    private const string LocationUnresolved = "Failed to resolve this location.";
+
     private readonly GeocodeService _geocodeService;
     private readonly WeatherService _weatherService;
 
@@ -39,139 +42,50 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     {
         await DeferAsync();
 
-        var weatherLocation = await ResolveUserLocationAsync(location);
-        if (weatherLocation == null)
+        var request = await ResolveRequestAsync(location, paramUnits);
+        if (request is null)
         {
             return;
         }
 
-        var unit = paramUnits ?? GuessMeasurementUnit(weatherLocation);
+        var (weatherLocation, unit) = request.Value;
 
-        var forecastData = await _weatherService.GetCurrentForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, unit);
+        var forecastData = await _weatherService.GetCurrentForecastAsync(
+            weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, unit);
+
         if (forecastData == null)
         {
-            await ModifyOriginalResponseAsync(properties =>
-                properties.Content = "Failed to find a forecast for this location.");
+            await SetContentAsync(ForecastUnavailable);
             return;
         }
 
         var forecast = forecastData.Data;
 
-        var descriptionBuilder = new StringBuilder();
-
-        descriptionBuilder.Append(
-            string.Format("{0} Currently {1} and {2} with a high of {3} and a low of {4}.",
-                EmojiIconMap.Resolve(forecast.Icon),
-                ConvertToTempString(unit, forecast.Temperature),
-                forecast.Condition,
-                ConvertToTempString(unit, forecast.ForecastHigh),
-                ConvertToTempString(unit, forecast.ForecastLow)));
-
-        if (forecast.Alerts != null && forecast.Alerts.Any())
-        {
-            descriptionBuilder.AppendLine();
-
-            var tzCode = GetTimeZoneCode(forecastData.TimeZone);
-
-            foreach (var alert in forecast.Alerts)
-            {
-                var issueIdx = alert.Title.IndexOf("issued");
-                var alertTitle = issueIdx > 0 ? alert.Title[..issueIdx].Trim() : alert.Title;
-
-                descriptionBuilder.AppendLine(
-                    string.Format("[**{0}**]({1}) Until {2:dd MMM yy HH:mm} {3}", alertTitle, alert.Uri, alert.ExpirationDate, tzCode));
-            }
-        }
-
-        var fieldBuilders = new List<EmbedFieldBuilder>();
-
-        if (forecast.PrecipitationProbability >= 0.05)
-        {
-            var precipAccumulation = 0.0;
-
-            if (forecast.SnowAccumulation > 0 && forecast.PrecipitationType == PrecipitationType.Snow)
-            {
-                precipAccumulation = forecast.SnowAccumulation;
-            }
-            else if (forecast.PrecipitationIntensity > 0)
-            {
-                precipAccumulation = forecast.PrecipitationIntensity * 24;
-            }
-
-            if (precipAccumulation > 0.1)
-            {
-                fieldBuilders.Add(
-                    new EmbedFieldBuilder()
-                        .WithIsInline(true)
-                        .WithName("Precipitation")
-                        .WithValue(
-                            string.Format("There is a {0:P0} chance of {1} with an estimated accumulation of {2:F1} inches",
-                                forecast.PrecipitationProbability, forecast.PrecipitationType.ToString().ToLower(), precipAccumulation)));
-            }
-        }
-
-        fieldBuilders.AddRange([
-            new EmbedFieldBuilder()
-                .WithIsInline(true)
-                .WithName("Wind")
-                .WithValue(string.Format("{0:F1} MpH with gusts up to {1:F1} MpH", forecast.WindSpeed, forecast.WindGust)),
-            new EmbedFieldBuilder()
-                .WithIsInline(true)
-                .WithName("Humidity")
-                .WithValue(string.Format("{0:N0}%", forecast.Humidity))
-        ]);
-
-        if (forecast.Temperature >= 80 && forecast.Humidity >= 40)
-        {
-            fieldBuilders.Add(
-                new EmbedFieldBuilder()
-                    .WithIsInline(true)
-                    .WithName("Heat Index")
-                    .WithValue(ConvertToTempString(unit, forecast.HeatIndex)));
-        }
-
-        if (forecast.Temperature <= 50 && forecast.WindGust >= 3)
-        {
-            fieldBuilders.Add(
-                new EmbedFieldBuilder()
-                    .WithIsInline(true)
-                    .WithName("Wind Chill")
-                    .WithValue(ConvertToTempString(unit, forecast.WindChill)));
-        }
-
-        if (forecast.UVIndex > 0)
-        {
-            fieldBuilders.Add(
-                new EmbedFieldBuilder()
-                    .WithIsInline(true)
-                    .WithName("UV Index")
-                    .WithValue(string.Format("({0}) {1}", forecast.UVIndex, GetUvIndexString(forecast.UVIndex))));
-        }
-
-        var embed = BuildEmbed(weatherLocation, fieldBuilders, descriptionBuilder.ToString());
+        var embed = BuildEmbed(
+            weatherLocation,
+            BuildCurrentFields(forecast, unit),
+            BuildCurrentDescription(forecast, unit, forecastData.TimeZone));
 
         await ModifyOriginalResponseAsync(properties => properties.Embed = embed);
     }
 
     [SlashCommand("hourly", "Get the hourly forecast.")]
     [CommandContextType(InteractionContextType.PrivateChannel, InteractionContextType.BotDm, InteractionContextType.Guild)]
-    public async Task GetWeatherHourlyAsync(
+    public Task GetWeatherHourlyAsync(
         [Summary("Location", "Where would like to forecast?")]
         [MaxLength(Constants.MaxLocationNameLength)]
         string location,
         [Summary("Units", "Units type")]
         MeasurementUnits? paramUnits = null)
-    {
-        await ProcessGetWeatherHourly(0, location, paramUnits);
-    }
+        => ProcessGetWeatherHourlyAsync(0, location, paramUnits);
 
     [ComponentInteraction("forecast_hourly_*_(*)_*", true)]
     [CommandContextType(InteractionContextType.PrivateChannel, InteractionContextType.BotDm, InteractionContextType.Guild)]
     public async Task GetWeatherHourly_ButtonAsync(int page, string encodedLocation, MeasurementUnits? unit)
     {
-        var originalUserId = (Context.Interaction as SocketMessageComponent).Message.Interaction.User.Id;
-
-        if (Context.Interaction.User.Id != originalUserId)
+        // Only the user who ran the original command may page through it.
+        if (Context.Interaction is not SocketMessageComponent component ||
+            component.Message.Interaction.User.Id != Context.Interaction.User.Id)
         {
             await RespondAsync();
             return;
@@ -179,80 +93,44 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         var location = string.IsNullOrEmpty(encodedLocation) ? null : Uri.UnescapeDataString(encodedLocation);
 
-        await ProcessGetWeatherHourly(page, location, unit);
+        await ProcessGetWeatherHourlyAsync(page, location, unit);
     }
 
-    private async Task ProcessGetWeatherHourly(int page, string location, MeasurementUnits? paramUnits)
+    private async Task ProcessGetWeatherHourlyAsync(int page, string location, MeasurementUnits? paramUnits)
     {
         await DeferAsync();
 
-        var weatherLocation = await ResolveUserLocationAsync(location);
-        if (weatherLocation == null)
+        var request = await ResolveRequestAsync(location, paramUnits);
+        if (request is null)
         {
             return;
         }
 
-        var unit = paramUnits ?? GuessMeasurementUnit(weatherLocation);
+        var (weatherLocation, unit) = request.Value;
 
-        var forecastData = await _weatherService.GetHourlyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, unit);
+        var forecastData = await _weatherService.GetHourlyForecastAsync(
+            weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, unit);
+
         if (forecastData == null)
         {
-            await ModifyOriginalResponseAsync(properties =>
-                    properties.Content = "Failed to find a forecast for this location.");
+            await SetContentAsync(ForecastUnavailable);
             return;
         }
 
-        var tz = GetTimeZoneCode(forecastData.TimeZone);
-
-        var fieldBuilders = forecastData.Data
+        var fields = forecastData.Data
             .Skip(page * Constants.ForecastHoursPerPageLimit)
             .Take(Constants.ForecastHoursPerPageLimit)
-            .Select(a =>
-            {
-                var tzTime = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(a.Date, forecastData.TimeZone);
+            .Select(hour => BuildHourField(hour, unit, forecastData.TimeZone));
 
-                var fieldName = string.Format(
-                    "{0} - {1} {2}",
-                    tzTime.ToString("h:mm tt"),
-                    EmojiIconMap.Resolve(a.Icon),
-                    a.Summary);
-
-                var fieldValue = string.Format(
-                    "{0} | :droplet: {1:N0}% ({2:F2} in) | :dash: {3:N0} mph {4}",
-                    ConvertToTempString(unit, a.Temperature),
-                    a.PrecipitationProbability,
-                    a.PrecipitationIntensity,
-                    a.WindSpeed,
-                    a.CardinalWindBearing);
-
-                return new EmbedFieldBuilder()
-                    .WithIsInline(false)
-                    .WithName(fieldName)
-                    .WithValue(fieldValue);
-            });
-
-        var embed = BuildEmbed(weatherLocation, fieldBuilders);
-
-        var encodedLocation = string.IsNullOrEmpty(location) ? null : Uri.EscapeDataString(location);
-
-        var component = new ComponentBuilder()
-            .WithButton(
-                customId: $"forecast_hourly_{page - 1}_({encodedLocation})_{unit}",
-                emote: new Emoji("⬅️"),
-                disabled: page == 0)
-            .WithButton(
-                customId: $"forecast_hourly_{page + 1}_({encodedLocation})_{unit}",
-                emote: new Emoji("➡️"),
-                disabled: page >= Constants.MaxForecastHours / Constants.ForecastHoursPerPageLimit - 1)
-            .Build();
+        var embed = BuildEmbed(weatherLocation, fields);
+        var components = BuildHourlyPager(page, location, unit);
 
         await ModifyOriginalResponseAsync(properties =>
         {
             properties.Embed = embed;
-            properties.Components = component;
+            properties.Components = components;
         });
     }
-
 
     [SlashCommand("week", "Get the weekly forecast.")]
     [CommandContextType(InteractionContextType.PrivateChannel, InteractionContextType.BotDm, InteractionContextType.Guild)]
@@ -265,125 +143,164 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     {
         await DeferAsync();
 
-        var weatherLocation = await ResolveUserLocationAsync(location);
-        if (weatherLocation == null)
+        var request = await ResolveRequestAsync(location, paramUnits);
+        if (request is null)
         {
             return;
         }
 
-        var unit = paramUnits ?? GuessMeasurementUnit(weatherLocation);
+        var (weatherLocation, unit) = request.Value;
 
-        var forecastData = await _weatherService.GetDailyForecastAsync(weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, Constants.MaxForecastDays, unit);
+        var forecastData = await _weatherService.GetDailyForecastAsync(
+            weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, Constants.MaxForecastDays, unit);
+
         if (forecastData == null)
         {
-            await ModifyOriginalResponseAsync(properties =>
-                    properties.Content = "Failed to find a forecast for this location.");
+            await SetContentAsync(ForecastUnavailable);
             return;
         }
 
-        var fieldBuilders = forecastData.Data
-            .Select(a =>
-            {
-                return new EmbedFieldBuilder()
-                    .WithIsInline(false)
-                    .WithName(a.Date.ToString("dddd MMMM d"))
-                    .WithValue(GetWeatherDailyString(unit, a, weatherLocation));
-            });
+        var fields = forecastData.Data.Select(day => new EmbedFieldBuilder()
+            .WithIsInline(false)
+            .WithName(day.Date.ToString("dddd MMMM d"))
+            .WithValue($"{EmojiIconMap.Resolve(day.Icon)} {FormatTemp(day.High, unit)} / {FormatTemp(day.Low, unit)} - {day.Summary}"));
 
-        var embed = BuildEmbed(weatherLocation, fieldBuilders);
+        var embed = BuildEmbed(weatherLocation, fields);
 
         await ModifyOriginalResponseAsync(properties => properties.Embed = embed);
     }
 
-    private async Task<LocationDetails> ResolveUserLocationAsync(string location)
+    /// <summary>
+    /// Geocodes the location and settles on a unit system. Returns null after replying with an
+    /// error when the location can't be resolved.
+    /// </summary>
+    private async Task<(LocationDetails Location, MeasurementUnits Unit)?> ResolveRequestAsync(string location, MeasurementUnits? paramUnits)
     {
         var weatherLocation = await _geocodeService.GetGeocodeForLocationStringAsync(location);
-        if (weatherLocation == null || weatherLocation.Coordinates == null)
+
+        if (weatherLocation?.Coordinates == null)
         {
-            await ModifyOriginalResponseAsync(properties =>
-                properties.Content = "Failed to resolve this location.");
+            await SetContentAsync(LocationUnresolved);
             return null;
         }
-        return weatherLocation;
+
+        return (weatherLocation, paramUnits ?? GuessMeasurementUnit(weatherLocation));
     }
 
-    private static string GetUvIndexString(int uvIndex)
+    private Task SetContentAsync(string content) =>
+        ModifyOriginalResponseAsync(properties => properties.Content = content);
+
+    private static string BuildCurrentDescription(ForecastNow forecast, MeasurementUnits unit, string timeZone)
     {
-        switch (uvIndex)
+        var description = new StringBuilder();
+
+        description.Append(
+            $"{EmojiIconMap.Resolve(forecast.Icon)} Currently {FormatTemp(forecast.Temperature, unit)} and {forecast.Condition} " +
+            $"with a high of {FormatTemp(forecast.ForecastHigh, unit)} and a low of {FormatTemp(forecast.ForecastLow, unit)}.");
+
+        var alerts = forecast.Alerts?.ToList() ?? [];
+        if (alerts.Count == 0)
         {
-            case < 3:
-                return "Low";
-            case < 6:
-                return "Moderate";
-            case < 8:
-                return "High";
-            case < 11:
-                return "Very High";
-            case >= 11:
-                return "Extreme";
+            return description.ToString();
         }
+
+        description.AppendLine();
+
+        var timeZoneCode = GetTimeZoneCode(timeZone);
+
+        foreach (var alert in alerts)
+        {
+            // Alert titles read "<name> issued <date> by <office>"; keep only the name.
+            var issuedIndex = alert.Title.IndexOf("issued", StringComparison.Ordinal);
+            var title = issuedIndex > 0 ? alert.Title[..issuedIndex].Trim() : alert.Title;
+
+            description.AppendLine($"[**{title}**]({alert.Uri}) Until {alert.ExpirationDate:dd MMM yy HH:mm} {timeZoneCode}");
+        }
+
+        return description.ToString();
     }
 
-    private static MeasurementUnits GuessMeasurementUnit(LocationDetails location)
+    private static IEnumerable<EmbedFieldBuilder> BuildCurrentFields(ForecastNow forecast, MeasurementUnits unit)
     {
-        if (location.Country == "United States" || location.Country == "USA")
+        var accumulation = GetPrecipitationAccumulation(forecast);
+        if (accumulation > 0.1)
         {
-            return MeasurementUnits.Imperial;
+            yield return Field("Precipitation",
+                $"There is a {forecast.PrecipitationProbability:P0} chance of {forecast.PrecipitationType.ToString().ToLower()} " +
+                $"with an estimated accumulation of {accumulation:F1} inches");
         }
-        return MeasurementUnits.Metric;
+
+        yield return Field("Wind", $"{forecast.WindSpeed:F1} MpH with gusts up to {forecast.WindGust:F1} MpH");
+        yield return Field("Humidity", $"{forecast.Humidity:N0}%");
+
+        if (forecast.Temperature >= 80 && forecast.Humidity >= 40)
+        {
+            yield return Field("Heat Index", FormatTemp(forecast.HeatIndex, unit));
+        }
+
+        if (forecast.Temperature <= 50 && forecast.WindGust >= 3)
+        {
+            yield return Field("Wind Chill", FormatTemp(forecast.WindChill, unit));
+        }
+
+        if (forecast.UVIndex > 0)
+        {
+            yield return Field("UV Index", $"({forecast.UVIndex}) {GetUvIndexDescription(forecast.UVIndex)}");
+        }
+
+        static EmbedFieldBuilder Field(string name, string value) =>
+            new EmbedFieldBuilder().WithIsInline(true).WithName(name).WithValue(value);
     }
 
-    private static string ConvertToTempString(MeasurementUnits unit, double temperature)
+    /// <summary>Estimated 24h accumulation in inches, or 0 when precipitation is unlikely.</summary>
+    private static double GetPrecipitationAccumulation(ForecastNow forecast)
     {
-        if (unit == MeasurementUnits.Imperial)
+        if (forecast.PrecipitationProbability < 0.05)
         {
-            return string.Format("{0:N0} °F", temperature);
+            return 0;
         }
 
-        return string.Format("{0:N0} °C", temperature);
+        if (forecast.SnowAccumulation > 0 && forecast.PrecipitationType == PrecipitationType.Snow)
+        {
+            return forecast.SnowAccumulation;
+        }
+
+        return forecast.PrecipitationIntensity > 0 ? forecast.PrecipitationIntensity * 24 : 0;
     }
 
-    private static string GetLocationString(LocationDetails location)
+    private static EmbedFieldBuilder BuildHourField(ForecastHour hour, MeasurementUnits unit, string timeZone)
     {
-        var sb = new StringBuilder();
+        var localTime = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(hour.Date, timeZone);
 
-        if (!string.IsNullOrEmpty(location.City))
-        {
-            sb.Append($"{location.City}, ");
-        }
-
-        if (!string.IsNullOrEmpty(location.Region))
-        {
-            sb.Append($"{location.Region} - ");
-        }
-
-        sb.Append(location.Country);
-
-        return sb.ToString();
+        return new EmbedFieldBuilder()
+            .WithIsInline(false)
+            .WithName($"{localTime:h:mm tt} - {EmojiIconMap.Resolve(hour.Icon)} {hour.Summary}")
+            .WithValue(
+                $"{FormatTemp(hour.Temperature, unit)} | :droplet: {hour.PrecipitationProbability:N0}% " +
+                $"({hour.PrecipitationIntensity:F2} in) | :dash: {hour.WindSpeed:N0} mph {hour.CardinalWindBearing}");
     }
 
-    private static string GetWeatherDailyString(MeasurementUnits unit, ForecastDay d, LocationDetails location)
+    private static MessageComponent BuildHourlyPager(int page, string location, MeasurementUnits unit)
     {
-        return $"{EmojiIconMap.Resolve(d.Icon)} {ConvertToTempString(unit, d.High)} / {ConvertToTempString(unit, d.Low)} - {d.Summary}";
-    }
+        var encodedLocation = string.IsNullOrEmpty(location) ? null : Uri.EscapeDataString(location);
+        var lastPage = Constants.MaxForecastHours / Constants.ForecastHoursPerPageLimit - 1;
 
-    private static string GetTimeZoneCode(string timezone)
-    {
-        try
-        {
-            var tzCode = TZNames.GetAbbreviationsForTimeZone(timezone, "en-US");
-            return tzCode?.Generic;
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        return new ComponentBuilder()
+            .WithButton(
+                customId: $"forecast_hourly_{page - 1}_({encodedLocation})_{unit}",
+                emote: new Emoji("⬅️"),
+                disabled: page == 0)
+            .WithButton(
+                customId: $"forecast_hourly_{page + 1}_({encodedLocation})_{unit}",
+                emote: new Emoji("➡️"),
+                disabled: page >= lastPage)
+            .Build();
     }
 
     private static Embed BuildEmbed(LocationDetails location, IEnumerable<EmbedFieldBuilder> fields, string description = null)
     {
-        var eb = new EmbedBuilder()
-            .WithAuthor(GetLocationString(location))
+        var embed = new EmbedBuilder()
+            .WithAuthor(FormatLocation(location))
             .WithTitle(Constants.TitleSeeMoreText)
             .WithUrl(string.Format(Constants.TitleSeeMoreUrlFormat, location.Coordinates.Latitude, location.Coordinates.Longitude))
             .WithColor(new Color(MonodyConstants.DefaultEmbedColor))
@@ -391,14 +308,58 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         if (!string.IsNullOrEmpty(description))
         {
-            eb.WithDescription(description);
+            embed.WithDescription(description);
         }
 
         if (fields != null)
         {
-            eb.WithFields(fields);
+            embed.WithFields(fields);
         }
 
-        return eb.Build();
+        return embed.Build();
+    }
+
+    private static string GetUvIndexDescription(int uvIndex) => uvIndex switch
+    {
+        < 3 => "Low",
+        < 6 => "Moderate",
+        < 8 => "High",
+        < 11 => "Very High",
+        _ => "Extreme"
+    };
+
+    private static MeasurementUnits GuessMeasurementUnit(LocationDetails location) =>
+        location.Country is "United States" or "USA" ? MeasurementUnits.Imperial : MeasurementUnits.Metric;
+
+    private static string FormatTemp(double temperature, MeasurementUnits unit) =>
+        unit == MeasurementUnits.Imperial ? $"{temperature:N0} °F" : $"{temperature:N0} °C";
+
+    private static string FormatLocation(LocationDetails location)
+    {
+        var prefix = new StringBuilder();
+
+        if (!string.IsNullOrEmpty(location.City))
+        {
+            prefix.Append($"{location.City}, ");
+        }
+
+        if (!string.IsNullOrEmpty(location.Region))
+        {
+            prefix.Append($"{location.Region} - ");
+        }
+
+        return prefix.Append(location.Country).ToString();
+    }
+
+    private static string GetTimeZoneCode(string timezone)
+    {
+        try
+        {
+            return TZNames.GetAbbreviationsForTimeZone(timezone, "en-US")?.Generic;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 }

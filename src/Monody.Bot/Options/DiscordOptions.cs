@@ -10,8 +10,6 @@ internal sealed class DiscordOptions
 
     public ulong? GuildId { get; set; }
 
-    public ulong? OwnerId { get; set; }
-
     public GatewayIntents GatewayIntents { get; set; } =
         GatewayIntents.GuildMessages |
         GatewayIntents.MessageContent |

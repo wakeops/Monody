@@ -14,10 +14,8 @@ public sealed class GeocodePlugin(GeocodeService geocodeService)
     [Description("Return the geocode, including latitude and longitude, for a given location")]
     public async Task<GeocodeToolResponse> GeocodeAsync(GeocodeToolRequest request, CancellationToken cancellationToken = default)
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Location))
-        {
-            throw new ArgumentNullException(nameof(request.Location));
-        }
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Location);
 
         var response = await geocodeService.GetGeocodeForLocationStringAsync(request.Location);
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
@@ -44,7 +45,7 @@ internal class InteractionLogger
                     break;
 
                 default:
-                    throw new NotImplementedException($"Unkonwn Interaction: {interaction.GetType().Name}");
+                    throw new NotImplementedException($"Unknown interaction: {interaction.GetType().Name}");
             }
         }
         catch (Exception ex)
@@ -55,22 +56,22 @@ internal class InteractionLogger
 
     private void LogSlashCommand(SocketSlashCommand cmd)
     {
-        var fullPath = BuildSlashCommandName(cmd.Data);
-        var args = BuildSlashCommandArgumentsObject(cmd.Data.Options);
-
         _logger.LogInformation("Slash Command: {Command} | Invoker: {@User} | Args: {Args}",
-            fullPath,
+            BuildSlashCommandName(cmd.Data),
             new { cmd.User.Id, cmd.User.Username },
-            args);
+            BuildSlashCommandArguments(cmd.Data.Options));
     }
+
     private void LogUserCommand(SocketUserCommand cmd)
     {
-        using (LogContext.PushProperty("TargetUser", new { cmd.Data.Member.Id, cmd.Data.Member.Username }))
+        var target = new { cmd.Data.Member.Id, cmd.Data.Member.Username };
+
+        using (LogContext.PushProperty("TargetUser", target))
         {
             _logger.LogInformation("User Command: /{Command} | Invoker: {@User} | Target: {@TargetUser}",
                 cmd.CommandName,
                 new { cmd.User.Id, cmd.User.Username },
-                new { cmd.Data.Member.Id, cmd.Data.Member.Username });
+                target);
         }
     }
 
@@ -100,34 +101,23 @@ internal class InteractionLogger
             values);
     }
 
+    /// <summary>Rebuilds the invoked path, e.g. "/weather now", by walking the subcommand chain.</summary>
     private static string BuildSlashCommandName(SocketSlashCommandData data)
     {
-        string name = $"/{data.Name}";
-        var current = data.Options.FirstOrDefault();
+        var name = new StringBuilder($"/{data.Name}");
 
-        // Walk down subcommand/subcommand-group structure
+        var current = data.Options.FirstOrDefault();
         while (current is { Type: ApplicationCommandOptionType.SubCommand or ApplicationCommandOptionType.SubCommandGroup })
         {
-            name += $" {current.Name}";
+            name.Append($" {current.Name}");
             current = current.Options.FirstOrDefault();
         }
 
-        return name;
+        return name.ToString();
     }
 
-    private static Dictionary<string, object> BuildSlashCommandArgumentsObject(IEnumerable<SocketSlashCommandDataOption> options)
-    {
-        var flat = FlattenOptions(options).ToList();
-
-        var dict = new Dictionary<string, object>();
-
-        foreach (var opt in flat)
-        {
-            dict[opt.Name] = ConvertOptionValue(opt.Value);
-        }
-
-        return dict;
-    }
+    private static Dictionary<string, object> BuildSlashCommandArguments(IEnumerable<SocketSlashCommandDataOption> options) =>
+        FlattenOptions(options).ToDictionary(opt => opt.Name, opt => ConvertOptionValue(opt.Value));
 
     private static IEnumerable<SocketSlashCommandDataOption> FlattenOptions(IEnumerable<SocketSlashCommandDataOption> opts)
     {

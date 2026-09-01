@@ -21,7 +21,7 @@ public class GoogleSearchService
 
     public async Task<List<GoogleSearchResultItem>> SearchAsync(string query, CancellationToken cancellationToken)
     {
-        var results = await ExecuteSearchAsync(query, CancellationToken.None);
+        var results = await ExecuteSearchAsync(query, cancellationToken);
 
         return [.. results.Select(item => new GoogleSearchResultItem
             {

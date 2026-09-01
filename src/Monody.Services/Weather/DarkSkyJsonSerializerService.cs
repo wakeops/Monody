@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DarkSky.Services;
@@ -7,19 +8,22 @@ using Newtonsoft.Json.Linq;
 
 namespace Monody.Services.Weather;
 
+/// <summary>
+/// Pirate Weather returns some fields DarkSkyCore models as integers (wind bearing, UV index)
+/// as fractional numbers, which fails to deserialize. Truncate them before handing the JSON over.
+/// </summary>
 internal class DarkSkyJsonSerializerService : IJsonSerializerService
 {
-    private readonly JsonSerializerSettings _jsonSettings = new ();
+    private static readonly string[] _integerFields = ["windBearing", "uvIndex", "nearestStormBearing"];
 
     public async Task<T> DeserializeJsonAsync<T>(Task<string> json)
     {
         try
         {
             var jsonString = await json;
-            jsonString = FixJsonTypeValues(jsonString);
 
-            return (jsonString != null)
-                ? JsonConvert.DeserializeObject<T>(jsonString, _jsonSettings)
+            return jsonString != null
+                ? JsonConvert.DeserializeObject<T>(TruncateIntegerFields(jsonString))
                 : default;
         }
         catch (JsonReaderException e)
@@ -28,32 +32,27 @@ internal class DarkSkyJsonSerializerService : IJsonSerializerService
         }
     }
 
-    private static string FixJsonTypeValues(string json)
+    private static string TruncateIntegerFields(string json)
     {
-        var jsonToken = JToken.Parse(json);
+        var root = JToken.Parse(json);
 
-        var jobj = (JObject)jsonToken.SelectToken("currently");
-        if (jobj != null)
+        foreach (var node in Blocks(root))
         {
-            jobj["windBearing"] = (int)(jobj["windBearing"].Value<double>());
-            jobj["uvIndex"] = (int)(jobj["uvIndex"].Value<double>());
-            jobj["nearestStormBearing"] = (int)(jobj["nearestStormBearing"].Value<double>());
+            foreach (var field in _integerFields)
+            {
+                if (node[field] is JValue { Type: not (JTokenType.Null or JTokenType.Undefined) } value)
+                {
+                    node[field] = (int)value.Value<double>();
+                }
+            }
         }
 
-        var dailyObj = jsonToken.SelectTokens("daily.data[*]");
-        dailyObj?.Cast<JObject>().ToList().ForEach(a =>
-            {
-                a["windBearing"] = (int)(a["windBearing"].Value<double>());
-                a["uvIndex"] = (int)(a["uvIndex"].Value<double>());
-            });
-
-        var hourlyData = jsonToken.SelectTokens("hourly.data[*]");
-        hourlyData?.Cast<JObject>().ToList().ForEach(a =>
-            {
-                a["windBearing"] = (int)(a["windBearing"].Value<double>());
-                a["uvIndex"] = (int)(a["uvIndex"].Value<double>());
-            });
-
-        return jsonToken.ToString();
+        return root.ToString();
     }
+
+    private static IEnumerable<JObject> Blocks(JToken root) =>
+        new[] { root.SelectToken("currently") }
+            .Concat(root.SelectTokens("daily.data[*]"))
+            .Concat(root.SelectTokens("hourly.data[*]"))
+            .OfType<JObject>();
 }

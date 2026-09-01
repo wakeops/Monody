@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -7,110 +7,72 @@ using AngleSharp.Html.Dom;
 
 namespace Monody.AI.Tools.Capabilities.FetchUrl.ContentExtractor;
 
-public static class HtmlContentParser
+/// <summary>
+/// Fallback article extraction for pages SmartReader can't handle: strip the chrome, prefer
+/// semantic tags, and otherwise pick the highest-scoring block of text.
+/// </summary>
+public static partial class HtmlContentParser
 {
+    private const string NoiseSelector = "script,style,noscript,svg,footer,nav,aside,form";
+
+    private static readonly string[] _noiseClasses = ["article-meta", "article-footer", "article-header", "tags"];
+
     public static string ExtractMainContent(IHtmlDocument doc)
     {
-        // Remove obvious noise
-        RemoveNodes(doc, "script,style,noscript,svg,footer,nav,aside,form");
+        RemoveNoise(doc);
 
-        RemoveNodesByClass(doc, "article-meta", "article-footer", "article-header", "tags");
-
-        // Prefer semantic tags
-        var article = doc.QuerySelector("article");
-        if (IsUsable(article))
+        var semantic = doc.QuerySelector("article") ?? doc.QuerySelector("main");
+        if (semantic != null && IsUsable(semantic))
         {
-            return CleanText(article.TextContent);
+            return CleanText(semantic.TextContent);
         }
 
-        var main = doc.QuerySelector("main");
-        if (IsUsable(main))
-        {
-            return CleanText(main.TextContent);
-        }
-
-        // Score candidates
-        var candidates = doc
-            .QuerySelectorAll("div,section,body")
-            .OfType<IElement>()
+        var best = doc.QuerySelectorAll("div,section,body")
             .Select(node => new ContentCandidate(node))
             .Where(c => c.Score > 0)
-            .OrderByDescending(c => c.Score)
+            .MaxBy(c => c.Score);
+
+        return best == null ? string.Empty : CleanText(best.Node.TextContent);
+    }
+
+    [GeneratedRegex(@"\s+")]
+    internal static partial Regex WhitespaceRun();
+
+    private static void RemoveNoise(IHtmlDocument doc)
+    {
+        foreach (var node in doc.QuerySelectorAll(NoiseSelector).ToList())
+        {
+            node.Remove();
+        }
+
+        var byClass = doc.All
+            .Where(e => e.GetAttribute("class") is string classes
+                        && _noiseClasses.Any(c => classes.Contains(c, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
-        if (candidates == null || candidates.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        return CleanText(candidates.First().Node.TextContent);
-    }
-
-    private static bool IsUsable(IElement element)
-    {
-        if (element is null)
-        {
-            return false;
-        }
-
-        var text = CleanText(element.TextContent);
-        return text.Length > 200;
-    }
-
-    private static void RemoveNodes(IHtmlDocument doc, string cssSelector)
-    {
-        var nodes = doc.QuerySelectorAll(cssSelector);
-        if (nodes == null || nodes.Length == 0)
-        {
-            return;
-        }
-
-        foreach (var node in nodes.ToList())
-        {
-            node.Remove(); // IChildNode.Remove() extension
-        }
-    }
-
-    private static void RemoveNodesByClass(IHtmlDocument doc, params string[] classNames)
-    {
-        // Equivalent to doc.DocumentNode.Descendants() in HtmlAgilityPack:
-        // `doc.All` gives all elements in the document.
-        var nodes = doc.All
-            .OfType<IElement>()
-            .Where(e =>
-            {
-                var classAttr = e.GetAttribute("class");
-                if (classAttr == null)
-                {
-                    return false;
-                }
-
-                return classNames.Any(c =>
-                    classAttr.Contains(c, StringComparison.OrdinalIgnoreCase));
-            })
-            .ToList();
-
-        foreach (var node in nodes)
+        foreach (var node in byClass)
         {
             node.Remove();
         }
     }
 
-    // Normalize whitespace while preserving paragraphs
+    private static bool IsUsable(IElement element) => CleanText(element.TextContent).Length > 200;
+
+    /// <summary>Collapses whitespace and drops sentence fragments, one sentence per line.</summary>
     private static string CleanText(string text)
     {
-        var normalized = Regex.Replace(text, @"\s+", " ").Trim();
+        var normalized = WhitespaceRun().Replace(text, " ").Trim();
 
-        var sb = new StringBuilder();
+        var sentences = new StringBuilder();
 
-        foreach (var paragraph in normalized.Split(". "))
+        foreach (var sentence in normalized.Split(". "))
         {
-            if (paragraph.Length > 30)
+            if (sentence.Length > 30)
             {
-                sb.AppendLine(paragraph.Trim() + ".");
+                sentences.AppendLine(sentence.Trim() + ".");
             }
         }
 
-        return sb.ToString().Trim();
+        return sentences.ToString().Trim();
     }
 }

@@ -130,15 +130,9 @@ public class WeatherService
         };
     }
 
-    private static double ConvertTempUnit(MeasurementUnits units, double temperature)
-    {
-        if (units == MeasurementUnits.Imperial)
-        {
-            return temperature;
-        }
-
-        return (temperature - 32.0) / 1.8;
-    }
+    // The API is always queried in US units, so Metric is a conversion on the way out.
+    private static double ConvertTempUnit(MeasurementUnits units, double temperature) =>
+        units == MeasurementUnits.Imperial ? temperature : (temperature - 32.0) / 1.8;
 
     private async Task<Forecast> GetForecastAsync(double latitude, double longitude)
     {
@@ -164,9 +158,13 @@ public class WeatherService
             return null;
         }
 
-        return result?.Response;
+        return result.Response;
     }
 
+    /// <summary>
+    /// The API repeats an alert each time it is re-issued, so keep only the latest of each
+    /// and order them by how soon they expire.
+    /// </summary>
     private static IEnumerable<WeatherAlert> ConvertAlerts(IEnumerable<Alert> alerts)
     {
         if (alerts == null)
@@ -175,18 +173,16 @@ public class WeatherService
         }
 
         return alerts
+            .GroupBy(a => a.Uri)
+            .Select(g => g.MaxBy(a => a.ExpiresDateTime))
             .OrderBy(a => a.ExpiresDateTime)
-            .Where(a => !alerts.Any(b => a.Uri == b.Uri && a.ExpiresDateTime < b.ExpiresDateTime))
-            .Select(a =>
+            .Select(a => new WeatherAlert
             {
-                return new WeatherAlert
-                {
-                    IssuedDate = a.DateTime,
-                    ExpirationDate = a.ExpiresDateTime,
-                    Title = a.Title,
-                    Description = a.Description,
-                    Uri = a.Uri
-                };
+                IssuedDate = a.DateTime,
+                ExpirationDate = a.ExpiresDateTime,
+                Title = a.Title,
+                Description = a.Description,
+                Uri = a.Uri
             });
     }
 }

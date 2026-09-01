@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -9,6 +10,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.TextToImage;
+using Monody.AI.Agents;
 using Monody.AI.SchemaJson;
 using Monody.Bot.Modules.Slop.Models;
 using Monody.Bot.Modules.Slop.Utils;
@@ -19,7 +21,7 @@ namespace Monody.Bot.Modules.Slop;
 
 public class AIChatService
 {
-    private readonly JsonSerializerOptions _serializerOptions = new()
+    private static readonly JsonSerializerOptions _serializerOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         Converters = { new JsonStringEnumConverter() }
@@ -42,61 +44,56 @@ public class AIChatService
     {
         var conversation = GetOrCreateConversation(interactionId, guild, channel, user);
 
-        var payload = new DiscordUserPrompt(user, prompt);
-        conversation.History.AddUserMessage(payload.ToString());
-
-        var schemaJson = StructuredOutputSchema.GenerateJsonSchema<DiscordCompletionResponse>();
+        conversation.History.AddUserMessage(new DiscordUserPrompt(user, prompt).ToString());
 
         var settings = new OpenAIPromptExecutionSettings
         {
             FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
             ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
                 "discord_completion_response",
-                BinaryData.FromString(schemaJson),
+                BinaryData.FromString(StructuredOutputSchema.GenerateJsonSchema<DiscordCompletionResponse>()),
                 jsonSchemaIsStrict: true)
         };
 
         var result = await _chatService.GetChatMessageContentsAsync(conversation.History, settings, _kernel);
-        _conversationStore.SaveConversation(interactionId.ToString(), conversation);
+        _conversationStore.Save(interactionId, conversation);
 
-        var responseContent = result.Last(m => m.Role == AuthorRole.Assistant).Content;
-        return DeserializeFirstJsonObject(responseContent);
+        var content = result.Last(m => m.Role == AuthorRole.Assistant).Content;
+        return DeserializeFirstJsonObject(content);
+    }
+
+    public async Task<Uri> GetImageGenerationAsync(string prompt, CancellationToken cancellationToken = default)
+    {
+        var url = await _imageService.GenerateImageAsync(prompt, 1024, 1024, cancellationToken: cancellationToken);
+        return new Uri(url);
     }
 
     // When function calling and a strict JSON-schema response format are both active, the model
     // can append a second JSON object after the first (e.g. a repaired retry) in the same message.
     // Read only the first complete value instead of requiring the whole string to be one JSON document.
-    private DiscordCompletionResponse DeserializeFirstJsonObject(string json)
+    private static DiscordCompletionResponse DeserializeFirstJsonObject(string json)
     {
-        var reader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(json));
+        var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
         return JsonSerializer.Deserialize<DiscordCompletionResponse>(ref reader, _serializerOptions);
-    }
-
-    public async Task<System.Uri> GetImageGenerationAsync(string prompt, CancellationToken cancellationToken = default)
-    {
-        var url = await _imageService.GenerateImageAsync(prompt, 1024, 1024, cancellationToken: cancellationToken);
-        return new System.Uri(url);
     }
 
     private DiscordConversation GetOrCreateConversation(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user)
     {
-        var conversation = _conversationStore.GetConversation(interactionId.ToString());
+        var conversation = _conversationStore.Get(interactionId);
+
         if (conversation == null)
         {
             var history = new ChatHistory();
             DiscordHelper.EnrichWithInteractionContext(history, interactionId, guild, channel);
-            conversation = new DiscordConversation(interactionId.ToString(), guild?.Id, channel?.Id, user.Id, history);
+            conversation = new DiscordConversation(interactionId, guild?.Id, channel?.Id, user.Id, history);
         }
 
-        // Replace system message: remove existing ones, then insert at front
-        for (int i = conversation.History.Count - 1; i >= 0; i--)
+        // Re-seed the system prompt so edits to it apply to conversations already in flight.
+        foreach (var systemMessage in conversation.History.Where(m => m.Role == AuthorRole.System).ToList())
         {
-            if (conversation.History[i].Role == AuthorRole.System)
-            {
-                conversation.History.RemoveAt(i);
-            }
-
+            conversation.History.Remove(systemMessage);
         }
+
         conversation.History.Insert(0, new SkChatMessageContent(AuthorRole.System, SystemPrompt.Monody));
 
         return conversation;
