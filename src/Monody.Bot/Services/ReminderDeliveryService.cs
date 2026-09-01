@@ -110,8 +110,10 @@ internal sealed class ReminderDeliveryService : DiscordClientService
             return;
         }
 
-        // No usable channel - fall back to a DM so the reminder is not silently lost.
-        var user = await Client.GetUserAsync(reminder.UserId);
+        // No usable channel - fall back to a DM so the reminder is not silently lost. Goes
+        // through REST because a user-installed app often shares no guild with the user, so
+        // they will not be in the gateway cache.
+        var user = (IUser)Client.GetUser(reminder.UserId) ?? await Client.Rest.GetUserAsync(reminder.UserId);
 
         if (user is null)
         {

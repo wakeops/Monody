@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Monody.Bot;
@@ -23,6 +24,11 @@ builder.Configuration
 builder.Logging
     .ClearProviders()
     .AddBotLogging(builder.Environment, builder.Configuration);
+
+// A Discord gateway hiccup can throw inside a DiscordClientService. The default is to stop the
+// host, which takes the bot down and loses anything held in memory; log and keep running instead.
+builder.Services.Configure<HostOptions>(options =>
+    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
 
 // Services
 builder.Services

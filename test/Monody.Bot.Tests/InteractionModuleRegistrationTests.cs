@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -78,6 +79,30 @@ public class InteractionModuleRegistrationTests : IAsyncLifetime
 
         Assert.Equal(slop.Count, slop.Distinct().Count());
         Assert.Contains("/slop memories", slop);
+    }
+
+    [Fact]
+    public void DeclaresUserInstallOnEveryCommand()
+    {
+        // Discord defaults integration_types to guild-install when it is omitted, which makes
+        // every command unavailable to a user-installed app. Nothing surfaces that at runtime.
+        foreach (var command in _interactionService.SlashCommands)
+        {
+            Assert.Contains(ApplicationIntegrationType.UserInstall, command.IntegrationTypes);
+            Assert.Contains(ApplicationIntegrationType.GuildInstall, command.IntegrationTypes);
+        }
+    }
+
+    [Fact]
+    public void AllowsEveryContextAUserInstalledAppCanReach()
+    {
+        // A user-installed app is used in DMs and in guilds the bot is not a member of.
+        foreach (var command in _interactionService.SlashCommands)
+        {
+            Assert.Contains(InteractionContextType.BotDm, command.ContextTypes);
+            Assert.Contains(InteractionContextType.PrivateChannel, command.ContextTypes);
+            Assert.Contains(InteractionContextType.Guild, command.ContextTypes);
+        }
     }
 
     [Fact]

@@ -12,6 +12,8 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.TextToImage;
 using Monody.AI.Agents;
 using Monody.AI.Tools.Abstractions;
+using Monody.Data;
+using Monody.Data.Entities;
 using Monody.AI.SchemaJson;
 using Monody.Bot.Modules.Slop.Models;
 using Monody.Bot.Modules.Slop.Utils;
@@ -50,9 +52,9 @@ public class AIChatService
 
     public async Task<DiscordCompletionResponse> GetChatCompletionAsync(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user, string prompt, CancellationToken cancellationToken = default)
     {
-        var conversation = GetOrCreateConversation(interactionId, guild, channel, user);
+        var history = await LoadHistoryAsync(interactionId, guild, channel, cancellationToken);
 
-        conversation.History.AddUserMessage(new DiscordUserPrompt(user, prompt).ToString());
+        history.AddUserMessage(new DiscordUserPrompt(user, prompt).ToString());
 
         var settings = new OpenAIPromptExecutionSettings
         {
@@ -67,8 +69,11 @@ public class AIChatService
         // are acting for without the model being able to name someone else.
         using var scope = _invocationContext.BeginScope(user.Id, channel?.Id);
 
-        var result = await _chatService.GetChatMessageContentsAsync(conversation.History, settings, _kernel, cancellationToken);
-        _conversationStore.Save(interactionId, conversation);
+        var result = await _chatService.GetChatMessageContentsAsync(history, settings, _kernel, cancellationToken);
+
+        // Persist before parsing: a malformed reply should not cost the user the whole thread.
+        history.AddRange(result);
+        await SaveHistoryAsync(interactionId, guild, channel, user, history, cancellationToken);
 
         var content = result.Last(m => m.Role == AuthorRole.Assistant).Content;
         return DeserializeFirstJsonObject(content);
@@ -89,25 +94,39 @@ public class AIChatService
         return JsonSerializer.Deserialize<DiscordCompletionResponse>(ref reader, _serializerOptions);
     }
 
-    private DiscordConversation GetOrCreateConversation(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user)
+    private async Task<ChatHistory> LoadHistoryAsync(ulong interactionId, IGuild guild, IMessageChannel channel, CancellationToken cancellationToken)
     {
-        var conversation = _conversationStore.Get(interactionId);
+        var stored = await _conversationStore.GetTurnsAsync(interactionId, cancellationToken);
 
-        if (conversation == null)
+        var history = new ChatHistory();
+
+        if (stored is null)
         {
-            var history = new ChatHistory();
             DiscordHelper.EnrichWithInteractionContext(history, interactionId, guild, channel);
-            conversation = new DiscordConversation(interactionId, guild?.Id, channel?.Id, user.Id, history);
         }
-
-        // Re-seed the system prompt so edits to it apply to conversations already in flight.
-        foreach (var systemMessage in conversation.History.Where(m => m.Role == AuthorRole.System).ToList())
+        else
         {
-            conversation.History.Remove(systemMessage);
+            foreach (var turn in stored)
+            {
+                history.Add(new SkChatMessageContent(new AuthorRole(turn.Role), turn.Content));
+            }
         }
 
-        conversation.History.Insert(0, new SkChatMessageContent(AuthorRole.System, SystemPrompt.Monody));
+        // Seeded fresh every round, so edits to the prompt reach conversations already in flight.
+        history.Insert(0, new SkChatMessageContent(AuthorRole.System, SystemPrompt.Monody));
 
-        return conversation;
+        return history;
+    }
+
+    private Task SaveHistoryAsync(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user, ChatHistory history, CancellationToken cancellationToken)
+    {
+        // Only the spoken turns are kept. Tool calls and their results were needed to finish this
+        // round, not to carry the thread, and the system prompt is re-seeded on load.
+        var turns = history
+            .Where(m => m.Role == AuthorRole.User || m.Role == AuthorRole.Assistant)
+            .Where(m => !string.IsNullOrWhiteSpace(m.Content))
+            .Select(m => new ConversationTurn(m.Role.Label, m.Content));
+
+        return _conversationStore.SaveAsync(interactionId, user.Id, channel?.Id, guild?.Id, turns, cancellationToken);
     }
 }

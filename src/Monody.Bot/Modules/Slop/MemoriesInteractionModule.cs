@@ -18,6 +18,7 @@ namespace Monody.Bot.Modules.Slop;
 /// component on someone else's screen, since the delete re-filters by the clicking user.
 /// </remarks>
 [Group("slop", "Slop bridge")]
+[IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
 public class MemoriesInteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
     private const string SelectMenuId = "monody_memory_delete";
