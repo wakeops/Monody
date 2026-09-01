@@ -15,7 +15,8 @@ internal static class ServiceCollectionExtensions
     public static IServiceCollection AddDiscord(this IServiceCollection services)
     {
         services.AddOptionsWithValidateOnStart<DiscordOptions>()
-            .BindConfiguration("Discord");
+            .BindConfiguration("Discord")
+            .ValidateDataAnnotations();
 
         services.AddDiscordHost((config, sp) =>
         {

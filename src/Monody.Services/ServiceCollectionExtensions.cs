@@ -59,8 +59,7 @@ public static class ServiceCollectionExtensions
 
     private static void AddWebSearchServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptionsWithValidateOnStart<WebSearchOptions>()
-            .BindConfiguration("Services:WebSearch");
+        services.ApplyValidatedOptions<WebSearchOptions>(configuration, "Services:WebSearch");
 
         services.AddSingleton<CustomSearchAPIService>(sp =>
         {

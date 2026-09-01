@@ -43,24 +43,28 @@ Do not "clean this up" into constructor injection; it reintroduces the cycle.
 Config is `appsettings.json` → `appsettings.{Environment}.json` (gitignored) →
 environment variables. Env keys use `__` for nesting: `Services__Geocode__HereApiKey`.
 
-`appsettings.json` ships every secret as `""`, so you must override them. Only
-three are needed to reach startup — **verified by running the published bot**:
+`appsettings.json` ships every secret as `""`, so you must override all of these
+to start the bot — **verified by running the published bot**:
 
-| Setting | Needed to start? |
+| Setting | Required to start? |
 | --- | --- |
-| `Discord:Token` | Yes — Discord.Addons.Hosting validates the token *format* |
-| `Services:Geocode:HereApiKey` | Yes — the HERE SDK rejects an empty key at registration |
-| `AIOptions:Providers:OpenAI:ApiKey` | Yes — Semantic Kernel rejects an empty key |
-| `Services:Weather:PirateWeatherApiKey` | No — fails later, when a command runs |
-| `Services:WebSearch:GoogleApiKey` / `GoogleSearchEngineId` | No — fails later |
+| `Discord:Token` | Yes |
+| `Services:Geocode:HereApiKey` | Yes |
+| `Services:Weather:PirateWeatherApiKey` | Yes |
+| `Services:WebSearch:GoogleApiKey` / `GoogleSearchEngineId` | Yes |
+| `AIOptions:Providers:OpenAI:ApiKey` | Yes |
 | `Cache:RedisConfiguration` | No — optional; set it to enable the FusionCache backplane |
 
-**Gotcha:** the `[Required]` attributes on the options classes are *not* enforced.
-`ApplyValidatedOptions` calls `AddOptionsWithValidateOnStart` but never
-`.ValidateDataAnnotations()`, so no validator is registered. What actually stops
-startup is each SDK rejecting an empty key, with a message that doesn't name the
-setting (e.g. `ArgumentException: The API key cannot be null or empty`). If you
-hit that, it is a missing config value, not a DI bug.
+A missing value fails fast and names the exact configuration path, e.g.
+`OptionsValidationException: Services:Geocode:HereApiKey - The HereApiKey field is required.`
+If you see that, it is a missing config value, not a DI bug.
+
+That comes from `ApplyValidatedOptions`, which validates data annotations twice on
+purpose. The eager pass covers the instance it returns, which callers hand straight
+to SDK registration — without it, those SDKs reject the empty key first and say only
+`The API key cannot be null or empty`, naming nothing. The `.ValidateDataAnnotations()`
+pass covers instances resolved later through `IOptions<T>`. If you add an options
+type, register it through this helper so it inherits both.
 
 A well-formed but fake token gets you through the whole DI graph to
 `Gateway: Connecting` before failing on Discord auth — a useful smoke test that
@@ -101,10 +105,13 @@ Package versions are managed centrally: add a `<PackageVersion>` to
 `Version`) to the csproj. A `Version` in a csproj is an error under central
 management.
 
-UTF-8 BOMs are inconsistent across files (about 60% have one), and `.editorconfig`
-asks for CRLF while the working tree is LF with no `.gitattributes`. Both are
-accidents rather than conventions — leave them alone unless you are fixing them
-deliberately, since normalising in passing turns a small diff into a whole-file one.
+Line endings are LF throughout, enforced by `.gitattributes` (`* text=auto eol=lf`)
+and matched by `.editorconfig`. CI, the Docker build and the runtime image are all
+Linux.
+
+UTF-8 BOMs are still inconsistent across files (about 60% have one). That one is an
+accident rather than a convention, but leave it alone — normalising in passing turns
+a small diff into a whole-file one.
 
 ## Things that have bitten before
 
