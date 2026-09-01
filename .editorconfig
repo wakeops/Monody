@@ -1,15 +1,15 @@
 root = true
 
 [*.json]
-intent_style = space
+indent_style = space
 indent_size = 2
-end_of_line = crlf
+end_of_line = lf
 
 [*.cs]
 dotnet_style_operator_placement_when_wrapping = beginning_of_line
-intent_style = space
+indent_style = space
 indent_size = 4
-end_of_line = crlf
+end_of_line = lf
 
 dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false

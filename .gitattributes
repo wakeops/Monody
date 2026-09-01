@@ -1,0 +1,3 @@
+# The tree is LF throughout and CI, Docker and the runtime image are all Linux.
+# Normalise on commit so a Windows checkout can't reintroduce CRLF.
+* text=auto eol=lf
