@@ -37,6 +37,7 @@ public static class ServiceCollectionExtensions
         kernelBuilder.Plugins.AddFromType<GeocodePlugin>();
 
         services.AddTransient<IResearchAgent, ResearchAgent>();
+        services.AddSingleton<IFunctionInvocationFilter, WeatherRequestCoercionFilter>();
 
         return services;
     }
