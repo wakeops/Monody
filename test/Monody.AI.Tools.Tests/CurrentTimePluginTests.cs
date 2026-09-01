@@ -39,13 +39,11 @@ public class CurrentTimePluginTests
     }
 
     [Theory]
-    // The case the bot actually failed on: the model supplies a bare city, not an IANA id.
-    [InlineData("London", "Europe/London")]
-    [InlineData("london", "Europe/London")]
-    [InlineData("New York", "America/New_York")]
-    [InlineData("new_york", "America/New_York")]
-    [InlineData("  Tokyo  ", "Asia/Tokyo")]
-    public async Task ResolvesABareCityName(string input, string expected)
+    // Identifiers only, in the shapes .NET accepts, plus surrounding whitespace.
+    [InlineData("Asia/Tokyo", "Asia/Tokyo")]
+    [InlineData("  Europe/London  ", "Europe/London")]
+    [InlineData("UTC", "UTC")]
+    public async Task AcceptsATimeZoneIdentifier(string input, string expected)
     {
         Assert.Equal(expected, (await RunAsync(input)).TimeZone);
     }
@@ -71,13 +69,28 @@ public class CurrentTimePluginTests
     }
 
     [Fact]
-    public async Task ReportsAnUnknownZoneClearly()
+    public async Task AppliesAZoneThatDoesNotObserveDaylightSaving()
     {
-        // The model needs to be told what to send instead, not just that it failed.
-        var ex = await Assert.ThrowsAsync<ArgumentException>(() => RunAsync("Middle Earth"));
+        // Proves the zone is really applied rather than just echoed: Arizona stays on MST.
+        var result = await RunAsync("America/Phoenix");
 
-        Assert.Contains("Middle Earth", ex.Message);
-        Assert.Contains("Europe/London", ex.Message);
+        Assert.Equal("-07:00", result.UtcOffset);
+        Assert.False(result.IsDaylightSavingTime);
+    }
+
+    [Theory]
+    // The tool takes zones, not places. The model knows which zone a city is in, so it is told
+    // to convert rather than have this guess - but the refusal has to say so, or it just stalls.
+    [InlineData("Raleigh, NC")]
+    [InlineData("Springfield")]
+    [InlineData("the Isle of Skye")]
+    [InlineData("Middle Earth")]
+    public async Task RejectsAPlaceNameAndSaysWhatToSendInstead(string place)
+    {
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => RunAsync(place));
+
+        Assert.Contains(place, ex.Message);
+        Assert.Contains("America/New_York", ex.Message);
     }
 
     [Fact]

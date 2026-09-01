@@ -94,7 +94,10 @@ is no registry or manifest to update.
 **A tool the model can call.** Add the plugin plus its request/response types under
 `src/Monody.AI.Tools/Capabilities/<Name>/`, then register it in
 `Monody.AI/ServiceCollectionExtensions.AddMonodyAI` (`Plugins.AddFromType<T>()`).
-Its dependencies must be resolvable from the container.
+Its dependencies must be resolvable from the container, and it must have **exactly one
+constructor**: Semantic Kernel activates plugins through `ActivatorUtilities`, which throws
+`Multiple constructors accepting all given argument types` when two overloads can both be
+satisfied — taking the Kernel, and the whole bot, down at startup.
 
 **A config-backed service.** Use `services.ApplyValidatedOptions<T>(configuration, "Section:Path")`,
 which binds the options and hands back an instance for use during registration.
@@ -132,6 +135,18 @@ accident rather than a convention, but leave it alone — normalising in passing
 a small diff into a whole-file one.
 
 ## Things that have bitten before
+
+**One module per top-level command group.** Registration sends one payload per module and
+Discord keys top-level commands by name, so two modules sharing a `[Group("slop")]` means the
+second silently replaces the first — `/slop memories` simply never appeared. The interaction
+tree merges them and looks correct, so this has to be checked on the grouping; a test asserts
+no group is declared twice.
+
+**`current_time` takes a time zone, never a place.** Resolution is just
+`TimeZoneInfo.FindSystemTimeZoneById`, so "Raleigh, NC" is rejected — the model is expected to
+know that is `America/New_York` and send the zone. That only works because the refusal says what
+to send instead; a bare failure leaves the model apologising to the user rather than retrying.
+Keep that message specific if you touch it.
 
 **This app is installed on users, not only on guilds.** Every command module carries
 `[IntegrationType(UserInstall, GuildInstall)]` as well as `[CommandContextType(...)]`.

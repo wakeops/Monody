@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Globalization;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
@@ -17,17 +16,19 @@ public sealed class CurrentTimePlugin
 {
     private readonly TimeProvider _timeProvider;
 
-    public CurrentTimePlugin() : this(TimeProvider.System)
-    {
-    }
-
+    // Exactly one constructor: Semantic Kernel activates plugins through ActivatorUtilities,
+    // which throws when more than one overload can be satisfied from the container.
     public CurrentTimePlugin(TimeProvider timeProvider)
     {
         _timeProvider = timeProvider;
     }
 
     [KernelFunction("current_time")]
-    [Description("Returns the current date and time, optionally for a given time zone or city. Always use this instead of guessing what the current date or time is.")]
+    [Description(
+        "Returns the current date and time for a time zone. Always use this instead of guessing " +
+        "what the current date or time is. TimeZone must be a time zone identifier, not a place: " +
+        "if the user names a city, work out its zone yourself and pass that, e.g. 'Raleigh, NC' " +
+        "becomes 'America/New_York'.")]
     public Task<CurrentTimeToolResponse> GetCurrentTimeAsync(CurrentTimeToolRequest request, CancellationToken cancellationToken = default)
     {
         var zone = ResolveTimeZone(request?.TimeZone);
@@ -52,8 +53,9 @@ public sealed class CurrentTimePlugin
     }
 
     /// <summary>
-    /// Accepts an IANA id, a Windows id, or - because the model does not always supply a proper
-    /// id - a bare city name like "London".
+    /// Accepts a time zone identifier only - an IANA id, or a Windows id, which .NET maps.
+    /// A place name is rejected with a message telling the model what to send instead, because
+    /// it knows perfectly well which zone a city is in and guessing here would be worse.
     /// </summary>
     private static TimeZoneInfo ResolveTimeZone(string timeZone)
     {
@@ -70,25 +72,12 @@ public sealed class CurrentTimePlugin
         }
         catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
         {
-            return FindByCityName(requested)
-                   ?? throw new ArgumentException(
-                       $"'{requested}' is not a recognised time zone. Supply an IANA id such as 'Europe/London'.",
-                       nameof(timeZone),
-                       ex);
+            throw new ArgumentException(
+                $"'{requested}' is not a time zone identifier. Pass the zone itself, such as " +
+                "'America/New_York' or 'Europe/London' - not a city or region name.",
+                nameof(timeZone),
+                ex);
         }
-    }
-
-    /// <summary>Matches the city segment of an IANA id, so "new york" finds "America/New_York".</summary>
-    private static TimeZoneInfo FindByCityName(string city)
-    {
-        var normalized = city.Replace(' ', '_');
-
-        return TimeZoneInfo.GetSystemTimeZones()
-            .Where(zone => zone.Id.Contains('/'))
-            // Ordered so a given city name always resolves to the same zone.
-            .OrderBy(zone => zone.Id, StringComparer.Ordinal)
-            .FirstOrDefault(zone =>
-                zone.Id[(zone.Id.LastIndexOf('/') + 1)..].Equals(normalized, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string GetAbbreviation(TimeZoneInfo zone, DateTimeOffset localNow)
