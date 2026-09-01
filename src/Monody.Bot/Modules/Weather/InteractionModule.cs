@@ -35,7 +35,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         [MaxLength(Constants.MaxLocationNameLength)]
         string location,
         [Summary("Units", "Units type")]
-        MeasurementUnits? paramUnits)
+        MeasurementUnits? paramUnits = null)
     {
         await DeferAsync();
 
@@ -160,7 +160,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         [MaxLength(Constants.MaxLocationNameLength)]
         string location,
         [Summary("Units", "Units type")]
-        MeasurementUnits? paramUnits)
+        MeasurementUnits? paramUnits = null)
     {
         await ProcessGetWeatherHourly(0, location, paramUnits);
     }
@@ -261,7 +261,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         [MaxLength(Constants.MaxLocationNameLength)]
         string location,
         [Summary("Units", "Units type")]
-        MeasurementUnits? paramUnits)
+        MeasurementUnits? paramUnits = null)
     {
         await DeferAsync();
 
