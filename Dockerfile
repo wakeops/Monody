@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-COPY *.sln ./
+COPY *.slnx ./
 COPY Directory.Build.props ./
 COPY Directory.Packages.props ./
 

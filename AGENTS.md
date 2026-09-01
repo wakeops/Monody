@@ -88,8 +88,9 @@ Its dependencies must be resolvable from the container.
 **A config-backed service.** Use `services.ApplyValidatedOptions<T>(configuration, "Section:Path")`,
 which binds the options and hands back an instance for use during registration.
 
-**A test project.** Add it to the solution *and* add a `COPY` line for its csproj to the
-`Dockerfile`. The restore layer copies each csproj individually and then restores the
+**A test project.** Add it to `Monody.slnx` (`dotnet sln add`, or just edit the XML —
+the solution is in the newer `.slnx` format) *and* add a `COPY` line for its csproj to
+the `Dockerfile`. The restore layer copies each csproj individually and then restores the
 whole solution, so a missing one fails the Docker build with `MSB3202` even though
 `dotnet build` locally is fine.
 

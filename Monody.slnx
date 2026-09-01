@@ -1,0 +1,35 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="Dockerfile" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution Items/Workflows/">
+    <File Path=".github/workflows/01-build-test.yaml" />
+    <File Path=".github/workflows/02-publish-on-release.yaml" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Monody.Bot/Monody.Bot.csproj" />
+    <Project Path="src/Monody.Domain/Monody.Domain.csproj" />
+    <Project Path="src/Monody.Services/Monody.Services.csproj" />
+  </Folder>
+  <Folder Name="/src/Monody.AI/">
+    <Project Path="src/Monody.AI/Monody.AI/Monody.AI.csproj" />
+    <Project Path="src/Monody.AI/Monody.AI.Tools/Monody.AI.Tools.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Monody.AI.Tools.Tests/Monody.AI.Tools.Tests.csproj" />
+    <Project Path="test/Monody.Bot.Tests/Monody.Bot.Tests.csproj" />
+  </Folder>
+</Solution>
