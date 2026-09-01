@@ -1,7 +1,10 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Time.Testing;
 using Monody.AI.Tools.Capabilities.CurrentTime;
+using Monody.Services.Geocode;
+using Monody.Services.Geocode.Models;
 using Xunit;
 
 namespace Monody.AI.Tools.Tests;
@@ -12,7 +15,7 @@ public class CurrentTimePluginTests
     private static readonly DateTimeOffset _now = new(2026, 7, 15, 12, 00, 00, TimeSpan.Zero);
 
     private static Task<CurrentTimeToolResponse> RunAsync(string timeZone) =>
-        new CurrentTimePlugin(new FakeTimeProvider(_now))
+        new CurrentTimePlugin(new TimeZoneResolver(new StubGeocodeService()), new FakeTimeProvider(_now))
             .GetCurrentTimeAsync(new CurrentTimeToolRequest { TimeZone = timeZone });
 
     [Fact]
@@ -70,10 +73,32 @@ public class CurrentTimePluginTests
         Assert.Equal("2026-07-15T08:00:00-04:00", result.LocalTime);
     }
 
+    [Theory]
+    // The reported bug: most places are not IANA zone names, so matching zone ids alone
+    // failed for almost everywhere. These are resolved by geocoding the place.
+    [InlineData("Raleigh, NC", "America/New_York")]
+    [InlineData("Springfield, IL", "America/Chicago")]
+    [InlineData("Phoenix, AZ", "America/Phoenix")]
+    public async Task ResolvesAPlaceThatIsNotAZoneName(string place, string expected)
+    {
+        Assert.Equal(expected, (await RunAsync(place)).TimeZone);
+    }
+
+    [Fact]
+    public async Task PhoenixDoesNotObserveDaylightSaving()
+    {
+        // Sanity check that the zone really is applied, not just named: Arizona stays on MST.
+        var result = await RunAsync("Phoenix, AZ");
+
+        Assert.Equal("-07:00", result.UtcOffset);
+        Assert.False(result.IsDaylightSavingTime);
+    }
+
     [Fact]
     public async Task ReportsAnUnknownZoneClearly()
     {
         // The model needs to be told what to send instead, not just that it failed.
+        // Not a zone id and not geocodable.
         var ex = await Assert.ThrowsAsync<ArgumentException>(() => RunAsync("Middle Earth"));
 
         Assert.Contains("Middle Earth", ex.Message);

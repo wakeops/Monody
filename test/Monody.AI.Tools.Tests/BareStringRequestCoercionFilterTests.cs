@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
@@ -16,6 +17,8 @@ public class BareStringRequestCoercionFilterTests
     private static Kernel BuildKernel()
     {
         var services = new ServiceCollection();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton(new TimeZoneResolver(new StubGeocodeService()));
         services.AddKernel().Plugins.AddFromType<CurrentTimePlugin>();
         services.AddSingleton<IFunctionInvocationFilter, BareStringRequestCoercionFilter>();
 

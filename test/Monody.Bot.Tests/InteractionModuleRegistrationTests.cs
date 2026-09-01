@@ -71,14 +71,22 @@ public class InteractionModuleRegistrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public void SplitsTheSlopGroupAcrossModulesWithoutClashing()
+    public void GivesEachTopLevelGroupExactlyOneModule()
     {
-        // memories lives in its own module but shares the "slop" group, which Discord.Net
-        // merges. A duplicate command name here would throw during AddModulesAsync.
-        var slop = CommandPaths().Where(p => p.StartsWith("/slop ", StringComparison.Ordinal)).ToList();
+        // Registration sends one payload per module, and Discord keys top-level commands by
+        // name, so two modules sharing a [Group] means the second silently replaces the first.
+        // The interaction tree merges them and looks fine, which is why this has to be checked
+        // on the grouping rather than on the commands.
+        var duplicated = _interactionService.Modules
+            .Where(m => !string.IsNullOrEmpty(m.SlashGroupName))
+            .GroupBy(m => m.SlashGroupName, StringComparer.Ordinal)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
 
-        Assert.Equal(slop.Count, slop.Distinct().Count());
-        Assert.Contains("/slop memories", slop);
+        Assert.True(
+            duplicated.Count == 0,
+            $"These groups are declared by more than one module, so only the last registers: {string.Join(", ", duplicated)}");
     }
 
     [Fact]

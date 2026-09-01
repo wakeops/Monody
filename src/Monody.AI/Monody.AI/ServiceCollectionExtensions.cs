@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
 
         // Tools that touch per-user data read the caller from here, never from the model.
         services.AddSingleton<IInvocationContext, AsyncLocalInvocationContext>();
+        services.AddSingleton<TimeZoneResolver>();
 
         var kernelBuilder = services.AddKernel();
 

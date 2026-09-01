@@ -24,7 +24,7 @@ public class GeocodeService
         _logger = logger;
     }
 
-    public async Task<LocationDetails> GetGeocodeForLocationStringAsync(string locationQuery)
+    public virtual async Task<LocationDetails> GetGeocodeForLocationStringAsync(string locationQuery)
     {
         return await _cache.GetOrSetAsync(
             $"geocodev2-{locationQuery}",
