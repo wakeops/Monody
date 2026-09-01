@@ -3,7 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Monody.AI.Agents;
 using Monody.AI.Options;
+using Monody.AI.Tools;
 using Monody.AI.Tools.Abstractions;
+using Monody.AI.Tools.Capabilities.CurrentTime;
 using Monody.AI.Tools.Capabilities.FetchBlueSky;
 using Monody.AI.Tools.Capabilities.FetchUrl;
 using Monody.AI.Tools.Capabilities.Geocode;
@@ -35,9 +37,10 @@ public static class ServiceCollectionExtensions
         kernelBuilder.Plugins.AddFromType<GetDiscordMessageHistoryPlugin>();
         kernelBuilder.Plugins.AddFromType<ResearchAssistantPlugin>();
         kernelBuilder.Plugins.AddFromType<GeocodePlugin>();
+        kernelBuilder.Plugins.AddFromType<CurrentTimePlugin>();
 
         services.AddTransient<IResearchAgent, ResearchAgent>();
-        services.AddSingleton<IFunctionInvocationFilter, WeatherRequestCoercionFilter>();
+        services.AddSingleton<IFunctionInvocationFilter, BareStringRequestCoercionFilter>();
 
         return services;
     }

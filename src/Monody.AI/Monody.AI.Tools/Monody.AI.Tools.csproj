@@ -7,6 +7,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
     <PackageReference Include="Microsoft.SemanticKernel" />
     <PackageReference Include="SmartReader" />
+    <PackageReference Include="TimeZoneNames" />
   </ItemGroup>
 
   <ItemGroup>
