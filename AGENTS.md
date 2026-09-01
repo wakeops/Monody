@@ -174,8 +174,8 @@ max-iterations knob. It passes an explicit allow-list to
 `FunctionChoiceBehavior.Auto(functions)` and runs under its own timeout. Adding a tool
 to that list is a deliberate act; adding `research_assistant` to it is a bug.
 
-**Per-user tools must not take the user id as a parameter.** `remember`, `recall` and
-`set_reminder` read the caller from `IInvocationContext`, which `AIChatService` scopes
+**Per-user tools must not take the user id as a parameter.** `remember`, `recall`, `forget`
+and `set_reminder` read the caller from `IInvocationContext`, which `AIChatService` scopes
 around the completion. A parameter would be chosen by the model, whose context contains
 untrusted text — channel history and fetched pages — so it could be talked into reading
 or overwriting someone else's data. The stores filter by user id on every query too, so

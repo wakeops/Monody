@@ -126,6 +126,30 @@ public class MemoryStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task SupersedesAContradictoryPreference()
+    {
+        // Preferences are append-only, so changing one means forgetting the old one first.
+        // This is the flow the prompt tells the model to follow.
+        await _store.RememberAsync(Alice, MemoryCategory.Preference, "Prefers metric units");
+
+        var stale = (await _store.GetAsync(Alice)).Single().Id;
+
+        Assert.Equal(1, await _store.ForgetAsync(Alice, [stale]));
+        await _store.RememberAsync(Alice, MemoryCategory.Preference, "Prefers imperial units");
+
+        Assert.Equal("Prefers imperial units", (await _store.GetAsync(Alice)).Single().Content);
+    }
+
+    [Fact]
+    public async Task ForgettingAnUnknownIdIsHarmless()
+    {
+        await _store.RememberAsync(Alice, MemoryCategory.Preference, "Prefers metric units");
+
+        Assert.Equal(0, await _store.ForgetAsync(Alice, [4242]));
+        Assert.Single(await _store.GetAsync(Alice));
+    }
+
+    [Fact]
     public async Task ForgetAllClearsOnlyThatUser()
     {
         await _store.RememberAsync(Alice, MemoryCategory.Name, "Goes by Alice");

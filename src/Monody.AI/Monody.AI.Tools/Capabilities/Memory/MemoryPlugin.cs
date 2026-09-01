@@ -56,9 +56,35 @@ public sealed class MemoryPlugin(MemoryStore memoryStore, IInvocationContext inv
         {
             Memories = [.. memories.Select(m => new RecalledMemory
             {
+                Id = m.Id,
                 Category = m.Category.ToString(),
                 Content = m.Content
             })]
+        };
+    }
+
+    [KernelFunction("forget")]
+    [Description(
+        "Removes one remembered fact about the current user. Use this when a preference they " +
+        "told you before no longer holds, or when they ask you to forget something. Call recall " +
+        "first to get the Id. Name, Location and TimeZone replace themselves when they change, " +
+        "so they rarely need forgetting.")]
+    public async Task<ForgetToolResponse> ForgetAsync(ForgetToolRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var userId = RequireUserId();
+
+        // Scoped to the caller in the store, so an id the model invented or read somewhere
+        // deletes nothing rather than reaching another user's row.
+        var removed = await memoryStore.ForgetAsync(userId, [request.MemoryId], cancellationToken);
+
+        return new ForgetToolResponse
+        {
+            Forgotten = removed > 0,
+            Outcome = removed > 0
+                ? "Forgotten."
+                : "No memory with that Id belongs to this user; call recall for the current list."
         };
     }
 

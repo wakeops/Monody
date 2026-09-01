@@ -47,9 +47,28 @@ public sealed class RecallToolResponse
 
 public sealed class RecalledMemory
 {
+    [Description("Identifier for this memory. Pass it to forget to remove it.")]
+    public int Id { get; set; }
+
     [Description("Which kind of fact this is.")]
     public string Category { get; set; }
 
     [Description("The remembered fact.")]
     public string Content { get; set; }
+}
+
+public sealed class ForgetToolRequest
+{
+    [Description("The Id of the memory to remove, taken from a recall result.")]
+    [Required]
+    public int MemoryId { get; set; }
+}
+
+public sealed class ForgetToolResponse
+{
+    [Description("Whether a memory was removed.")]
+    public bool Forgotten { get; set; }
+
+    [Description("What happened, to relay if it is worth mentioning.")]
+    public string Outcome { get; set; }
 }
