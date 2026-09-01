@@ -7,6 +7,7 @@ COPY Directory.Build.props ./
 COPY Directory.Packages.props ./
 
 COPY ./src/Monody.Bot/*.csproj ./src/Monody.Bot/
+COPY ./src/Monody.Data/*.csproj ./src/Monody.Data/
 COPY ./src/Monody.Domain/*.csproj ./src/Monody.Domain/
 COPY ./src/Monody.Services/*.csproj ./src/Monody.Services/
 
@@ -15,6 +16,7 @@ COPY ./src/Monody.AI/Monody.AI.Tools/*.csproj ./src/Monody.AI/Monody.AI.Tools/
 
 COPY ./test/Monody.AI.Tools.Tests/*.csproj ./test/Monody.AI.Tools.Tests/
 COPY ./test/Monody.Bot.Tests/*.csproj ./test/Monody.Bot.Tests/
+COPY ./test/Monody.Data.Tests/*.csproj ./test/Monody.Data.Tests/
 
 
 RUN --mount=type=cache,target=/root/.nuget/packages dotnet restore --nologo

@@ -37,6 +37,11 @@ TestResults/
 *.coverage
 *.coveragexml
 
+# Local SQLite databases - the container gets its own on a mounted volume
+*.db
+*.db-shm
+*.db-wal
+
 # Docker recursion safety
 Dockerfile
 docker-compose.yml

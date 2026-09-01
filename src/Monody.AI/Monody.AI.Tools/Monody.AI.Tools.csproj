@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Monody.Data\Monody.Data.csproj" />
     <ProjectReference Include="..\..\Monody.Services\Monody.Services.csproj" />
   </ItemGroup>
 
