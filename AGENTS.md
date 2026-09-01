@@ -27,7 +27,7 @@ src/Monody.AI.Tools    Semantic Kernel plugins (the tools the model can call).
 src/Monody.AI          Kernel/OpenAI wiring, system prompts, the research agent,
                        and the structured-output JSON Schema generator.
 src/Monody.Bot         Host, Discord wiring, interaction modules. The entrypoint.
-test/…AI.Tools.Tests   HTML content extraction.
+test/…AI.Tools.Tests   Plugin behaviour: HTML extraction, current time, arg coercion.
 test/Monody.Bot.Tests  Embed construction. Sees Monody.Bot internals via InternalsVisibleTo.
 ```
 
@@ -150,9 +150,18 @@ that needs the document after the reader is disposed must parse its own copy;
 DarkSkyCore-integer fields as fractional numbers, which
 `DarkSkyJsonSerializerService` truncates before deserialisation.
 
-**The model sometimes calls the weather tool with a bare string** instead of the
-request object. `WeatherRequestCoercionFilter` (an `IFunctionInvocationFilter`)
-fixes that up; it is a real workaround, not dead code.
+**The model sometimes passes a bare string where a request object is expected**, e.g.
+`{"request": "London"}` instead of `{"request": {"timeZone": "London"}}`. Semantic
+Kernel hands that straight to the reflection-invoked method and it throws
+`ArgumentException`. `BareStringRequestCoercionFilter` (an `IFunctionInvocationFilter`)
+converts it first — a real workaround, not dead code. Any new single-field tool request
+should be added to its map.
+
+**The model has no clock.** It cannot answer "what time is it in London" or even "what
+is today's date" from its own knowledge, so the `current_time` tool exists and both
+system prompts tell it never to guess. Deliberately *not* solved by stamping the time
+into the conversation context: that history persists in `ConversationStore` across
+follow-ups, so the stamp would silently go stale.
 
 **Never hand the model's embed straight to Discord.** `/slop ask` can answer with an
 embed, and Discord.Net throws on an over-long title, an empty field name, more than 25
