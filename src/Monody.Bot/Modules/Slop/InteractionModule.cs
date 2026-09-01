@@ -7,6 +7,7 @@ using Discord.Interactions;
 using Microsoft.Extensions.Logging;
 using Monody.Bot.Modules.Slop.Modals;
 using Monody.Bot.Modules.Slop.Models;
+using Monody.Bot.Modules.Slop.Utils;
 
 namespace Monody.Bot.Modules.Slop;
 
@@ -131,22 +132,22 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        string text = null;
-        Embed embed = null;
+        // Strict structured outputs force every property to be present, so "unused" arrives as
+        // an empty string rather than null.
+        var content = Truncate(completion?.Text);
 
-        switch (completion)
+        var embed = completion?.Kind == DiscordResponseKind.Embed
+            ? DiscordEmbedFactory.TryBuild(completion.Embed)
+            : null;
+
+        // Text is sent either way: alongside an embed it reads as a short lead-in, and if the
+        // model asked for an embed but supplied nothing renderable it is all we have left.
+        var text = content;
+
+        if (embed is null && text is null)
         {
-            case { Kind: DiscordResponseKind.Embed, Embed: not null }:
-                embed = BuildEmbedFromResponse(completion.Embed);
-                break;
-
-            case { Kind: DiscordResponseKind.Text, Text: { Length: > 0 } content }:
-                text = content.Length > MaxMessageLength ? content[..MaxMessageLength] + "…" : content;
-                break;
-
-            default:
-                await FollowupAsync("I didn't get any text back from the model.", ephemeral: isEphemeral);
-                return;
+            await FollowupAsync("I didn't get any text back from the model.", ephemeral: isEphemeral);
+            return;
         }
 
         var components = new ComponentBuilder()
@@ -168,25 +169,13 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         await FollowupAsync("You can follow up on this reply here:", components: components, ephemeral: true);
     }
 
-    private static Embed BuildEmbedFromResponse(DiscordEmbed model)
+    private static string Truncate(string text)
     {
-        var builder = new EmbedBuilder()
-            .WithTitle(model.Title)
-            .WithDescription(model.Description)
-            .WithColor(new Color(MonodyConstants.DefaultEmbedColor));
-
-        foreach (var field in model.Fields ?? [])
+        if (string.IsNullOrWhiteSpace(text))
         {
-            builder.AddField(field.Name, field.Value, field.Inline);
+            return null;
         }
 
-        if (model.Footer != null)
-        {
-            builder.WithFooter(new EmbedFooterBuilder()
-                .WithText(model.Footer.Text)
-                .WithIconUrl(model.Footer.IconUrl));
-        }
-
-        return builder.Build();
+        return text.Length > MaxMessageLength ? text[..MaxMessageLength] + "\u2026" : text;
     }
 }

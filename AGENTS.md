@@ -7,7 +7,7 @@ and an LLM bridge (`/slop ask|image`) built on Semantic Kernel and OpenAI.
 
 ```bash
 dotnet build -c Release          # Release is the default Configuration (Directory.Build.props)
-dotnet test  -c Release          # xunit; one test project
+dotnet test  -c Release          # xunit
 dotnet publish src/Monody.Bot/Monody.Bot.csproj -c Release -o ./out
 ```
 
@@ -27,7 +27,8 @@ src/Monody.AI.Tools    Semantic Kernel plugins (the tools the model can call).
 src/Monody.AI          Kernel/OpenAI wiring, system prompts, the research agent,
                        and the structured-output JSON Schema generator.
 src/Monody.Bot         Host, Discord wiring, interaction modules. The entrypoint.
-test/…AI.Tools.Tests   Only covers HTML content extraction today.
+test/…AI.Tools.Tests   HTML content extraction.
+test/Monody.Bot.Tests  Embed construction. Sees Monody.Bot internals via InternalsVisibleTo.
 ```
 
 Dependencies flow one way: `Bot → AI → AI.Tools → Services → Domain`.
@@ -86,6 +87,12 @@ Its dependencies must be resolvable from the container.
 
 **A config-backed service.** Use `services.ApplyValidatedOptions<T>(configuration, "Section:Path")`,
 which binds the options and hands back an instance for use during registration.
+
+**A test project.** Add it to `Monody.slnx` (`dotnet sln add`, or just edit the XML —
+the solution is in the newer `.slnx` format) *and* add a `COPY` line for its csproj to
+the `Dockerfile`. The restore layer copies each csproj individually and then restores the
+whole solution, so a missing one fails the Docker build with `MSB3202` even though
+`dotnet build` locally is fine.
 
 ## Conventions
 
@@ -146,6 +153,16 @@ DarkSkyCore-integer fields as fractional numbers, which
 **The model sometimes calls the weather tool with a bare string** instead of the
 request object. `WeatherRequestCoercionFilter` (an `IFunctionInvocationFilter`)
 fixes that up; it is a real workaround, not dead code.
+
+**Never hand the model's embed straight to Discord.** `/slop ask` can answer with an
+embed, and Discord.Net throws on an over-long title, an empty field name, more than 25
+fields, a non-http url, or a total payload over 6000 characters. The schema's
+`[MaxLength]` hints are advisory — OpenAI does not guarantee enforcing them — so
+`DiscordEmbedFactory` clamps everything and drops what does not fit. Strict structured
+outputs also force every property to be present, so "unused" arrives as an empty string
+or an empty object, not null; those are treated as absent. Note `EmbedBuilder.Length`
+counts text but *not* image urls, so an image-only embed measures zero and must not be
+mistaken for an empty one.
 
 **Component custom IDs carry state.** Buttons encode their arguments in the ID
 (e.g. `forecast_hourly_{page}_({location})_{unit}`) and are matched by the wildcard

@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-COPY *.sln ./
+COPY *.slnx ./
 COPY Directory.Build.props ./
 COPY Directory.Packages.props ./
 
@@ -14,6 +14,7 @@ COPY ./src/Monody.AI/Monody.AI/*.csproj ./src/Monody.AI/Monody.AI/
 COPY ./src/Monody.AI/Monody.AI.Tools/*.csproj ./src/Monody.AI/Monody.AI.Tools/
 
 COPY ./test/Monody.AI.Tools.Tests/*.csproj ./test/Monody.AI.Tools.Tests/
+COPY ./test/Monody.Bot.Tests/*.csproj ./test/Monody.Bot.Tests/
 
 
 RUN --mount=type=cache,target=/root/.nuget/packages dotnet restore --nologo
