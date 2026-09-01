@@ -212,9 +212,20 @@ the model to actually retry. It does two things:
   map - add a new single-field request type there, never a multi-field one, since there is no
   safe way to guess which field a bare string belongs to.
 - **Catching `ArgumentException`** (which covers `ArgumentNullException` and
-  `ArgumentOutOfRangeException` too) around the call and returning its message as the tool's
-  result instead of letting it propagate. This is what actually recovers a multi-field request
-  sent as a bare string, and every plugin's own validation guard.
+  `ArgumentOutOfRangeException` too, and also Semantic Kernel's own `KernelException` when it
+  wraps one - see below) around the call and returning its message as the tool's result instead
+  of letting it propagate. This is what actually recovers a multi-field request sent as a bare
+  string, and every plugin's own validation guard.
+
+A request type with **no required fields** - `recall`'s and `list_reminders`' both have exactly
+one property, and it isn't required - hits a separate failure the `ArgumentException` catch
+alone didn't cover: the model can legally omit the `request` argument entirely, since nothing in
+the object is required, but Semantic Kernel still treats the *parameter* as non-optional and
+throws `KernelException("Missing argument for function parameter 'request'")` - which wraps an
+`ArgumentException` rather than being one. The catch clause matches `ex.InnerException is
+ArgumentException` too, for exactly this. If you add a tool whose request has nothing required,
+this is why a call with no arguments at all still needs to work, not just one with an empty
+`{}`.
 
 The coercion step only touches a string that is **not already valid JSON**. It used to touch
 every string unconditionally, which corrupted `current_time`: the model sent

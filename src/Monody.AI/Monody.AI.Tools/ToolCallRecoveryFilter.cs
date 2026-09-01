@@ -25,13 +25,18 @@ namespace Monody.AI.Tools;
 /// {"request": "{\"TimeZone\":\"...\"}"} - the argument itself already a serialized object - and
 /// the old version of this filter stuffed that whole string into TimeZone).
 ///
-/// Anything else that fails to bind - a bare string for a request with more than one field, or
-/// one of this project's own ArgumentException-based validation refusals (an unrecognised time
-/// zone, a missing required field) - is caught around the call rather than left to propagate.
-/// Propagating crashes the entire chat completion, discarding a perfectly recoverable situation:
-/// every message on this path is already written to tell the model what to send instead, so
-/// returning it as the tool's result lets the model actually use it and retry, rather than the
-/// whole command failing with a generic "the prompt request failed".
+/// Anything else that fails to bind - a bare string for a request with more than one field, one
+/// of this project's own ArgumentException-based validation refusals (an unrecognised time zone,
+/// a missing required field), or the model omitting the "request" argument entirely for a tool
+/// whose request has nothing required (recall's did: {"Unused": "..."} with no [Required] on it,
+/// so a well-formed call can legally supply no arguments at all - Semantic Kernel still throws
+/// KernelException("Missing argument for function parameter 'request'") wrapping an
+/// ArgumentException, since the parameter itself is non-optional even when every one of its
+/// properties is) - is caught around the call rather than left to propagate. Propagating crashes
+/// the entire chat completion, discarding a perfectly recoverable situation: every message on
+/// this path is already written to tell the model what to send instead, so returning it as the
+/// tool's result lets the model actually use it and retry, rather than the whole command failing
+/// with a generic "the prompt request failed".
 /// </remarks>
 public sealed class ToolCallRecoveryFilter : IFunctionInvocationFilter
 {
@@ -57,10 +62,12 @@ public sealed class ToolCallRecoveryFilter : IFunctionInvocationFilter
         {
             await next(context);
         }
-        catch (ArgumentException ex)
+        catch (Exception ex) when (ex is ArgumentException || ex.InnerException is ArgumentException)
         {
-            // Covers ArgumentNullException and ArgumentOutOfRangeException too, both used
-            // throughout the plugins for exactly this kind of model-facing validation message.
+            // Covers ArgumentNullException and ArgumentOutOfRangeException directly (both used
+            // throughout the plugins for this kind of model-facing validation message), and
+            // Semantic Kernel's own KernelException, which wraps an ArgumentException rather
+            // than being one, for argument-binding failures such as a missing required parameter.
             context.Result = new FunctionResult(context.Function, ex.Message);
         }
     }

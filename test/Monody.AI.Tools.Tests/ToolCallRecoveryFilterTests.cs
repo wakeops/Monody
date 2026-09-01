@@ -24,6 +24,7 @@ public class ToolCallRecoveryFilterTests
         var plugins = services.AddKernel().Plugins;
         plugins.AddFromType<CurrentTimePlugin>();
         plugins.AddFromType<TwoFieldDemoPlugin>();
+        plugins.AddFromType<NoRequiredFieldsDemoPlugin>();
 
         services.AddSingleton<IFunctionInvocationFilter, ToolCallRecoveryFilter>();
 
@@ -124,6 +125,23 @@ public class ToolCallRecoveryFilterTests
         Assert.Contains("First", result.GetValue<string>());
     }
 
+    [Fact]
+    public async Task RecoversWhenTheModelOmitsARequestThatHasNothingRequired()
+    {
+        // The reported bug: recall's request has one property, and it isn't required (there is
+        // nothing to pass - recall always returns everything). A well-formed call can legally
+        // supply no "request" argument at all, but Semantic Kernel still treats the parameter
+        // itself as non-optional and throws KernelException("Missing argument for function
+        // parameter 'request'") - a type this filter's earlier ArgumentException catch did not
+        // match, since KernelException wraps an ArgumentException rather than being one.
+        var kernel = BuildKernel();
+        var function = kernel.Plugins.GetFunction("NoRequiredFieldsDemoPlugin", "no_required_fields_demo");
+
+        var result = await kernel.InvokeAsync(function, new KernelArguments());
+
+        Assert.Contains("request", result.GetValue<string>());
+    }
+
     /// <summary>A minimal stand-in for a plugin whose request has more than one required field.</summary>
     private sealed class TwoFieldDemoRequest
     {
@@ -142,5 +160,18 @@ public class ToolCallRecoveryFilterTests
 
             return $"{request.First}:{request.Second}";
         }
+    }
+
+    /// <summary>Mirrors RecallToolRequest: a request whose one property is not required.</summary>
+    private sealed class NoRequiredFieldsDemoRequest
+    {
+        public string Unused { get; set; }
+    }
+
+    private sealed class NoRequiredFieldsDemoPlugin
+    {
+        [KernelFunction("no_required_fields_demo")]
+        [Description("test-only plugin for exercising the recovery filter")]
+        public string Run(NoRequiredFieldsDemoRequest request) => "ok";
     }
 }
