@@ -198,12 +198,29 @@ that needs the document after the reader is disposed must parse its own copy;
 DarkSkyCore-integer fields as fractional numbers, which
 `DarkSkyJsonSerializerService` truncates before deserialisation.
 
-**The model sometimes passes a bare string where a request object is expected**, e.g.
-`{"request": "London"}` instead of `{"request": {"timeZone": "London"}}`. Semantic
-Kernel hands that straight to the reflection-invoked method and it throws
-`ArgumentException`. `BareStringRequestCoercionFilter` (an `IFunctionInvocationFilter`)
-converts it first — a real workaround, not dead code. Any new single-field tool request
-should be added to its map.
+**A malformed tool call must not crash the whole completion.** `ToolCallRecoveryFilter`
+(an `IFunctionInvocationFilter`, registered on the kernel) is the only thing standing between
+a bad model tool call and `GetChatMessageContentsAsync` throwing out of `AIChatService`,
+failing the entire `/slop ask` with a generic "the prompt request failed" - discarding a
+message that was written for exactly this: every `ArgumentException` a plugin throws for bad
+input is worded to tell the model what to send instead, and the filter is what lets it reach
+the model to actually retry. It does two things:
+
+- **Bare-value coercion**, for tools with one field that matters: the model sometimes sends
+  `{"request": "London"}` instead of `{"request": {"timeZone": "London"}}`, which Semantic
+  Kernel hands straight to the reflection-invoked method uncoerced. Fixed up from a hardcoded
+  map - add a new single-field request type there, never a multi-field one, since there is no
+  safe way to guess which field a bare string belongs to.
+- **Catching `ArgumentException`** (which covers `ArgumentNullException` and
+  `ArgumentOutOfRangeException` too) around the call and returning its message as the tool's
+  result instead of letting it propagate. This is what actually recovers a multi-field request
+  sent as a bare string, and every plugin's own validation guard.
+
+The coercion step only touches a string that is **not already valid JSON**. It used to touch
+every string unconditionally, which corrupted `current_time`: the model sent
+`{"request": "{\"TimeZone\":\"...\"}"}` - the argument itself an already-correct, already
+JSON-encoded object - and the old filter stuffed that whole string into the `TimeZone` field
+because it never checked whether the string was already the right shape.
 
 **The sub-agent must not be handed the whole toolbox.** `ResearchAgent` shares the
 global `Kernel`, so without restriction it can call `research_assistant` — itself —
