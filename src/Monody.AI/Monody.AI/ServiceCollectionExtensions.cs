@@ -52,7 +52,7 @@ public static class ServiceCollectionExtensions
         kernelBuilder.Plugins.AddFromType<ReminderPlugin>();
 
         services.AddTransient<IResearchAgent, ResearchAgent>();
-        services.AddSingleton<IFunctionInvocationFilter, BareStringRequestCoercionFilter>();
+        services.AddSingleton<IFunctionInvocationFilter, ToolCallRecoveryFilter>();
 
         return services;
     }
