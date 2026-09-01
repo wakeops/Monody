@@ -15,10 +15,8 @@ public sealed class FetchBlueSkyPlugin(BlueSkyService blueSkyService)
     [Description("Fetches the content of a given bsky URL for the assistant to analyze.")]
     public async Task<FetchBlueSkyToolResponse> FetchAsync(FetchBlueSkyToolRequest request, CancellationToken cancellationToken = default)
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Url))
-        {
-            throw new ArgumentNullException(nameof(request.Url));
-        }
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Url);
 
         if (!IsBlueskyUrl(request.Url))
         {

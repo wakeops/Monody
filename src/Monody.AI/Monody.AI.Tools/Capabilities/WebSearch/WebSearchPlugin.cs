@@ -14,10 +14,8 @@ public sealed class WebSearchPlugin(GoogleSearchService searchService)
     [Description("Searches Google for up-to-date information and returns a short list of results with titles, snippets, and URLs.")]
     public async Task<WebSearchToolResponse> SearchAsync(WebSearchToolRequest request, CancellationToken cancellationToken = default)
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Query))
-        {
-            throw new ArgumentNullException(nameof(request.Query));
-        }
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Query);
 
         var results = await searchService.SearchAsync(request.Query, cancellationToken);
 

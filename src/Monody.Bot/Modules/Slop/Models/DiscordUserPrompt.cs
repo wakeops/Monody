@@ -1,12 +1,13 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Discord;
 
 namespace Monody.Bot.Modules.Slop.Models;
 
-internal class DiscordUserPrompt
+/// <summary>The user's prompt plus who sent it, serialized as JSON for the model to read.</summary>
+internal sealed class DiscordUserPrompt
 {
-    private readonly JsonSerializerOptions _jsonOptions = new ()
+    private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
@@ -18,35 +19,12 @@ internal class DiscordUserPrompt
     public DiscordUserPrompt(IUser user, string prompt)
     {
         Prompt = prompt.Trim();
-
-        DiscordContext = new DiscordPromptContext(user);
+        DiscordContext = new DiscordPromptContext(new DiscordPromptUser(user.Id, user.Username));
     }
 
-    public override string ToString()
-    {
-        return JsonSerializer.Serialize(this, _jsonOptions);
-    }
+    public override string ToString() => JsonSerializer.Serialize(this, _jsonOptions);
 }
 
-internal class DiscordPromptContext
-{
-    public DiscordPromptContextUser User { get; }
+internal sealed record DiscordPromptContext(DiscordPromptUser User);
 
-    public DiscordPromptContext(IUser user)
-    {
-        User = new DiscordPromptContextUser(user);
-    }
-}
-
-internal class DiscordPromptContextUser
-{
-    public ulong Id { get; }
-
-    public string Username { get; }
-
-    public DiscordPromptContextUser(IUser user)
-    {
-        Id = user.Id;
-        Username = user.Username;
-    }
-}
+internal sealed record DiscordPromptUser(ulong Id, string Username);

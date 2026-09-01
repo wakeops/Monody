@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
-using AngleSharp;
 using AngleSharp.Html.Parser;
 using SmartReader;
 
@@ -16,22 +15,30 @@ public static class HtmlContentExtractor
 
     public static async Task<string> ExtractMainContentAsync(string html)
     {
-        var doc = await _parser.ParseDocumentAsync(html);
+        var article = await TryReadArticleAsync(html);
+        if (!string.IsNullOrWhiteSpace(article))
+        {
+            return article;
+        }
 
+        // Parsed fresh: disposing the Reader above also tears down the document it was given.
+        return HtmlContentParser.ExtractMainContent(await _parser.ParseDocumentAsync(html));
+    }
+
+    private static async Task<string> TryReadArticleAsync(string html)
+    {
         try
         {
-            using var reader = new Reader("https://localhost/", doc);
+            // SmartReader needs a base URI to resolve relative links; the text it returns
+            // doesn't depend on it, so a placeholder is fine.
+            using var reader = new Reader("https://localhost/", await _parser.ParseDocumentAsync(html));
 
-            var article = await reader.GetArticleAsync();
-            if (article != null && !string.IsNullOrWhiteSpace(article.TextContent))
-            {
-                return article.TextContent;
-            }
+            return (await reader.GetArticleAsync())?.TextContent;
         }
         catch (Exception)
         {
+            // SmartReader throws on pages it can't make sense of; fall back to our own parser.
+            return null;
         }
-
-        return HtmlContentParser.ExtractMainContent(doc);
     }
 }

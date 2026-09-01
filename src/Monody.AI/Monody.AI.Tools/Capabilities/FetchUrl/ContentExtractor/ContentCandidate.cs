@@ -1,12 +1,17 @@
-﻿using System;
-using System.Text.RegularExpressions;
+using System;
+using System.Linq;
 using AngleSharp.Dom;
 
 namespace Monody.AI.Tools.Capabilities.FetchUrl.ContentExtractor;
 
+/// <summary>A block of the page, scored on how much it looks like the article body.</summary>
 public class ContentCandidate
 {
+    // "article" also matches article-main/article-body, "post" matches blog-post, and so on.
+    private static readonly string[] _contentMarkers = ["content", "article", "post", "entry"];
+
     public IElement Node { get; }
+
     public int Score { get; }
 
     public ContentCandidate(IElement node)
@@ -17,43 +22,27 @@ public class ContentCandidate
 
     private static int CalculateScore(IElement node)
     {
-        var text = node.TextContent ?? string.Empty;
-        text = Regex.Replace(text, @"\s+", " ").Trim();
+        var text = HtmlContentParser.WhitespaceRun().Replace(node.TextContent ?? string.Empty, " ").Trim();
 
         if (text.Length < 200)
         {
             return 0;
         }
 
-        int score = 0;
+        var paragraphCount = node.QuerySelectorAll("p").Length;
+        var linkCount = node.QuerySelectorAll("a").Length;
 
-        // Favor length
-        score += Math.Min(text.Length / 100, 50);
+        // Longer, paragraph-heavy blocks are article-like; link-heavy ones are usually navigation.
+        var score = Math.Min(text.Length / 100, 50) + paragraphCount * 5;
 
-        // Favor paragraphs (".//p")
-        var paragraphCount = node.QuerySelectorAll("p")?.Length ?? 0;
-        score += paragraphCount * 5;
-
-        // Penalize link-heavy blocks (".//a")
-        var linkCount = node.QuerySelectorAll("a")?.Length ?? 0;
         if (linkCount > 0)
         {
-            var linkDensity = (double)linkCount / Math.Max(1, paragraphCount);
-            score -= (int)(linkDensity * 10);
+            score -= (int)((double)linkCount / Math.Max(1, paragraphCount) * 10);
         }
 
-        // Bonus for typical content identifiers
-        var classAttr = node.GetAttribute("class") ?? string.Empty;
-        var idAttr = node.Id ?? string.Empty;
+        var classAndId = $"{node.GetAttribute("class")} {node.Id}".ToLowerInvariant();
 
-        var classId = (classAttr + " " + idAttr).ToLowerInvariant();
-
-        if (classId.Contains("content") ||
-            classId.Contains("article") ||
-            classId.Contains("article-main") ||
-            classId.Contains("article-body") ||
-            classId.Contains("post") ||
-            classId.Contains("entry"))
+        if (_contentMarkers.Any(marker => classAndId.Contains(marker, StringComparison.Ordinal)))
         {
             score += 20;
         }

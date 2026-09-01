@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -13,11 +13,16 @@ namespace Monody.Bot.Modules.Slop;
 [Group("slop", "Slop bridge")]
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
+    private const string LostContextMessage = "Sorry, I lost this conversation's context.";
+
+    // Discord messages cap at 2000 characters; leave room for the ellipsis.
+    private const int MaxMessageLength = 1950;
+
+    private static readonly HttpClient _httpClient = new();
+
     private readonly AIChatService _aiChatService;
     private readonly ConversationStore _conversationStore;
     private readonly ILogger _logger;
-
-    private static readonly HttpClient _httpClient = new();
 
     public InteractionModule(AIChatService aiChatService, ConversationStore conversationStore, ILogger<InteractionModule> logger)
     {
@@ -32,23 +37,19 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         [Summary("Prompt", "What do you want to ask?")]
         [MaxLength(1800)]
         string prompt,
-        bool? ephemeral = false
-        )
+        bool ephemeral = false)
     {
-        await DeferAsync(ephemeral: ephemeral.Value);
+        await DeferAsync(ephemeral: ephemeral);
 
-        var interactionId = Context.Interaction.Id;
-
-        await ExecuteChatCompletion(interactionId, ephemeral.Value, prompt);
+        await ExecuteChatCompletionAsync(Context.Interaction.Id, ephemeral, prompt);
     }
 
     [ComponentInteraction("monody_followup:*:*", true)]
-    public async Task Ask_OpenModalAsync(string originInteractionId, bool isEphemeral)
+    public async Task Ask_OpenModalAsync(ulong originInteractionId, bool isEphemeral)
     {
-        var conversation = _conversationStore.GetConversation(originInteractionId);
-        if (conversation is null)
+        if (_conversationStore.Get(originInteractionId) is null)
         {
-            await RespondAsync("Sorry, I lost this conversation’s context.", ephemeral: true);
+            await RespondAsync(LostContextMessage, ephemeral: true);
             return;
         }
 
@@ -58,17 +59,17 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     [ModalInteraction("monody_followup_modal:*:*", true)]
     public async Task Ask_HandleModalAsync(ulong originInteractionId, bool isEphemeral, SlopFollowupModal modal)
     {
-        var conversation = _conversationStore.GetConversation(originInteractionId.ToString());
-        if (conversation is null)
+        if (_conversationStore.Get(originInteractionId) is null)
         {
-            await RespondAsync("Sorry, I lost this conversation’s context.", ephemeral: true);
+            await RespondAsync(LostContextMessage, ephemeral: true);
             return;
         }
 
         await DeferAsync();
 
-        await ExecuteChatCompletion(originInteractionId, isEphemeral, modal.FollowupText);
+        await ExecuteChatCompletionAsync(originInteractionId, isEphemeral, modal.FollowupText);
 
+        // Retire the follow-up button now that this round has been answered.
         await ModifyOriginalResponseAsync(f => f.Components = new ComponentBuilder().Build());
     }
 
@@ -78,37 +79,33 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         [Summary("Prompt", "What do you want to generate?")]
         [MaxLength(800)]
         string prompt,
-        bool? ephemeral = false
-        )
+        bool ephemeral = false)
     {
-        await DeferAsync(ephemeral: ephemeral.Value);
+        await DeferAsync(ephemeral: ephemeral);
 
-        Uri imgUri;
+        Uri imageUri;
         try
         {
-            imgUri = await _aiChatService.GetImageGenerationAsync(prompt);
+            imageUri = await _aiChatService.GetImageGenerationAsync(prompt);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unable to complete interaction");
-
-            await FollowupAsync("Image generation failed", ephemeral: ephemeral.Value);
+            await FollowupAsync("Image generation failed", ephemeral: ephemeral);
             return;
         }
 
         try
         {
-            using var stream = await _httpClient.GetStreamAsync(imgUri);
+            using var stream = await _httpClient.GetStreamAsync(imageUri);
 
-            var ext = Path.GetExtension(imgUri.LocalPath);
-            if (string.IsNullOrWhiteSpace(ext))
+            var extension = Path.GetExtension(imageUri.LocalPath);
+            if (string.IsNullOrWhiteSpace(extension))
             {
-                ext = ".jpg";
+                extension = ".jpg";
             }
 
-            var userId = Context.User.Id;
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-            var filename = $"monody_{userId}_{timestamp}{ext.ToLowerInvariant()}";
+            var filename = $"monody_{Context.User.Id}_{DateTime.UtcNow:yyyyMMddHHmmss}{extension.ToLowerInvariant()}";
 
             await FollowupWithFileAsync(stream, filename, text: null);
         }
@@ -119,14 +116,13 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         }
     }
 
-    private async Task ExecuteChatCompletion(ulong interactionId, bool isEphemeral, string prompt)
+    private async Task ExecuteChatCompletionAsync(ulong interactionId, bool isEphemeral, string prompt)
     {
-        var channel = Context.Interaction?.InteractionChannel;
-
         DiscordCompletionResponse completion;
         try
         {
-            completion = await _aiChatService.GetChatCompletionAsync(interactionId, Context.Guild, channel, Context.User, prompt);
+            completion = await _aiChatService.GetChatCompletionAsync(
+                interactionId, Context.Guild, Context.Interaction?.InteractionChannel, Context.User, prompt);
         }
         catch (Exception ex)
         {
@@ -135,69 +131,60 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
+        string text = null;
+        Embed embed = null;
+
+        switch (completion)
+        {
+            case { Kind: DiscordResponseKind.Embed, Embed: not null }:
+                embed = BuildEmbedFromResponse(completion.Embed);
+                break;
+
+            case { Kind: DiscordResponseKind.Text, Text: { Length: > 0 } content }:
+                text = content.Length > MaxMessageLength ? content[..MaxMessageLength] + "…" : content;
+                break;
+
+            default:
+                await FollowupAsync("I didn't get any text back from the model.", ephemeral: isEphemeral);
+                return;
+        }
+
         var components = new ComponentBuilder()
             .WithButton(
                 label: "Follow up",
                 customId: $"monody_followup:{interactionId}:{isEphemeral}",
-                style: ButtonStyle.Primary);
-
-        string text = null;
-        Embed embed = null;
-
-        if (completion?.Kind == DiscordResponseKind.Embed && completion?.Embed != null)
-        {
-            embed = BuildEmbedFromResponse(completion.Embed);
-        }
-        else if (completion?.Kind == DiscordResponseKind.Text && !string.IsNullOrEmpty(completion?.Text))
-        {
-            text = completion?.Text;
-
-            // Discord messages cap at 2000 chars; trim if needed
-            const int cap = 1950;
-            if (text.Length > cap)
-            {
-                text = text[..cap] + "…";
-            }
-        }
-        else
-        {
-            await FollowupAsync("I didn’t get any text back from the model.", ephemeral: isEphemeral);
-            return;
-        }
+                style: ButtonStyle.Primary)
+            .Build();
 
         if (isEphemeral)
         {
-            await FollowupAsync(text: text, embed: embed, components: components.Build(), ephemeral: true);
+            await FollowupAsync(text: text, embed: embed, components: components, ephemeral: true);
+            return;
         }
-        else
-        {
-            await FollowupAsync(text: text, embed: embed, ephemeral: false);
-            await FollowupAsync("You can follow up on this reply here:", components: components.Build(), ephemeral: true);
-        }
+
+        // A public reply can't carry the follow-up button, since anyone could press it;
+        // send the button separately, visible only to the user who asked.
+        await FollowupAsync(text: text, embed: embed, ephemeral: false);
+        await FollowupAsync("You can follow up on this reply here:", components: components, ephemeral: true);
     }
 
-    public static Embed BuildEmbedFromResponse(DiscordEmbed model)
+    private static Embed BuildEmbedFromResponse(DiscordEmbed model)
     {
         var builder = new EmbedBuilder()
             .WithTitle(model.Title)
             .WithDescription(model.Description)
             .WithColor(new Color(MonodyConstants.DefaultEmbedColor));
 
-        if (model.Fields != null)
+        foreach (var field in model.Fields ?? [])
         {
-            foreach (var field in model.Fields)
-            {
-                builder.AddField(field.Name, field.Value, field.Inline);
-            }
+            builder.AddField(field.Name, field.Value, field.Inline);
         }
 
         if (model.Footer != null)
         {
-            var fb = new EmbedFooterBuilder()
+            builder.WithFooter(new EmbedFooterBuilder()
                 .WithText(model.Footer.Text)
-                .WithIconUrl(model.Footer.IconUrl);
-
-            builder.WithFooter(fb);
+                .WithIconUrl(model.Footer.IconUrl));
         }
 
         return builder.Build();

@@ -14,11 +14,11 @@ public sealed class ResearchAssistantPlugin(IServiceProvider serviceProvider)
     [Description("Use a specialized agent to investigate unknown or recent information")]
     public async Task<ResearchAssistantToolResponse> ResearchAsync(ResearchAssistantToolRequest request, CancellationToken cancellationToken = default)
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Prompt))
-        {
-            throw new ArgumentNullException(nameof(request.Prompt));
-        }
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Prompt);
 
+        // Resolved on demand: the agent needs the Kernel, which is still being built
+        // at the point this plugin is registered on it.
         var researchAgent = serviceProvider.GetRequiredService<IResearchAgent>();
 
         var response = await researchAgent.GetResultAsync(request.Prompt, cancellationToken);

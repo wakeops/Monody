@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace Monody.Bot.Modules.Slop.Models;
 
-public sealed class DiscordCompletionResponse : IValidatableObject
+public sealed class DiscordCompletionResponse
 {
     [Description("Which shape this response is using.")]
     [Required]
@@ -19,42 +18,6 @@ public sealed class DiscordCompletionResponse : IValidatableObject
     [Description("Discord embed JSON (single embed). Must be a valid embed when kind=Embed. Use an empty embed when kind=Text.")]
     [Required]
     public DiscordEmbed Embed { get; set; }
-
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        if (Kind == DiscordResponseKind.Text)
-        {
-            if (string.IsNullOrWhiteSpace(Text))
-            {
-                yield return new ValidationResult(
-                    "text is required when kind=text.",
-                    [nameof(Text)]);
-            }
-
-            if (Embed is not null)
-            {
-                yield return new ValidationResult(
-                    "embed must be null when kind=text.",
-                    [nameof(Embed)]);
-            }
-        }
-        else // kind == "embed"
-        {
-            if (Embed is null)
-            {
-                yield return new ValidationResult(
-                    "embed is required when kind=embed.",
-                    [nameof(Embed)]);
-            }
-
-            if (!string.IsNullOrWhiteSpace(Text))
-            {
-                yield return new ValidationResult(
-                    "text must be null/empty when kind=embed.",
-                    [nameof(Text)]);
-            }
-        }
-    }
 }
 
 public enum DiscordResponseKind
