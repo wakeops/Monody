@@ -11,6 +11,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.TextToImage;
 using Monody.AI.Agents;
+using Monody.AI.Tools.Abstractions;
 using Monody.AI.SchemaJson;
 using Monody.Bot.Modules.Slop.Models;
 using Monody.Bot.Modules.Slop.Utils;
@@ -31,16 +32,23 @@ public class AIChatService
     private readonly ITextToImageService _imageService;
     private readonly Kernel _kernel;
     private readonly ConversationStore _conversationStore;
+    private readonly IInvocationContext _invocationContext;
 
-    public AIChatService(IChatCompletionService chatService, ITextToImageService imageService, Kernel kernel, ConversationStore conversationStore)
+    public AIChatService(
+        IChatCompletionService chatService,
+        ITextToImageService imageService,
+        Kernel kernel,
+        ConversationStore conversationStore,
+        IInvocationContext invocationContext)
     {
         _chatService = chatService;
         _imageService = imageService;
         _kernel = kernel;
         _conversationStore = conversationStore;
+        _invocationContext = invocationContext;
     }
 
-    public async Task<DiscordCompletionResponse> GetChatCompletionAsync(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user, string prompt)
+    public async Task<DiscordCompletionResponse> GetChatCompletionAsync(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user, string prompt, CancellationToken cancellationToken = default)
     {
         var conversation = GetOrCreateConversation(interactionId, guild, channel, user);
 
@@ -55,7 +63,11 @@ public class AIChatService
                 jsonSchemaIsStrict: true)
         };
 
-        var result = await _chatService.GetChatMessageContentsAsync(conversation.History, settings, _kernel);
+        // Scopes the caller for the whole tool-calling loop, so per-user tools know who they
+        // are acting for without the model being able to name someone else.
+        using var scope = _invocationContext.BeginScope(user.Id, channel?.Id);
+
+        var result = await _chatService.GetChatMessageContentsAsync(conversation.History, settings, _kernel, cancellationToken);
         _conversationStore.Save(interactionId, conversation);
 
         var content = result.Last(m => m.Role == AuthorRole.Assistant).Content;

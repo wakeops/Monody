@@ -23,15 +23,20 @@ CDN is often blocked but Ubuntu 24.04 ships it: `apt-get install -y dotnet-sdk-1
 src/Monody.Domain      Shared DI/options helpers. No project dependencies.
 src/Monody.Services    External APIs: geocoding (HERE), weather (Pirate Weather),
                        web search (Google CSE), Bluesky. Caching lives here.
+src/Monody.Data        SQLite via EF Core: user memories and reminders, plus their
+                       stores and migrations.
 src/Monody.AI.Tools    Semantic Kernel plugins (the tools the model can call).
 src/Monody.AI          Kernel/OpenAI wiring, system prompts, the research agent,
                        and the structured-output JSON Schema generator.
 src/Monody.Bot         Host, Discord wiring, interaction modules. The entrypoint.
-test/…AI.Tools.Tests   Plugin behaviour: HTML extraction, current time, arg coercion.
-test/Monody.Bot.Tests  Embed construction. Sees Monody.Bot internals via InternalsVisibleTo.
+test/…AI.Tools.Tests   Plugin behaviour: HTML extraction, current time, arg coercion,
+                       the expression evaluator.
+test/Monody.Bot.Tests  Embed construction and the interaction-command tree. Sees
+                       Monody.Bot internals via InternalsVisibleTo.
+test/Monody.Data.Tests Store behaviour against a real in-memory SQLite database.
 ```
 
-Dependencies flow one way: `Bot → AI → AI.Tools → Services → Domain`.
+Dependencies flow one way: `Bot → AI → AI.Tools → {Services, Data} → Domain`.
 
 `Monody.AI.Tools` must not reference `Monody.AI`. `ResearchAssistantPlugin` needs
 the research agent, which needs the `Kernel` the plugin is being registered on —
@@ -55,6 +60,7 @@ to start the bot — **verified by running the published bot**:
 | `Services:WebSearch:GoogleApiKey` / `GoogleSearchEngineId` | Yes |
 | `AIOptions:Providers:OpenAI:ApiKey` | Yes |
 | `Cache:RedisConfiguration` | No — optional; set it to enable the FusionCache backplane |
+| `Data:ConnectionString` | No — defaults to `Data Source=/data/monody.db` |
 
 A missing value fails fast and names the exact configuration path, e.g.
 `OptionsValidationException: Services:Geocode:HereApiKey - The HereApiKey field is required.`
@@ -66,6 +72,10 @@ to SDK registration — without it, those SDKs reject the empty key first and sa
 `The API key cannot be null or empty`, naming nothing. The `.ValidateDataAnnotations()`
 pass covers instances resolved later through `IOptions<T>`. If you add an options
 type, register it through this helper so it inherits both.
+
+**The SQLite file must be on a mounted volume.** Migrations run at startup, so a fresh
+container silently starts with an empty database — every saved memory and pending reminder
+gone — if the path is not persisted.
 
 A well-formed but fake token gets you through the whole DI graph to
 `Gateway: Connecting` before failing on Discord auth — a useful smoke test that
@@ -156,6 +166,26 @@ Kernel hands that straight to the reflection-invoked method and it throws
 `ArgumentException`. `BareStringRequestCoercionFilter` (an `IFunctionInvocationFilter`)
 converts it first — a real workaround, not dead code. Any new single-field tool request
 should be added to its map.
+
+**The sub-agent must not be handed the whole toolbox.** `ResearchAgent` shares the
+global `Kernel`, so without restriction it can call `research_assistant` — itself —
+and nothing in Semantic Kernel bounds that: `FunctionChoiceBehaviorOptions` has no
+max-iterations knob. It passes an explicit allow-list to
+`FunctionChoiceBehavior.Auto(functions)` and runs under its own timeout. Adding a tool
+to that list is a deliberate act; adding `research_assistant` to it is a bug.
+
+**Per-user tools must not take the user id as a parameter.** `remember`, `recall`, `forget`
+and `set_reminder` read the caller from `IInvocationContext`, which `AIChatService` scopes
+around the completion. A parameter would be chosen by the model, whose context contains
+untrusted text — channel history and fetched pages — so it could be talked into reading
+or overwriting someone else's data. The stores filter by user id on every query too, so
+a wrong id fails closed rather than leaking.
+
+**SQLite cannot order or compare `DateTimeOffset`.** EF throws
+`NotSupportedException: SQLite does not support expressions of type 'DateTimeOffset' in
+ORDER BY clauses`, which would have taken out the reminder sweep in production. Instants
+are stored through a value converter as unix milliseconds; keep using it for new
+date columns.
 
 **The model has no clock.** It cannot answer "what time is it in London" or even "what
 is today's date" from its own knowledge, so the `current_time` tool exists and both

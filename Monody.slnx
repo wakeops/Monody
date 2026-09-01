@@ -21,6 +21,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Monody.Bot/Monody.Bot.csproj" />
+    <Project Path="src/Monody.Data/Monody.Data.csproj" />
     <Project Path="src/Monody.Domain/Monody.Domain.csproj" />
     <Project Path="src/Monody.Services/Monody.Services.csproj" />
   </Folder>
@@ -31,5 +32,6 @@
   <Folder Name="/test/">
     <Project Path="test/Monody.AI.Tools.Tests/Monody.AI.Tools.Tests.csproj" />
     <Project Path="test/Monody.Bot.Tests/Monody.Bot.Tests.csproj" />
+    <Project Path="test/Monody.Data.Tests/Monody.Data.Tests.csproj" />
   </Folder>
 </Solution>
