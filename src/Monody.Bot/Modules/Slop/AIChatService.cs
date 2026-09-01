@@ -60,7 +60,16 @@ public class AIChatService
         _conversationStore.SaveConversation(interactionId.ToString(), conversation);
 
         var responseContent = result.Last(m => m.Role == AuthorRole.Assistant).Content;
-        return JsonSerializer.Deserialize<DiscordCompletionResponse>(responseContent, _serializerOptions);
+        return DeserializeFirstJsonObject(responseContent);
+    }
+
+    // When function calling and a strict JSON-schema response format are both active, the model
+    // can append a second JSON object after the first (e.g. a repaired retry) in the same message.
+    // Read only the first complete value instead of requiring the whole string to be one JSON document.
+    private DiscordCompletionResponse DeserializeFirstJsonObject(string json)
+    {
+        var reader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(json));
+        return JsonSerializer.Deserialize<DiscordCompletionResponse>(ref reader, _serializerOptions);
     }
 
     public async Task<System.Uri> GetImageGenerationAsync(string prompt, CancellationToken cancellationToken = default)
