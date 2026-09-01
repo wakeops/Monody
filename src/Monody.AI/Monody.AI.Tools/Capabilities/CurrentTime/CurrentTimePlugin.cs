@@ -14,25 +14,24 @@ namespace Monody.AI.Tools.Capabilities.CurrentTime;
 /// </summary>
 public sealed class CurrentTimePlugin
 {
-    private readonly TimeZoneResolver _timeZoneResolver;
     private readonly TimeProvider _timeProvider;
 
     // Exactly one constructor: Semantic Kernel activates plugins through ActivatorUtilities,
     // which throws when more than one overload can be satisfied from the container.
-    public CurrentTimePlugin(TimeZoneResolver timeZoneResolver, TimeProvider timeProvider)
+    public CurrentTimePlugin(TimeProvider timeProvider)
     {
-        _timeZoneResolver = timeZoneResolver;
         _timeProvider = timeProvider;
     }
 
     [KernelFunction("current_time")]
     [Description(
-        "Returns the current date and time, optionally for a given time zone or place. Accepts an " +
-        "IANA id or any place name, including ones that are not zone names such as 'Raleigh, NC'. " +
-        "Always use this instead of guessing what the current date or time is.")]
-    public async Task<CurrentTimeToolResponse> GetCurrentTimeAsync(CurrentTimeToolRequest request, CancellationToken cancellationToken = default)
+        "Returns the current date and time for a time zone. Always use this instead of guessing " +
+        "what the current date or time is. TimeZone must be a time zone identifier, not a place: " +
+        "if the user names a city, work out its zone yourself and pass that, e.g. 'Raleigh, NC' " +
+        "becomes 'America/New_York'.")]
+    public Task<CurrentTimeToolResponse> GetCurrentTimeAsync(CurrentTimeToolRequest request, CancellationToken cancellationToken = default)
     {
-        var zone = await _timeZoneResolver.ResolveAsync(request?.TimeZone, cancellationToken);
+        var zone = ResolveTimeZone(request?.TimeZone);
 
         var utcNow = _timeProvider.GetUtcNow();
         var localNow = TimeZoneInfo.ConvertTime(utcNow, zone);
@@ -40,7 +39,7 @@ public sealed class CurrentTimePlugin
 
         var description = localNow.ToString("dddd, dd MMMM yyyy HH:mm", CultureInfo.InvariantCulture);
 
-        return new CurrentTimeToolResponse
+        return Task.FromResult(new CurrentTimeToolResponse
         {
             TimeZone = zone.Id,
             LocalTime = localNow.ToString("yyyy-MM-dd'T'HH:mm:ssK", CultureInfo.InvariantCulture),
@@ -50,7 +49,35 @@ public sealed class CurrentTimePlugin
             Abbreviation = abbreviation,
             IsDaylightSavingTime = zone.IsDaylightSavingTime(utcNow),
             DiscordTimestamp = $"<t:{utcNow.ToUnixTimeSeconds()}:F>"
-        };
+        });
+    }
+
+    /// <summary>
+    /// Accepts a time zone identifier only - an IANA id, or a Windows id, which .NET maps.
+    /// A place name is rejected with a message telling the model what to send instead, because
+    /// it knows perfectly well which zone a city is in and guessing here would be worse.
+    /// </summary>
+    private static TimeZoneInfo ResolveTimeZone(string timeZone)
+    {
+        if (string.IsNullOrWhiteSpace(timeZone))
+        {
+            return TimeZoneInfo.Utc;
+        }
+
+        var requested = timeZone.Trim();
+
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(requested);
+        }
+        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            throw new ArgumentException(
+                $"'{requested}' is not a time zone identifier. Pass the zone itself, such as " +
+                "'America/New_York' or 'Europe/London' - not a city or region name.",
+                nameof(timeZone),
+                ex);
+        }
     }
 
     private static string GetAbbreviation(TimeZoneInfo zone, DateTimeOffset localNow)

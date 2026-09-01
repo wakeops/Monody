@@ -142,10 +142,11 @@ second silently replaces the first — `/slop memories` simply never appeared. T
 tree merges them and looks correct, so this has to be checked on the grouping; a test asserts
 no group is declared twice.
 
-**Most places are not IANA zone names.** `current_time` originally matched the city segment of
-zone ids, which works for London and Tokyo and fails for nearly everywhere else — "Raleigh, NC"
-is `America/New_York`. `TimeZoneResolver` tries the exact id and the city segment first, then
-geocodes the place and maps the coordinates with `GeoTimeZone`.
+**`current_time` takes a time zone, never a place.** Resolution is just
+`TimeZoneInfo.FindSystemTimeZoneById`, so "Raleigh, NC" is rejected — the model is expected to
+know that is `America/New_York` and send the zone. That only works because the refusal says what
+to send instead; a bare failure leaves the model apologising to the user rather than retrying.
+Keep that message specific if you touch it.
 
 **This app is installed on users, not only on guilds.** Every command module carries
 `[IntegrationType(UserInstall, GuildInstall)]` as well as `[CommandContextType(...)]`.

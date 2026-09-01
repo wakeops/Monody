@@ -18,7 +18,6 @@ public class BareStringRequestCoercionFilterTests
     {
         var services = new ServiceCollection();
         services.AddSingleton(TimeProvider.System);
-        services.AddSingleton(new TimeZoneResolver(new StubGeocodeService()));
         services.AddKernel().Plugins.AddFromType<CurrentTimePlugin>();
         services.AddSingleton<IFunctionInvocationFilter, BareStringRequestCoercionFilter>();
 

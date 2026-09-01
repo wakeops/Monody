@@ -5,7 +5,7 @@ namespace Monody.AI.Tools.Capabilities.CurrentTime;
 public sealed class CurrentTimeToolRequest
 {
     [Description(
-        "A time zone or a place. An IANA id such as 'Europe/London' works, and so does any place " +
-        "name - 'Raleigh, NC', 'Tokyo', 'the Isle of Skye' - which is looked up. Leave empty for UTC.")]
+        "A time zone identifier, such as 'Europe/London' or 'America/New_York'. Not a city or " +
+        "region name - convert those to their zone yourself. Leave empty for UTC.")]
     public string TimeZone { get; set; }
 }

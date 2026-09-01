@@ -3,7 +3,6 @@
   <ItemGroup>
     <PackageReference Include="AngleSharp" />
     <PackageReference Include="Discord.Addons.Hosting" />
-    <PackageReference Include="GeoTimeZone" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
     <PackageReference Include="Microsoft.SemanticKernel" />
