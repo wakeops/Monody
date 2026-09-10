@@ -5,7 +5,6 @@ namespace Monody.Data.Stores;
 
 public class MemoryStore : IMemoryStore
 {
-    // Categories that describe a single fact: remembering a new one replaces the old.
     private static readonly MemoryCategory[] _singleValued =
         [MemoryCategory.Name, MemoryCategory.Location, MemoryCategory.TimeZone];
 
@@ -29,10 +28,6 @@ public class MemoryStore : IMemoryStore
             .ToListAsync(cancellationToken);
     }
 
-    /// <summary>
-    /// Stores a fact, replacing the existing one for single-valued categories. Returns the
-    /// outcome so the caller can tell the user what actually happened.
-    /// </summary>
     public async Task<MemoryWriteResult> RememberAsync(ulong userId, MemoryCategory category, string content, CancellationToken cancellationToken = default)
     {
         var trimmed = content?.Trim();
@@ -86,7 +81,6 @@ public class MemoryStore : IMemoryStore
         return MemoryWriteResult.Saved(replaced);
     }
 
-    /// <summary>Deletes the given memories, ignoring any id that is not this user's.</summary>
     public async Task<int> ForgetAsync(ulong userId, IEnumerable<int> memoryIds, CancellationToken cancellationToken = default)
     {
         var ids = memoryIds?.Distinct().ToList() ?? [];

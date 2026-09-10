@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Monody.Data.Stores;
 using Monody.Domain.Extensions;
 
@@ -16,7 +17,7 @@ public static class ServiceCollectionExtensions
         // services) with no ambient scope, and each unit of work wants its own short-lived context.
         services.AddDbContextFactory<MonodyDbContext>(builder => builder.UseSqlite(options.ConnectionString));
 
-        services.TryAddTimeProvider();
+        services.TryAddSingleton(TimeProvider.System);
 
         services.AddHostedService<DatabaseMigrationService>();
 
@@ -25,13 +26,5 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IReminderStore, ReminderStore>();
 
         return services;
-    }
-
-    private static void TryAddTimeProvider(this IServiceCollection services)
-    {
-        if (!services.Any(d => d.ServiceType == typeof(TimeProvider)))
-        {
-            services.AddSingleton(TimeProvider.System);
-        }
     }
 }
