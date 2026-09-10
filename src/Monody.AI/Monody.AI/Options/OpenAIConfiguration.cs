@@ -8,6 +8,4 @@ public sealed class OpenAIConfiguration
     public string ApiKey { get; set; }
 
     public string ChatModel { get; set; } = "gpt-4.1-mini";
-
-    public string ImageModel { get; set; } = "dall-e-3";
 }

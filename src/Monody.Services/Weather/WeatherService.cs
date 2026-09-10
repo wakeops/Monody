@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using DarkSky.Models;
+﻿using DarkSky.Models;
 using DarkSky.Services;
 using Microsoft.Extensions.Logging;
 using Monody.Services.Weather.Models;

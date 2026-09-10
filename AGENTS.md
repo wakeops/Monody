@@ -134,6 +134,12 @@ UTF-8 BOMs are still inconsistent across files (about 60% have one). That one is
 accident rather than a convention, but leave it alone — normalising in passing turns
 a small diff into a whole-file one.
 
+All Monody services that are registered for dependency injection should have corresponding interfaces for testability.
+
+Code comments should only be added to address quirks or unclear reasoning. When comments are needed, keep them brief and accurate.
+
+Any build warnings from style or formatting messages should be resolved if they're a result of new contributions.
+
 ## Things that have bitten before
 
 **One module per top-level command group.** Registration sends one payload per module and

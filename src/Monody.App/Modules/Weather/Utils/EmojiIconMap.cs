@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using DarkSky.Models;
+﻿using DarkSky.Models;
 
 namespace Monody.App.Modules.Weather.Utils;
 

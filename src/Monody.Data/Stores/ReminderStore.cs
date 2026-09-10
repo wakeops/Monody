@@ -1,14 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Monody.Data.Entities;
 
-namespace Monody.Data;
+namespace Monody.Data.Stores;
 
-public class ReminderStore
+public class ReminderStore : IReminderStore
 {
     /// <summary>Long enough to be useful, short enough that a typo can't schedule something in 3024.</summary>
     public static readonly TimeSpan MaxLeadTime = TimeSpan.FromDays(365);

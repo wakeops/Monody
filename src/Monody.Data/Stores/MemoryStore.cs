@@ -1,21 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Monody.Data.Entities;
 
-namespace Monody.Data;
+namespace Monody.Data.Stores;
 
-/// <summary>
-/// Durable personal facts, scoped to one Discord user.
-/// </summary>
-/// <remarks>
-/// Every method takes the user id as its first argument and filters on it. Nothing here lets a
-/// caller reach another user's rows, which matters because the caller is ultimately the model.
-/// </remarks>
-public class MemoryStore
+public class MemoryStore : IMemoryStore
 {
     // Categories that describe a single fact: remembering a new one replaces the old.
     private static readonly MemoryCategory[] _singleValued =

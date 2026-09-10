@@ -1,5 +1,3 @@
-using System.IO;
-using System.Threading.Tasks;
 using Monody.AI.Tools.Capabilities.FetchUrl.ContentExtractor;
 using Xunit;
 

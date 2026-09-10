@@ -1,5 +1,3 @@
-using System;
-
 namespace Monody.Data.Entities;
 
 public class Reminder

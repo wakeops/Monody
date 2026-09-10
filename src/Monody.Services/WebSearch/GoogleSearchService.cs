@@ -1,7 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Google.Apis.CustomSearchAPI.v1;
 using Google.Apis.CustomSearchAPI.v1.Data;
 using Microsoft.Extensions.Options;

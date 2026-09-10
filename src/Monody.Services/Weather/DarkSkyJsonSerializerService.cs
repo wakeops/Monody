@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using DarkSky.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

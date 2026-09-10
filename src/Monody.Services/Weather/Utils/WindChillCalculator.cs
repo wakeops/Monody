@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Monody.Services.Weather.Utils;
+﻿namespace Monody.Services.Weather.Utils;
 
 internal static class WindChillCalculator
 {

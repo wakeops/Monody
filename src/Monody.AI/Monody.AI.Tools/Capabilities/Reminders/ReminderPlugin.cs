@@ -1,12 +1,8 @@
-using System;
 using System.ComponentModel;
 using System.Globalization;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Monody.AI.Tools.Abstractions;
-using Monody.Data;
+using Monody.Data.Stores;
 
 namespace Monody.AI.Tools.Capabilities.Reminders;
 
@@ -14,7 +10,7 @@ namespace Monody.AI.Tools.Capabilities.Reminders;
 /// Schedules reminders delivered later by the bot. Like the memory tools, the user is taken
 /// from the invocation context rather than from the model's arguments.
 /// </summary>
-public sealed class ReminderPlugin(ReminderStore reminderStore, IInvocationContext invocationContext, TimeProvider timeProvider)
+public sealed class ReminderPlugin(IReminderStore reminderStore, IInvocationContext invocationContext, TimeProvider timeProvider)
 {
     [KernelFunction("set_reminder")]
     [Description(

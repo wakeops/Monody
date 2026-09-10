@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Time.Testing;
 using Monody.AI.Tools.Capabilities.CurrentTime;
 using Xunit;

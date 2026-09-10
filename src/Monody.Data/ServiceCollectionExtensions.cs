@@ -1,8 +1,7 @@
-using System;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Monody.Data.Stores;
 using Monody.Domain.Extensions;
 
 namespace Monody.Data;
@@ -21,9 +20,9 @@ public static class ServiceCollectionExtensions
 
         services.AddHostedService<DatabaseMigrationService>();
 
-        services.AddSingleton<ConversationStore>();
-        services.AddSingleton<MemoryStore>();
-        services.AddSingleton<ReminderStore>();
+        services.AddSingleton<IConversationStore, ConversationStore>();
+        services.AddSingleton<IMemoryStore, MemoryStore>();
+        services.AddSingleton<IReminderStore, ReminderStore>();
 
         return services;
     }

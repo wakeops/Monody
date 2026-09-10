@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Monody.AI.Tools.Capabilities.GetDiscordMessageHistory;
+﻿namespace Monody.AI.Tools.Capabilities.GetDiscordMessageHistory;
 
 public sealed class GetDiscordMessageHistoryResponse
 {

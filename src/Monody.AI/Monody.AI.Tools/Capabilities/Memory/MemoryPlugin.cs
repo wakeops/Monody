@@ -1,11 +1,7 @@
-using System;
 using System.ComponentModel;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Monody.AI.Tools.Abstractions;
-using Monody.Data;
+using Monody.Data.Stores;
 
 namespace Monody.AI.Tools.Capabilities.Memory;
 
@@ -17,7 +13,7 @@ namespace Monody.AI.Tools.Capabilities.Memory;
 /// the chat service sets from the Discord interaction, so the model cannot be argued into
 /// reading or overwriting another user's memories by text it found in a channel or a web page.
 /// </remarks>
-public sealed class MemoryPlugin(MemoryStore memoryStore, IInvocationContext invocationContext)
+public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext invocationContext)
 {
     [KernelFunction("remember")]
     [Description(

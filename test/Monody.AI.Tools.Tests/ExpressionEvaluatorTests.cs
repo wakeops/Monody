@@ -1,4 +1,3 @@
-using System;
 using Monody.AI.Tools.Capabilities.Calculator;
 using Xunit;
 

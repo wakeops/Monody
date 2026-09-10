@@ -1,12 +1,10 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Monody.AI.Tools.Abstractions;
 using Monody.AI.Tools.Capabilities.Memory;
 using Monody.Data;
 using Monody.Data.Entities;
+using Monody.Data.Stores;
 using Xunit;
 
 namespace Monody.AI.Tools.Tests;
@@ -17,8 +15,8 @@ namespace Monody.AI.Tools.Tests;
 /// </summary>
 public class MemoryPluginTests : IDisposable
 {
-    private const ulong Alice = 111;
-    private const ulong Bob = 222;
+    private const ulong _alice = 111;
+    private const ulong _bob = 222;
 
     private readonly SqliteConnection _connection;
     private readonly MemoryStore _store;
@@ -45,7 +43,7 @@ public class MemoryPluginTests : IDisposable
     [Fact]
     public async Task RecallReturnsIdsSoForgetCanNameOne()
     {
-        using var _ = _invocationContext.BeginScope(Alice, null);
+        using var _ = _invocationContext.BeginScope(_alice, null);
 
         await _plugin.RememberAsync(new RememberToolRequest
         {
@@ -62,7 +60,7 @@ public class MemoryPluginTests : IDisposable
     [Fact]
     public async Task ForgetsASupersededPreference()
     {
-        using var _ = _invocationContext.BeginScope(Alice, null);
+        using var _ = _invocationContext.BeginScope(_alice, null);
 
         await _plugin.RememberAsync(new RememberToolRequest { Category = MemoryCategory.Preference, Content = "Prefers metric units" });
         var stale = (await _plugin.RecallAsync(new RecallToolRequest())).Memories.Single().Id;
@@ -81,20 +79,20 @@ public class MemoryPluginTests : IDisposable
     {
         // The id is real, just somebody else's - the case a prompt injection would aim for.
         int bobsId;
-        using (var _ = _invocationContext.BeginScope(Bob, null))
+        using (var _ = _invocationContext.BeginScope(_bob, null))
         {
             await _plugin.RememberAsync(new RememberToolRequest { Category = MemoryCategory.Preference, Content = "Bob's preference" });
             bobsId = (await _plugin.RecallAsync(new RecallToolRequest())).Memories.Single().Id;
         }
 
-        using (var _ = _invocationContext.BeginScope(Alice, null))
+        using (var _ = _invocationContext.BeginScope(_alice, null))
         {
             var result = await _plugin.ForgetAsync(new ForgetToolRequest { MemoryId = bobsId });
 
             Assert.False(result.Forgotten);
         }
 
-        using (var _ = _invocationContext.BeginScope(Bob, null))
+        using (var _ = _invocationContext.BeginScope(_bob, null))
         {
             Assert.Single((await _plugin.RecallAsync(new RecallToolRequest())).Memories);
         }

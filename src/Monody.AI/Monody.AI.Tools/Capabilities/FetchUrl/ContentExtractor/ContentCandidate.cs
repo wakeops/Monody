@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using AngleSharp.Dom;
 
 namespace Monody.AI.Tools.Capabilities.FetchUrl.ContentExtractor;

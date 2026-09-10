@@ -1,14 +1,11 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Hosting;
 using Discord.Addons.Hosting.Util;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using Monody.App.Modules;
-using Monody.Data;
 using Monody.Data.Entities;
+using Monody.Data.Stores;
 
 namespace Monody.App.Services;
 
@@ -24,11 +21,11 @@ internal sealed class ReminderDeliveryService : DiscordClientService
 {
     private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(30);
 
-    private const int BatchSize = 25;
+    private const int _batchSize = 25;
 
-    private readonly ReminderStore _reminderStore;
+    private readonly IReminderStore _reminderStore;
 
-    public ReminderDeliveryService(DiscordSocketClient client, ILogger<ReminderDeliveryService> logger, ReminderStore reminderStore)
+    public ReminderDeliveryService(DiscordSocketClient client, ILogger<ReminderDeliveryService> logger, IReminderStore reminderStore)
         : base(client, logger)
     {
         _reminderStore = reminderStore;
@@ -72,7 +69,7 @@ internal sealed class ReminderDeliveryService : DiscordClientService
 
     private async Task DeliverDueAsync(CancellationToken cancellationToken)
     {
-        var due = await _reminderStore.GetDueAsync(BatchSize, cancellationToken);
+        var due = await _reminderStore.GetDueAsync(_batchSize, cancellationToken);
 
         foreach (var reminder in due)
         {

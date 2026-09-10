@@ -34,6 +34,8 @@ dotnet_diagnostic.CA2007.severity = none         # Do not directly await a Task
 dotnet_diagnostic.CA2012.severity = warning      # ValueTask usage guidance
 dotnet_diagnostic.CA2254.severity = warning      # Logging message should be constant
 
+dotnet_diagnostic.CS1591.severity = none         # Missing XML comment for publicly visible type or member
+
 dotnet_diagnostic.SKEXP0001.severity = warning   # Type is for evaluation purposes only and is subject to change or removal in future updates.
 dotnet_diagnostic.SKEXP0010.severity = warning   # Type is for evaluation purposes only and is subject to change or removal in future updates.
 
@@ -81,3 +83,6 @@ csharp_style_expression_bodied_local_functions = false:silent
 csharp_space_after_keywords_in_control_flow_statements = true:warning
 csharp_space_between_parentheses = false:warning
 csharp_space_around_binary_operators = before_and_after:warning
+
+[src/Monody.Data/Migrations/*.cs]
+generated_code = true

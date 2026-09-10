@@ -1,8 +1,5 @@
-using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 
 namespace Monody.AI.Tools.Capabilities.Calculator;
@@ -18,7 +15,7 @@ public sealed class MathPlugin
         "working it out yourself, however simple it looks. " +
         "Operators + - * / % ^ and parentheses; functions include sqrt, abs, round, floor, ceil, " +
         "min, max, sum, avg, log, ln, exp and the trig functions; constants pi, e, tau.")]
-    public Task<CalculateToolResponse> CalculateAsync(CalculateToolRequest request, CancellationToken cancellationToken = default)
+    public static Task<CalculateToolResponse> CalculateAsync(CalculateToolRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Expression);

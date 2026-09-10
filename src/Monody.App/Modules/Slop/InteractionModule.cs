@@ -1,17 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Microsoft.Extensions.Logging;
 using Monody.App.Modules.Slop.Modals;
 using Monody.App.Modules.Slop.Models;
 using Monody.App.Modules.Slop.Utils;
-using Monody.Data;
 using Monody.Data.Entities;
+using Monody.Data.Stores;
 
 namespace Monody.App.Modules.Slop;
 
@@ -19,25 +13,23 @@ namespace Monody.App.Modules.Slop;
 [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
-    private const string LostContextMessage = "Sorry, I lost this conversation's context.";
+    private const string _lostContextMessage = "Sorry, I lost this conversation's context.";
 
     // Discord messages cap at 2000 characters; leave room for the ellipsis.
-    private const int MaxMessageLength = 1950;
+    private const int _maxMessageLength = 1950;
 
-    private static readonly HttpClient _httpClient = new();
-
-    private const string MemorySelectMenuId = "monody_memory_delete";
-    private const string MemoryDeleteAllButtonId = "monody_memory_delete_all";
+    private const string _memorySelectMenuId = "monody_memory_delete";
+    private const string _memoryDeleteAllButtonId = "monody_memory_delete_all";
 
     private readonly AIChatService _aiChatService;
-    private readonly ConversationStore _conversationStore;
-    private readonly MemoryStore _memoryStore;
+    private readonly IConversationStore _conversationStore;
+    private readonly IMemoryStore _memoryStore;
     private readonly ILogger _logger;
 
     public InteractionModule(
         AIChatService aiChatService,
-        ConversationStore conversationStore,
-        MemoryStore memoryStore,
+        IConversationStore conversationStore,
+        IMemoryStore memoryStore,
         ILogger<InteractionModule> logger)
     {
         _aiChatService = aiChatService;
@@ -64,7 +56,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     {
         if (!await _conversationStore.ExistsAsync(originInteractionId))
         {
-            await RespondAsync(LostContextMessage, ephemeral: true);
+            await RespondAsync(_lostContextMessage, ephemeral: true);
             return;
         }
 
@@ -76,7 +68,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     {
         if (!await _conversationStore.ExistsAsync(originInteractionId))
         {
-            await RespondAsync(LostContextMessage, ephemeral: true);
+            await RespondAsync(_lostContextMessage, ephemeral: true);
             return;
         }
 
@@ -93,49 +85,6 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             f.Content = "Answered below.";
             f.Components = new ComponentBuilder().Build();
         });
-    }
-
-    [SlashCommand("image", "Ask ChatGPT and get an image")]
-    [CommandContextType(InteractionContextType.PrivateChannel, InteractionContextType.BotDm, InteractionContextType.Guild)]
-    public async Task ImageAsync(
-        [Summary("Prompt", "What do you want to generate?")]
-        [MaxLength(800)]
-        string prompt,
-        bool ephemeral = false)
-    {
-        await DeferAsync(ephemeral: ephemeral);
-
-        Uri imageUri;
-        try
-        {
-            imageUri = await _aiChatService.GetImageGenerationAsync(prompt);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unable to complete interaction");
-            await FollowupAsync("Image generation failed", ephemeral: ephemeral);
-            return;
-        }
-
-        try
-        {
-            using var stream = await _httpClient.GetStreamAsync(imageUri);
-
-            var extension = Path.GetExtension(imageUri.LocalPath);
-            if (string.IsNullOrWhiteSpace(extension))
-            {
-                extension = ".jpg";
-            }
-
-            var filename = $"monody_{Context.User.Id}_{DateTime.UtcNow:yyyyMMddHHmmss}{extension.ToLowerInvariant()}";
-
-            await FollowupWithFileAsync(stream, filename, text: null);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unable to complete interaction");
-            await FollowupAsync($"Failed to fetch or upload the image: `{ex.Message}`");
-        }
     }
 
     private async Task ExecuteChatCompletionAsync(ulong interactionId, bool isEphemeral, string prompt)
@@ -199,7 +148,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         await ShowCurrentAsync();
     }
 
-    [ComponentInteraction(MemorySelectMenuId, true)]
+    [ComponentInteraction(_memorySelectMenuId, true)]
     public async Task DeleteSelectedAsync(string[] selectedIds)
     {
         await DeferAsync(ephemeral: true);
@@ -214,7 +163,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         await ShowCurrentAsync(deleted == 1 ? "Forgot 1 memory." : $"Forgot {deleted} memories.");
     }
 
-    [ComponentInteraction(MemoryDeleteAllButtonId, true)]
+    [ComponentInteraction(_memoryDeleteAllButtonId, true)]
     public async Task DeleteAllAsync()
     {
         await DeferAsync(ephemeral: true);
@@ -282,7 +231,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         // A select menu rather than a modal: deleting is picking from a list, not typing text.
         var menu = new SelectMenuBuilder()
-            .WithCustomId(MemorySelectMenuId)
+            .WithCustomId(_memorySelectMenuId)
             .WithPlaceholder("Select memories to forget…")
             .WithMinValues(1)
             .WithMaxValues(memories.Count);
@@ -297,7 +246,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         return new ComponentBuilder()
             .WithSelectMenu(menu)
-            .WithButton("Forget everything", MemoryDeleteAllButtonId, ButtonStyle.Danger, row: 1)
+            .WithButton("Forget everything", _memoryDeleteAllButtonId, ButtonStyle.Danger, row: 1)
             .Build();
     }
 
@@ -320,6 +269,6 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return null;
         }
 
-        return text.Length > MaxMessageLength ? text[..MaxMessageLength] + "\u2026" : text;
+        return text.Length > _maxMessageLength ? text[.._maxMessageLength] + "\u2026" : text;
     }
 }

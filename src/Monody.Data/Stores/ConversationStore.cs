@@ -1,23 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Monody.Data.Entities;
 
-namespace Monody.Data;
+namespace Monody.Data.Stores;
 
-/// <summary>
-/// Durable storage for /slop conversations.
-/// </summary>
-/// <remarks>
-/// Only the user and assistant turns are kept. Tool calls and their results are dropped once a
-/// round finishes: they are needed to complete that round, not to carry the thread forward, and
-/// keeping them would mean serialising Semantic Kernel's polymorphic content types.
-/// </remarks>
-public class ConversationStore
+public class ConversationStore : IConversationStore
 {
     /// <summary>Most recent turns kept per conversation, so a long thread cannot grow forever.</summary>
     public const int MaxTurns = 40;

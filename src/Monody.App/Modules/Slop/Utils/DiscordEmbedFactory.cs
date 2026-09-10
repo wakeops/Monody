@@ -1,4 +1,3 @@
-using System;
 using System.Globalization;
 using Discord;
 using Monody.App.Modules.Slop.Models;

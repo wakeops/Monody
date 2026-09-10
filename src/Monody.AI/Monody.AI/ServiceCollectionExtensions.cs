@@ -36,7 +36,6 @@ public static class ServiceCollectionExtensions
         var kernelBuilder = services.AddKernel();
 
         kernelBuilder.AddOpenAIChatCompletion(openAiConfig.ChatModel, openAiConfig.ApiKey);
-        kernelBuilder.AddOpenAITextToImage(openAiConfig.ImageModel, openAiConfig.ApiKey);
 
         kernelBuilder.Plugins.AddFromType<WeatherPlugin>();
         kernelBuilder.Plugins.AddFromType<WebSearchPlugin>();

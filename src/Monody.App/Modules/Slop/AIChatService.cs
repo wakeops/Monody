@@ -1,24 +1,19 @@
-using System;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using Discord;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using Microsoft.SemanticKernel.TextToImage;
 using Monody.AI.Agents;
 using Monody.AI.Tools.Abstractions;
-using Monody.Data;
 using Monody.Data.Entities;
 using Monody.AI.SchemaJson;
 using Monody.App.Modules.Slop.Models;
 using Monody.App.Modules.Slop.Utils;
 using OpenAI.Chat;
 using SkChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
+using Monody.Data.Stores;
 
 namespace Monody.App.Modules.Slop;
 
@@ -31,20 +26,17 @@ public class AIChatService
     };
 
     private readonly IChatCompletionService _chatService;
-    private readonly ITextToImageService _imageService;
     private readonly Kernel _kernel;
-    private readonly ConversationStore _conversationStore;
+    private readonly IConversationStore _conversationStore;
     private readonly IInvocationContext _invocationContext;
 
     public AIChatService(
         IChatCompletionService chatService,
-        ITextToImageService imageService,
         Kernel kernel,
-        ConversationStore conversationStore,
+        IConversationStore conversationStore,
         IInvocationContext invocationContext)
     {
         _chatService = chatService;
-        _imageService = imageService;
         _kernel = kernel;
         _conversationStore = conversationStore;
         _invocationContext = invocationContext;
@@ -77,12 +69,6 @@ public class AIChatService
 
         var content = result.Last(m => m.Role == AuthorRole.Assistant).Content;
         return DeserializeFirstJsonObject(content);
-    }
-
-    public async Task<Uri> GetImageGenerationAsync(string prompt, CancellationToken cancellationToken = default)
-    {
-        var url = await _imageService.GenerateImageAsync(prompt, 1024, 1024, cancellationToken: cancellationToken);
-        return new Uri(url);
     }
 
     // When function calling and a strict JSON-schema response format are both active, the model

@@ -1,10 +1,6 @@
-using System;
 using System.ComponentModel;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
-using Monody.AI.Tools;
 using Monody.AI.Tools.Capabilities.CurrentTime;
 using Xunit;
 
@@ -192,7 +188,7 @@ public class ToolCallRecoveryFilterTests
     {
         [KernelFunction("two_field_demo")]
         [Description("test-only plugin for exercising the recovery filter")]
-        public string Run(TwoFieldDemoRequest request, CancellationToken cancellationToken = default)
+        public static string Run(TwoFieldDemoRequest request, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(request.First);
 
@@ -210,7 +206,7 @@ public class ToolCallRecoveryFilterTests
     {
         [KernelFunction("no_required_fields_demo")]
         [Description("test-only plugin for exercising the recovery filter")]
-        public string Run(NoRequiredFieldsDemoRequest request) => "ok";
+        public static string Run(NoRequiredFieldsDemoRequest request) => "ok";
     }
 
     private enum DemoCategory
@@ -233,6 +229,6 @@ public class ToolCallRecoveryFilterTests
     {
         [KernelFunction("enum_and_string_demo")]
         [Description("test-only plugin for exercising the recovery filter")]
-        public string Run(EnumAndStringDemoRequest request) => $"{request.Category}:{request.Content}";
+        public static string Run(EnumAndStringDemoRequest request) => $"{request.Category}:{request.Content}";
     }
 }
