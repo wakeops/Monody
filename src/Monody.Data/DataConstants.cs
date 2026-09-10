@@ -2,10 +2,13 @@ namespace Monody.Data;
 
 public static class DataConstants
 {
-    public const int MaxMemoryLength = 200;
+    public const int MaxSlugLength = 40;
 
-    /// <summary>Per user. Keeps the store small enough to inject wholesale into a prompt.</summary>
-    public const int MaxMemoriesPerUser = 25;
+    public const int MaxMemoryDescriptionLength = 80;
+
+    public const int MaxMemoryContentLength = 500;
+
+    public const int MaxMemoriesPerUser = 30;
 
     public const int MaxReminderLength = 500;
 

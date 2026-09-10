@@ -44,7 +44,7 @@ public sealed class ReminderPlugin(IReminderStore reminderStore, IInvocationCont
 
     [KernelFunction("list_reminders")]
     [Description("Lists the current user's pending reminders.")]
-    public async Task<ListRemindersToolResponse> ListRemindersAsync(ListRemindersToolRequest request, CancellationToken cancellationToken = default)
+    public async Task<ListRemindersToolResponse> ListRemindersAsync(CancellationToken cancellationToken = default)
     {
         var pending = await reminderStore.GetPendingAsync(RequireUserId(), cancellationToken);
 

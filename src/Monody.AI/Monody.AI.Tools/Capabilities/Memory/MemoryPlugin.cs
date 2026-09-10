@@ -5,30 +5,25 @@ using Monody.Data.Stores;
 
 namespace Monody.AI.Tools.Capabilities.Memory;
 
-/// <summary>
-/// Lets the assistant carry a few durable facts about a user between conversations.
-/// </summary>
-/// <remarks>
-/// Neither function takes a user id. The id comes from <see cref="IInvocationContext"/>, which
-/// the chat service sets from the Discord interaction, so the model cannot be argued into
-/// reading or overwriting another user's memories by text it found in a channel or a web page.
-/// </remarks>
 public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext invocationContext)
 {
     [KernelFunction("remember")]
     [Description(
-        "Saves one durable personal fact about the current user so it is available in later " +
-        "conversations. Only for lasting facts they have volunteered: their name, where they " +
-        "live, their time zone, or a standing preference. Never store passing details, one-off " +
-        "questions, opinions about others, or anything sensitive.")]
+        "Saves or updates one durable topic about the current user, for use in later conversations. " +
+        "Call recall_index first: if an existing slug already covers this topic, reuse it so the " +
+        "topic is updated in place rather than duplicated. Only for lasting facts they have " +
+        "volunteered - their name, where they live, their time zone, or a standing preference. " +
+        "Never store passing details, one-off questions, opinions about others, or anything sensitive.")]
     public async Task<RememberToolResponse> RememberAsync(RememberToolRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Slug);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Description);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Content);
 
         var userId = RequireUserId();
 
-        var result = await memoryStore.RememberAsync(userId, request.Category, request.Content, cancellationToken);
+        var result = await memoryStore.RememberAsync(userId, request.Slug, request.Description, request.Content, cancellationToken);
 
         return new RememberToolResponse
         {
@@ -37,42 +32,61 @@ public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext in
         };
     }
 
-    [KernelFunction("recall")]
+    [KernelFunction("recall_index")]
     [Description(
-        "Returns what is already remembered about the current user. Call this when the answer " +
-        "depends on who they are - their location, units, or how they like to be addressed - " +
-        "before asking them for something they may have already told you.")]
-    public async Task<RecallToolResponse> RecallAsync(RecallToolRequest request, CancellationToken cancellationToken = default)
+        "Returns the slug and one-line description of every topic remembered about the current " +
+        "user, without their full content. Cheap enough to call before most answers that might " +
+        "depend on who the user is. Follow up with recall_topic for any topic whose description " +
+        "looks relevant.")]
+    public async Task<RecallIndexToolResponse> RecallIndexAsync(CancellationToken cancellationToken = default)
     {
         var userId = RequireUserId();
 
-        var memories = await memoryStore.GetAsync(userId, cancellationToken);
+        var index = await memoryStore.GetIndexAsync(userId, cancellationToken);
 
-        return new RecallToolResponse
+        return new RecallIndexToolResponse
         {
-            Memories = [.. memories.Select(m => new RecalledMemory
+            Topics = [.. index.Select(m => new MemoryIndexEntry
             {
                 Id = m.Id,
-                Category = m.Category.ToString(),
-                Content = m.Content
+                Slug = m.Slug,
+                Description = m.Description
             })]
+        };
+    }
+
+    [KernelFunction("recall_topic")]
+    [Description(
+        "Returns the full content of one remembered topic about the current user, by slug. Call " +
+        "recall_index first to find the slug.")]
+    public async Task<RecallTopicToolResponse> RecallTopicAsync(RecallTopicToolRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Slug);
+
+        var userId = RequireUserId();
+
+        var topic = await memoryStore.GetTopicAsync(userId, request.Slug, cancellationToken);
+
+        return new RecallTopicToolResponse
+        {
+            Found = topic is not null,
+            Content = topic?.Content ?? ""
         };
     }
 
     [KernelFunction("forget")]
     [Description(
-        "Removes one remembered fact about the current user. Use this when a preference they " +
-        "told you before no longer holds, or when they ask you to forget something. Call recall " +
-        "first to get the Id. Name, Location and TimeZone replace themselves when they change, " +
-        "so they rarely need forgetting.")]
+        "Removes one remembered topic about the current user. Use this when they ask you to forget " +
+        "something, or a topic no longer holds and isn't just being updated. Call recall_index first " +
+        "to get the Id - if the topic is simply changing, prefer calling remember with the same slug " +
+        "instead of forgetting and re-saving it.")]
     public async Task<ForgetToolResponse> ForgetAsync(ForgetToolRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         var userId = RequireUserId();
 
-        // Scoped to the caller in the store, so an id the model invented or read somewhere
-        // deletes nothing rather than reaching another user's row.
         var removed = await memoryStore.ForgetAsync(userId, [request.MemoryId], cancellationToken);
 
         return new ForgetToolResponse
@@ -80,7 +94,7 @@ public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext in
             Forgotten = removed > 0,
             Outcome = removed > 0
                 ? "Forgotten."
-                : "No memory with that Id belongs to this user; call recall for the current list."
+                : "No topic with that Id belongs to this user; call recall_index for the current list."
         };
     }
 
@@ -100,6 +114,6 @@ public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext in
             return "Already remembered; nothing changed.";
         }
 
-        return result.Replaced ? "Saved, replacing the previous value." : "Saved.";
+        return result.Replaced ? "Saved, updating the existing topic." : "Saved as a new topic.";
     }
 }

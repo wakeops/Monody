@@ -211,12 +211,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             embed.WithDescription(notice);
         }
 
-        foreach (var group in memories.GroupBy(m => m.Category))
+        foreach (var memory in memories)
         {
-            embed.AddField(
-                DescribeCategory(group.Key),
-                string.Join('\n', group.Select(m => $"• {m.Content}")),
-                inline: false);
+            embed.AddField(memory.Description, memory.Content, inline: false);
         }
 
         return embed.Build();
@@ -239,9 +236,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         foreach (var memory in memories)
         {
             menu.AddOption(
-                label: TruncateLabel(memory.Content, SelectMenuOptionBuilder.MaxSelectLabelLength),
+                label: TruncateLabel(memory.Slug, SelectMenuOptionBuilder.MaxSelectLabelLength),
                 value: memory.Id.ToString(),
-                description: DescribeCategory(memory.Category));
+                description: TruncateLabel(memory.Description, 100));
         }
 
         return new ComponentBuilder()
@@ -249,15 +246,6 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             .WithButton("Forget everything", _memoryDeleteAllButtonId, ButtonStyle.Danger, row: 1)
             .Build();
     }
-
-    private static string DescribeCategory(MemoryCategory category) => category switch
-    {
-        MemoryCategory.Name => "Name",
-        MemoryCategory.Location => "Location",
-        MemoryCategory.TimeZone => "Time zone",
-        MemoryCategory.Preference => "Preferences",
-        _ => category.ToString()
-    };
 
     private static string TruncateLabel(string value, int maxLength) =>
         value.Length <= maxLength ? value : value[..(maxLength - 1)] + "…";

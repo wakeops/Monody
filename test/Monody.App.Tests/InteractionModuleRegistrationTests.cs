@@ -1,3 +1,4 @@
+using System.Reflection;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
@@ -36,12 +37,32 @@ public class InteractionModuleRegistrationTests : IAsyncLifetime
 
         public object GetService(Type serviceType)
         {
-            if (serviceType.IsInterface || serviceType.IsAbstract)
+            if (serviceType.IsInterface)
+            {
+                // Only ILogger<T> etc. resolve from the logging provider; anything else (the data
+                // store interfaces the modules depend on) gets a proxy that is never called.
+                return _logging.GetService(serviceType) ?? CreateNoOpProxy(serviceType);
+            }
+
+            if (serviceType.IsAbstract)
             {
                 return _logging.GetService(serviceType);
             }
 
             return System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(serviceType);
+        }
+
+        private static object CreateNoOpProxy(Type interfaceType) =>
+            typeof(DispatchProxy)
+                .GetMethods()
+                .Single(m => m.Name == nameof(DispatchProxy.Create) && m.GetGenericArguments().Length == 2)
+                .MakeGenericMethod(interfaceType, typeof(NoOpProxy))
+                .Invoke(null, null);
+
+        private class NoOpProxy : DispatchProxy
+        {
+            protected override object Invoke(MethodInfo targetMethod, object[] args) =>
+                throw new NotSupportedException("Modules are only inspected for attributes in this test, never invoked.");
         }
     }
 
@@ -59,7 +80,6 @@ public class InteractionModuleRegistrationTests : IAsyncLifetime
     [InlineData("/weather hourly")]
     [InlineData("/weather week")]
     [InlineData("/slop ask")]
-    [InlineData("/slop image")]
     [InlineData("/slop memories")]
     public void RegistersTheExpectedCommands(string path)
     {

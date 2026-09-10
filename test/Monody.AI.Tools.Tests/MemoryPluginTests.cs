@@ -3,15 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using Monody.AI.Tools.Abstractions;
 using Monody.AI.Tools.Capabilities.Memory;
 using Monody.Data;
-using Monody.Data.Entities;
 using Monody.Data.Stores;
 using Xunit;
 
 namespace Monody.AI.Tools.Tests;
 
 /// <summary>
-/// Covers the model-facing surface: what recall hands back, and that the tools act only for
-/// whoever is in scope.
+/// Covers the model-facing surface: what recall_index/recall_topic hand back, and that the tools
+/// act only for whoever is in scope.
 /// </summary>
 public class MemoryPluginTests : IDisposable
 {
@@ -41,37 +40,56 @@ public class MemoryPluginTests : IDisposable
     public void Dispose() => _connection.Dispose();
 
     [Fact]
-    public async Task RecallReturnsIdsSoForgetCanNameOne()
+    public async Task RecallIndexReturnsIdsAndSlugsSoForgetAndRecallTopicCanUseThem()
     {
         using var _ = _invocationContext.BeginScope(_alice, null);
 
         await _plugin.RememberAsync(new RememberToolRequest
         {
-            Category = MemoryCategory.Preference,
+            Slug = "units",
+            Description = "Preferred units",
             Content = "Prefers metric units"
         });
 
-        var recalled = (await _plugin.RecallAsync(new RecallToolRequest())).Memories.Single();
+        var entry = (await _plugin.RecallIndexAsync()).Topics.Single();
 
-        Assert.NotEqual(0, recalled.Id);
-        Assert.Equal("Preference", recalled.Category);
+        Assert.NotEqual(0, entry.Id);
+        Assert.Equal("units", entry.Slug);
+        Assert.Equal("Preferred units", entry.Description);
     }
 
     [Fact]
-    public async Task ForgetsASupersededPreference()
+    public async Task RecallTopicReturnsFullContent()
     {
         using var _ = _invocationContext.BeginScope(_alice, null);
 
-        await _plugin.RememberAsync(new RememberToolRequest { Category = MemoryCategory.Preference, Content = "Prefers metric units" });
-        var stale = (await _plugin.RecallAsync(new RecallToolRequest())).Memories.Single().Id;
+        await _plugin.RememberAsync(new RememberToolRequest
+        {
+            Slug = "units",
+            Description = "Preferred units",
+            Content = "Prefers metric units"
+        });
 
-        var result = await _plugin.ForgetAsync(new ForgetToolRequest { MemoryId = stale });
+        var found = await _plugin.RecallTopicAsync(new RecallTopicToolRequest { Slug = "units" });
+        Assert.True(found.Found);
+        Assert.Equal("Prefers metric units", found.Content);
 
-        Assert.True(result.Forgotten);
+        var missing = await _plugin.RecallTopicAsync(new RecallTopicToolRequest { Slug = "unknown" });
+        Assert.False(missing.Found);
+    }
 
-        await _plugin.RememberAsync(new RememberToolRequest { Category = MemoryCategory.Preference, Content = "Prefers imperial units" });
+    [Fact]
+    public async Task RememberingTheSameSlugAgainUpdatesRatherThanDuplicating()
+    {
+        using var _ = _invocationContext.BeginScope(_alice, null);
 
-        Assert.Equal("Prefers imperial units", (await _plugin.RecallAsync(new RecallToolRequest())).Memories.Single().Content);
+        await _plugin.RememberAsync(new RememberToolRequest { Slug = "units", Description = "Preferred units", Content = "Prefers metric units" });
+        await _plugin.RememberAsync(new RememberToolRequest { Slug = "units", Description = "Preferred units", Content = "Prefers imperial units" });
+
+        Assert.Single((await _plugin.RecallIndexAsync()).Topics);
+
+        var topic = await _plugin.RecallTopicAsync(new RecallTopicToolRequest { Slug = "units" });
+        Assert.Equal("Prefers imperial units", topic.Content);
     }
 
     [Fact]
@@ -81,8 +99,8 @@ public class MemoryPluginTests : IDisposable
         int bobsId;
         using (var _ = _invocationContext.BeginScope(_bob, null))
         {
-            await _plugin.RememberAsync(new RememberToolRequest { Category = MemoryCategory.Preference, Content = "Bob's preference" });
-            bobsId = (await _plugin.RecallAsync(new RecallToolRequest())).Memories.Single().Id;
+            await _plugin.RememberAsync(new RememberToolRequest { Slug = "units", Description = "Preferred units", Content = "Bob's preference" });
+            bobsId = (await _plugin.RecallIndexAsync()).Topics.Single().Id;
         }
 
         using (var _ = _invocationContext.BeginScope(_alice, null))
@@ -94,14 +112,15 @@ public class MemoryPluginTests : IDisposable
 
         using (var _ = _invocationContext.BeginScope(_bob, null))
         {
-            Assert.Single((await _plugin.RecallAsync(new RecallToolRequest())).Memories);
+            Assert.Single((await _plugin.RecallIndexAsync()).Topics);
         }
     }
 
     [Fact]
     public async Task RefusesToActWithNobodyInScope()
     {
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.RecallAsync(new RecallToolRequest()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.RecallIndexAsync());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.RecallTopicAsync(new RecallTopicToolRequest { Slug = "units" }));
         await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.ForgetAsync(new ForgetToolRequest { MemoryId = 1 }));
     }
 

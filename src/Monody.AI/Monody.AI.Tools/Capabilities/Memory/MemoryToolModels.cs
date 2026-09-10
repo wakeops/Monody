@@ -1,71 +1,90 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Monody.Data;
-using Monody.Data.Entities;
 
 namespace Monody.AI.Tools.Capabilities.Memory;
 
 public sealed class RememberToolRequest
 {
     [Description(
-        "What kind of fact this is. Name, Location and TimeZone hold one value each and are " +
-        "replaced when they change; Preference may have several.")]
+        "A short lowercase kebab-case id for this topic, e.g. 'home-location' or 'coffee-preference'. " +
+        "If this slug already exists for the user, its description and content are replaced; use the " +
+        "same slug again to update a topic rather than creating a near-duplicate one.")]
     [Required]
-    public MemoryCategory Category { get; set; }
+    [MaxLength(DataConstants.MaxSlugLength)]
+    public string Slug { get; set; }
 
     [Description(
-        "The fact, written as a short standalone statement in the third person, e.g. " +
-        "'Lives in Raleigh, NC' or 'Prefers metric units'. Keep it under 200 characters.")]
+        "One short line summarizing this topic, shown in the index before the full content is " +
+        "loaded. Keep it under 80 characters, e.g. 'Where the user lives'.")]
     [Required]
-    [MaxLength(DataConstants.MaxMemoryLength)]
+    [MaxLength(DataConstants.MaxMemoryDescriptionLength)]
+    public string Description { get; set; }
+
+    [Description(
+        "The full note for this topic, written for your own later reading. Only for lasting facts " +
+        "the user has volunteered. Never store passing details, one-off questions, opinions about " +
+        "others, or anything sensitive.")]
+    [Required]
+    [MaxLength(DataConstants.MaxMemoryContentLength)]
     public string Content { get; set; }
 }
 
 public sealed class RememberToolResponse
 {
-    [Description("Whether the fact was saved.")]
+    [Description("Whether the topic was saved.")]
     public bool Saved { get; set; }
 
     [Description("What happened, to relay to the user if it is worth mentioning.")]
     public string Outcome { get; set; }
 }
 
-public sealed class RecallToolRequest
+public sealed class RecallIndexToolResponse
 {
-    // Structured outputs require at least one property, and the store is small enough that
-    // filtering is not worth the extra failure mode.
-    [Description("Unused. Recall always returns everything remembered about the current user.")]
-    public string Unused { get; set; }
+    [Description(
+        "Every remembered topic's slug and one-line description for the current user, cheapest to " +
+        "scan first. Call recall_topic with a slug to load its full content. Empty when nothing is stored.")]
+    public List<MemoryIndexEntry> Topics { get; set; } = [];
 }
 
-public sealed class RecallToolResponse
+public sealed class MemoryIndexEntry
 {
-    [Description("Everything remembered about the current user. Empty when nothing is stored.")]
-    public List<RecalledMemory> Memories { get; set; } = [];
-}
-
-public sealed class RecalledMemory
-{
-    [Description("Identifier for this memory. Pass it to forget to remove it.")]
+    [Description("Identifier for this topic. Pass it to forget to remove it.")]
     public int Id { get; set; }
 
-    [Description("Which kind of fact this is.")]
-    public string Category { get; set; }
+    [Description("The topic's slug. Reuse this in remember to update the topic instead of creating a new one.")]
+    public string Slug { get; set; }
 
-    [Description("The remembered fact.")]
+    [Description("One-line summary of the topic.")]
+    public string Description { get; set; }
+}
+
+public sealed class RecallTopicToolRequest
+{
+    [Description("The slug of the topic to load, taken from a recall_index result.")]
+    [Required]
+    public string Slug { get; set; }
+}
+
+public sealed class RecallTopicToolResponse
+{
+    [Description("Whether a topic with that slug exists for the current user.")]
+    public bool Found { get; set; }
+
+    [Description("The topic's full content, or empty if not found.")]
     public string Content { get; set; }
 }
 
 public sealed class ForgetToolRequest
 {
-    [Description("The Id of the memory to remove, taken from a recall result.")]
+    [Description("The Id of the topic to remove, taken from a recall_index result.")]
     [Required]
     public int MemoryId { get; set; }
 }
 
 public sealed class ForgetToolResponse
 {
-    [Description("Whether a memory was removed.")]
+    [Description("Whether a topic was removed.")]
     public bool Forgotten { get; set; }
 
     [Description("What happened, to relay if it is worth mentioning.")]

@@ -35,9 +35,11 @@ namespace Monody.Data.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     UserId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    Category = table.Column<string>(type: "TEXT", nullable: false),
-                    Content = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    CreatedAt = table.Column<long>(type: "INTEGER", nullable: false)
+                    Slug = table.Column<string>(type: "TEXT", maxLength: 40, nullable: false),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 80, nullable: false),
+                    Content = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
+                    CreatedAt = table.Column<long>(type: "INTEGER", nullable: false),
+                    UpdatedAt = table.Column<long>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -60,9 +62,9 @@ namespace Monody.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserMemories_UserId_Category_Content",
+                name: "IX_UserMemories_UserId_Slug",
                 table: "UserMemories",
-                columns: new[] { "UserId", "Category", "Content" },
+                columns: new[] { "UserId", "Slug" },
                 unique: true);
         }
 

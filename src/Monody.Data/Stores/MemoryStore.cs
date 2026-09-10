@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Monody.Data.Entities;
 
@@ -5,8 +6,7 @@ namespace Monody.Data.Stores;
 
 public class MemoryStore : IMemoryStore
 {
-    private static readonly MemoryCategory[] _singleValued =
-        [MemoryCategory.Name, MemoryCategory.Location, MemoryCategory.TimeZone];
+    private static readonly Regex _slugPattern = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.Compiled);
 
     private readonly IDbContextFactory<MonodyDbContext> _dbContextFactory;
     private readonly TimeProvider _timeProvider;
@@ -23,23 +23,45 @@ public class MemoryStore : IMemoryStore
 
         return await db.UserMemories
             .Where(m => m.UserId == userId)
-            .OrderBy(m => m.Category)
-            .ThenBy(m => m.Id)
+            .OrderBy(m => m.Slug)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<MemoryWriteResult> RememberAsync(ulong userId, MemoryCategory category, string content, CancellationToken cancellationToken = default)
-    {
-        var trimmed = content?.Trim();
+    public Task<IReadOnlyList<UserMemory>> GetIndexAsync(ulong userId, CancellationToken cancellationToken = default) =>
+        GetAsync(userId, cancellationToken);
 
-        if (string.IsNullOrWhiteSpace(trimmed))
+    public async Task<UserMemory> GetTopicAsync(ulong userId, string slug, CancellationToken cancellationToken = default)
+    {
+        var normalizedSlug = slug?.Trim().ToLowerInvariant();
+
+        await using var db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        return await db.UserMemories
+            .FirstOrDefaultAsync(m => m.UserId == userId && m.Slug == normalizedSlug, cancellationToken);
+    }
+
+    public async Task<MemoryWriteResult> RememberAsync(ulong userId, string slug, string description, string content, CancellationToken cancellationToken = default)
+    {
+        var normalizedSlug = slug?.Trim().ToLowerInvariant();
+
+        if (string.IsNullOrWhiteSpace(normalizedSlug) || normalizedSlug.Length > DataConstants.MaxSlugLength || !_slugPattern.IsMatch(normalizedSlug))
         {
-            return MemoryWriteResult.Rejected("A memory cannot be empty.");
+            return MemoryWriteResult.Rejected(
+                $"Slug must be lowercase kebab-case, e.g. 'home-location', and {DataConstants.MaxSlugLength} characters or fewer.");
         }
 
-        if (trimmed.Length > DataConstants.MaxMemoryLength)
+        var trimmedDescription = description?.Trim();
+
+        if (string.IsNullOrWhiteSpace(trimmedDescription) || trimmedDescription.Length > DataConstants.MaxMemoryDescriptionLength)
         {
-            return MemoryWriteResult.Rejected($"A memory must be {DataConstants.MaxMemoryLength} characters or fewer.");
+            return MemoryWriteResult.Rejected($"Description must be non-empty and {DataConstants.MaxMemoryDescriptionLength} characters or fewer.");
+        }
+
+        var trimmedContent = content?.Trim();
+
+        if (string.IsNullOrWhiteSpace(trimmedContent) || trimmedContent.Length > DataConstants.MaxMemoryContentLength)
+        {
+            return MemoryWriteResult.Rejected($"Content must be non-empty and {DataConstants.MaxMemoryContentLength} characters or fewer.");
         }
 
         await using var db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -48,37 +70,47 @@ public class MemoryStore : IMemoryStore
             .Where(m => m.UserId == userId)
             .ToListAsync(cancellationToken);
 
-        if (existing.Any(m => m.Category == category && string.Equals(m.Content, trimmed, StringComparison.OrdinalIgnoreCase)))
+        var match = existing.FirstOrDefault(m => string.Equals(m.Slug, normalizedSlug, StringComparison.Ordinal));
+
+        if (match is not null)
         {
-            return MemoryWriteResult.AlreadyKnown();
+            if (string.Equals(match.Description, trimmedDescription, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(match.Content, trimmedContent, StringComparison.OrdinalIgnoreCase))
+            {
+                return MemoryWriteResult.AlreadyKnown();
+            }
+
+            match.Description = trimmedDescription;
+            match.Content = trimmedContent;
+            match.UpdatedAt = _timeProvider.GetUtcNow();
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            return MemoryWriteResult.Saved(replaced: true);
         }
 
-        var replaced = false;
-
-        if (_singleValued.Contains(category))
-        {
-            var superseded = existing.Where(m => m.Category == category).ToList();
-            replaced = superseded.Count > 0;
-            db.UserMemories.RemoveRange(superseded);
-        }
-        else if (existing.Count >= DataConstants.MaxMemoriesPerUser)
+        if (existing.Count >= DataConstants.MaxMemoriesPerUser)
         {
             return MemoryWriteResult.Rejected(
-                $"You already have the maximum of {DataConstants.MaxMemoriesPerUser} saved memories. " +
+                $"You already have the maximum of {DataConstants.MaxMemoriesPerUser} saved topics. " +
                 "Remove one with /slop memories first.");
         }
+
+        var now = _timeProvider.GetUtcNow();
 
         db.UserMemories.Add(new UserMemory
         {
             UserId = userId,
-            Category = category,
-            Content = trimmed,
-            CreatedAt = _timeProvider.GetUtcNow()
+            Slug = normalizedSlug,
+            Description = trimmedDescription,
+            Content = trimmedContent,
+            CreatedAt = now,
+            UpdatedAt = now
         });
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return MemoryWriteResult.Saved(replaced);
+        return MemoryWriteResult.Saved(replaced: false);
     }
 
     public async Task<int> ForgetAsync(ulong userId, IEnumerable<int> memoryIds, CancellationToken cancellationToken = default)

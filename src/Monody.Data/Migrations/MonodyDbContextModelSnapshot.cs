@@ -88,16 +88,25 @@ namespace Monody.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Category")
+                    b.Property<string>("Slug")
                         .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(80)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasMaxLength(200)
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UpdatedAt")
                         .HasColumnType("INTEGER");
 
                     b.Property<ulong>("UserId")
@@ -107,7 +116,7 @@ namespace Monody.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("UserId", "Category", "Content")
+                    b.HasIndex("UserId", "Slug")
                         .IsUnique();
 
                     b.ToTable("UserMemories");

@@ -36,14 +36,8 @@ public sealed class SetReminderToolResponse
     public string Outcome { get; set; }
 }
 
-public sealed class ListRemindersToolRequest
-{
-    [Description("Unused. Always lists the current user's pending reminders.")]
-    public string Unused { get; set; }
-}
-
 public sealed class ListRemindersToolResponse
 {
     [Description("Pending reminders, soonest first. Each entry is 'due — message'.")]
-    public System.Collections.Generic.List<string> Reminders { get; set; } = [];
+    public List<string> Reminders { get; set; } = [];
 }

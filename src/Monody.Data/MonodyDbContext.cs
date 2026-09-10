@@ -16,11 +16,6 @@ public class MonodyDbContext : DbContext
 
     public DbSet<Conversation> Conversations => Set<Conversation>();
 
-    /// <summary>
-    /// SQLite has no date type, and EF refuses to order or compare a DateTimeOffset stored as
-    /// text. Everything here is UTC, so persist the instant as a number instead; that sorts and
-    /// compares correctly in SQL, which the reminder sweep depends on.
-    /// </summary>
     private static readonly ValueConverter<DateTimeOffset, long> _instantConverter = new(
         value => value.ToUnixTimeMilliseconds(),
         value => DateTimeOffset.FromUnixTimeMilliseconds(value));
@@ -33,25 +28,23 @@ public class MonodyDbContext : DbContext
     {
         modelBuilder.Entity<UserMemory>(entity =>
         {
-            entity.Property(m => m.Content).IsRequired().HasMaxLength(DataConstants.MaxMemoryLength);
-            entity.Property(m => m.Category).HasConversion<string>();
+            entity.Property(m => m.Slug).IsRequired().HasMaxLength(DataConstants.MaxSlugLength);
+            entity.Property(m => m.Description).IsRequired().HasMaxLength(DataConstants.MaxMemoryDescriptionLength);
+            entity.Property(m => m.Content).IsRequired().HasMaxLength(DataConstants.MaxMemoryContentLength);
             entity.Property(m => m.CreatedAt).HasConversion(_instantConverter);
+            entity.Property(m => m.UpdatedAt).HasConversion(_instantConverter);
 
-            // Every read is "this user's memories", and the unique index makes the store itself
-            // reject a duplicate rather than relying on the caller to check first.
             entity.HasIndex(m => m.UserId);
-            entity.HasIndex(m => new { m.UserId, m.Category, m.Content }).IsUnique();
+            entity.HasIndex(m => new { m.UserId, m.Slug }).IsUnique();
         });
 
         modelBuilder.Entity<Conversation>(entity =>
         {
-            // Keyed by the originating interaction id, so it is assigned rather than generated.
             entity.Property(c => c.Id).ValueGeneratedNever();
             entity.Property(c => c.TurnsJson).IsRequired();
             entity.Property(c => c.CreatedAt).HasConversion(_instantConverter);
             entity.Property(c => c.UpdatedAt).HasConversion(_instantConverter);
 
-            // The retention sweep deletes by age.
             entity.HasIndex(c => c.UpdatedAt);
         });
 
@@ -62,7 +55,6 @@ public class MonodyDbContext : DbContext
             entity.Property(r => r.CreatedAt).HasConversion(_instantConverter);
             entity.Property(r => r.DeliveredAt).HasConversion(_nullableInstantConverter);
 
-            // The delivery sweep looks for undelivered reminders that are due.
             entity.HasIndex(r => new { r.DeliveredAt, r.DueAt });
             entity.HasIndex(r => r.UserId);
         });
