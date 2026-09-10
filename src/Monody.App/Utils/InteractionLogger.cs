@@ -1,0 +1,151 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Discord;
+using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
+
+namespace Monody.App.Utils;
+
+internal class InteractionLogger
+{
+    private readonly ILogger _logger;
+
+    public InteractionLogger(ILogger logger)
+    {
+        _logger = logger;
+    }
+
+    public void LogInteraction(SocketInteraction interaction)
+    {
+        try
+        {
+            switch (interaction)
+            {
+                case SocketSlashCommand slash:
+                    LogSlashCommand(slash);
+                    break;
+
+                case SocketUserCommand userCmd:
+                    LogUserCommand(userCmd);
+                    break;
+
+                case SocketMessageCommand msgCmd:
+                    LogMessageCommand(msgCmd);
+                    break;
+
+                case SocketMessageComponent component:
+                    LogComponentInteraction(component);
+                    break;
+
+                case SocketModal modal:
+                    LogModalInteraction(modal);
+                    break;
+
+                default:
+                    throw new NotImplementedException($"Unknown interaction: {interaction.GetType().Name}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to log interaction");
+        }
+    }
+
+    private void LogSlashCommand(SocketSlashCommand cmd)
+    {
+        _logger.LogInformation("Slash Command: {Command} | Invoker: {@User} | Args: {Args}",
+            BuildSlashCommandName(cmd.Data),
+            new { cmd.User.Id, cmd.User.Username },
+            BuildSlashCommandArguments(cmd.Data.Options));
+    }
+
+    private void LogUserCommand(SocketUserCommand cmd)
+    {
+        var target = new { cmd.Data.Member.Id, cmd.Data.Member.Username };
+
+        using (LogContext.PushProperty("TargetUser", target))
+        {
+            _logger.LogInformation("User Command: /{Command} | Invoker: {@User} | Target: {@TargetUser}",
+                cmd.CommandName,
+                new { cmd.User.Id, cmd.User.Username },
+                target);
+        }
+    }
+
+    private void LogMessageCommand(SocketMessageCommand cmd)
+    {
+        _logger.LogInformation("Message Command: /{Command} | Invoker: {@User} | Target Message: {MessageId}",
+            cmd.CommandName,
+            new { cmd.User.Id, cmd.User.Username },
+            cmd.Data.Message.Id);
+    }
+
+    private void LogComponentInteraction(SocketMessageComponent component)
+    {
+        _logger.LogInformation("Component Interaction: {Id} | Invoker: {@User} | Value: {Value}",
+            component.Data.CustomId,
+            new { component.User.Id, component.User.Username },
+            component.Data.Values);
+    }
+
+    private void LogModalInteraction(SocketModal modal)
+    {
+        var values = modal.Data.Components.Select(c => $"{c.CustomId}: {c.Value}");
+
+        _logger.LogInformation("Modal Interaction: {Id} | Invoker: {@User} | Values: {Values}",
+            modal.Data.CustomId,
+            new { modal.User.Id, modal.User.Username },
+            values);
+    }
+
+    /// <summary>Rebuilds the invoked path, e.g. "/weather now", by walking the subcommand chain.</summary>
+    private static string BuildSlashCommandName(SocketSlashCommandData data)
+    {
+        var name = new StringBuilder($"/{data.Name}");
+
+        var current = data.Options.FirstOrDefault();
+        while (current is { Type: ApplicationCommandOptionType.SubCommand or ApplicationCommandOptionType.SubCommandGroup })
+        {
+            name.Append($" {current.Name}");
+            current = current.Options.FirstOrDefault();
+        }
+
+        return name.ToString();
+    }
+
+    private static Dictionary<string, object> BuildSlashCommandArguments(IEnumerable<SocketSlashCommandDataOption> options) =>
+        FlattenOptions(options).ToDictionary(opt => opt.Name, opt => ConvertOptionValue(opt.Value));
+
+    private static IEnumerable<SocketSlashCommandDataOption> FlattenOptions(IEnumerable<SocketSlashCommandDataOption> opts)
+    {
+        foreach (var opt in opts)
+        {
+            if (opt.Type is ApplicationCommandOptionType.SubCommand or ApplicationCommandOptionType.SubCommandGroup)
+            {
+                foreach (var nested in FlattenOptions(opt.Options))
+                {
+                    yield return nested;
+                }
+            }
+            else
+            {
+                yield return opt;
+            }
+        }
+    }
+
+    private static object ConvertOptionValue(object value)
+    {
+        return value switch
+        {
+            null => null,
+            SocketUser user => new { user.Id, user.Username },
+            SocketChannel ch => new { ch.Id, ChannelType = ch.GetType().Name },
+            SocketRole role => new { role.Id, role.Name },
+            _ => value
+        };
+    }
+}

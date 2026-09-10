@@ -8,7 +8,7 @@ and an LLM bridge (`/slop ask|image`) built on Semantic Kernel and OpenAI.
 ```bash
 dotnet build -c Release          # Release is the default Configuration (Directory.Build.props)
 dotnet test  -c Release          # xunit
-dotnet publish src/Monody.Bot/Monody.Bot.csproj -c Release -o ./out
+dotnet publish src/Monody.App/Monody.App.csproj -c Release -o ./out
 ```
 
 CI runs exactly `restore` → `build` → `test` → `docker build`, so a clean local
@@ -28,11 +28,11 @@ src/Monody.Data        SQLite via EF Core: conversations, user memories and remi
 src/Monody.AI.Tools    Semantic Kernel plugins (the tools the model can call).
 src/Monody.AI          Kernel/OpenAI wiring, system prompts, the research agent,
                        and the structured-output JSON Schema generator.
-src/Monody.Bot         Host, Discord wiring, interaction modules. The entrypoint.
+src/Monody.App         Host, Discord wiring, interaction modules. The entrypoint.
 test/…AI.Tools.Tests   Plugin behaviour: HTML extraction, current time, arg coercion,
                        the expression evaluator.
-test/Monody.Bot.Tests  Embed construction and the interaction-command tree. Sees
-                       Monody.Bot internals via InternalsVisibleTo.
+test/Monody.App.Tests  Embed construction and the interaction-command tree. Sees
+                       Monody.App internals via InternalsVisibleTo.
 test/Monody.Data.Tests Store behaviour against a real in-memory SQLite database.
 ```
 
@@ -85,7 +85,7 @@ startup wiring is intact.
 ## Adding things
 
 **A slash command.** Add an `InteractionModule : InteractionModuleBase<SocketInteractionContext>`
-under `src/Monody.Bot/Modules/<Area>/`. It must live in `Monody.Bot`:
+under `src/Monody.App/Modules/<Area>/`. It must live in `Monody.App`:
 `ModuleLoaderService` only scans the executing assembly. If the module needs its
 own services, add an `InjectionHandler : ModuleInjectionHandler` beside it —
 `AddModulesFromAssembly` finds every such type by reflection and calls it. There

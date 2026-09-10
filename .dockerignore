@@ -45,3 +45,6 @@ TestResults/
 # Docker recursion safety
 Dockerfile
 docker-compose.yml
+
+# Test projects
+test/
