@@ -13,14 +13,12 @@ public static class ServiceCollectionExtensions
     {
         var options = services.ApplyValidatedOptions<DataOptions>(configuration, "Data");
 
-        // A factory rather than a scoped DbContext: the callers are singletons (plugins, hosted
-        // services) with no ambient scope, and each unit of work wants its own short-lived context.
         services.AddDbContextFactory<MonodyDbContext>(builder => builder.UseSqlite(options.ConnectionString));
-
-        services.TryAddSingleton(TimeProvider.System);
 
         services.AddHostedService<DatabaseMigrationService>();
 
+        services.TryAddSingleton(TimeProvider.System);
+        
         services.AddSingleton<IConversationStore, ConversationStore>();
         services.AddSingleton<IMemoryStore, MemoryStore>();
         services.AddSingleton<IReminderStore, ReminderStore>();

@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Monody.App;
-using Monody.App.ModuleBuilder;
+using Monody.App.Modules;
 using Monody.Services;
 
 // Avoid slow thread injection delaying interaction defers past Discord's 3s window.

@@ -1,9 +1,8 @@
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Monody.App.Modules;
 
-namespace Monody.App.ModuleBuilder;
+namespace Monody.App.Modules;
 
 internal static class ServiceCollectionExtensions
 {
