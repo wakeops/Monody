@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Monody.Domain.Extensions;
 using Monody.Services.BlueSky;
 using Monody.Services.Geocode;
+using Monody.Services.Graylog;
 using Monody.Services.Weather;
 using Monody.Services.WebSearch;
 
@@ -23,6 +24,7 @@ public static class ServiceCollectionExtensions
         services.AddWeatherServices(configuration);
         services.AddBlueSkyServices();
         services.AddWebSearchServices(configuration);
+        services.AddGraylogServices(configuration);
 
         return services;
     }
@@ -71,5 +73,20 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddTransient<GoogleSearchService>();
+    }
+
+    private static void AddGraylogServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.ApplyValidatedOptions<GraylogOptions>(configuration, "Services:Graylog");
+
+        services.AddHttpClient<GraylogService>((sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<GraylogOptions>>().Value;
+
+            if (Uri.TryCreate(options.BaseUrl.TrimEnd('/') + "/api/", UriKind.Absolute, out var baseAddress))
+            {
+                client.BaseAddress = baseAddress;
+            }
+        });
     }
 }

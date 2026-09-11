@@ -10,6 +10,7 @@ using Monody.AI.Tools.Capabilities.CurrentTime;
 using Monody.AI.Tools.Capabilities.FetchBlueSky;
 using Monody.AI.Tools.Capabilities.FetchUrl;
 using Monody.AI.Tools.Capabilities.Geocode;
+using Monody.AI.Tools.Capabilities.Graylog;
 using Monody.AI.Tools.Capabilities.Memory;
 using Monody.AI.Tools.Capabilities.GetDiscordMessage;
 using Monody.AI.Tools.Capabilities.GetDiscordMessageHistory;
@@ -49,6 +50,7 @@ public static class ServiceCollectionExtensions
         kernelBuilder.Plugins.AddFromType<MathPlugin>();
         kernelBuilder.Plugins.AddFromType<MemoryPlugin>();
         kernelBuilder.Plugins.AddFromType<ReminderPlugin>();
+        kernelBuilder.Plugins.AddFromType<GraylogPlugin>();
 
         services.AddTransient<IResearchAgent, ResearchAgent>();
         services.AddSingleton<IFunctionInvocationFilter, ToolCallRecoveryFilter>();
