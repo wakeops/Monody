@@ -1,10 +1,10 @@
-﻿using System.Reflection;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Monody.AI;
 using Monody.App;
-using Monody.App.Modules;
+using Monody.App.Modules.Slop;
 using Monody.Services;
 
 // Avoid slow thread injection delaying interaction defers past Discord's 3s window.
@@ -30,8 +30,9 @@ builder.Services.Configure<HostOptions>(options =>
 
 // Services
 builder.Services
+    .AddMonodyAI(builder.Configuration)
+    .AddSingleton<AIChatService>()
     .AddServices(builder.Configuration)
-    .AddModulesFromAssembly(builder.Configuration, Assembly.GetExecutingAssembly())
     .AddCache(builder.Configuration)
     .AddDiscord();
 
