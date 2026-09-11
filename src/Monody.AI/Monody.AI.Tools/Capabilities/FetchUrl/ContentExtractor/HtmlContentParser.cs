@@ -11,7 +11,7 @@ namespace Monody.AI.Tools.Capabilities.FetchUrl.ContentExtractor;
 /// </summary>
 public static partial class HtmlContentParser
 {
-    private const string NoiseSelector = "script,style,noscript,svg,footer,nav,aside,form";
+    private const string _noiseSelector = "script,style,noscript,svg,footer,nav,aside,form";
 
     private static readonly string[] _noiseClasses = ["article-meta", "article-footer", "article-header", "tags"];
 
@@ -38,7 +38,7 @@ public static partial class HtmlContentParser
 
     private static void RemoveNoise(IHtmlDocument doc)
     {
-        foreach (var node in doc.QuerySelectorAll(NoiseSelector).ToList())
+        foreach (var node in doc.QuerySelectorAll(_noiseSelector).ToList())
         {
             node.Remove();
         }

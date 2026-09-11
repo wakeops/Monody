@@ -6,7 +6,7 @@ namespace Monody.AI.Tools.Capabilities.FetchUrl;
 
 public sealed class FetchUrlPlugin(HttpClient httpClient)
 {
-    private const int MaxBodyLength = 20_000;
+    private const int _maxBodyLength = 20_000;
 
     [KernelFunction("fetch_url")]
     [Description("Fetches a URL over HTTP(S) and returns the status code and body.")]
@@ -32,9 +32,9 @@ public sealed class FetchUrlPlugin(HttpClient httpClient)
 
         response.Body = await HtmlContentExtractor.ExtractMainContentAsync(resultHtml);
 
-        if (response.Body.Length > MaxBodyLength)
+        if (response.Body.Length > _maxBodyLength)
         {
-            response.Body = string.Concat(response.Body.AsSpan(0, MaxBodyLength), "\n\n[Truncated]");
+            response.Body = string.Concat(response.Body.AsSpan(0, _maxBodyLength), "\n\n[Truncated]");
         }
 
         return response;

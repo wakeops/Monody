@@ -134,7 +134,7 @@ public static class ExpressionEvaluator
     private sealed class Parser
     {
         // Bounds recursion so a pathological input fails cleanly instead of overflowing the stack.
-        private const int MaxDepth = 64;
+        private const int _maxDepth = 64;
 
         private readonly string _text;
         private int _position;
@@ -346,7 +346,7 @@ public static class ExpressionEvaluator
 
         private double Nested(Func<double> parse)
         {
-            if (++_depth > MaxDepth)
+            if (++_depth > _maxDepth)
             {
                 throw new FormatException("That expression is nested too deeply.");
             }

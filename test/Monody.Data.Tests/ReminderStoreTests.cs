@@ -6,9 +6,9 @@ namespace Monody.Data.Tests;
 
 public class ReminderStoreTests : IDisposable
 {
-    private const ulong Alice = 111;
-    private const ulong Bob = 222;
-    private const ulong Channel = 999;
+    private const ulong _alice = 111;
+    private const ulong _bob = 222;
+    private const ulong _channel = 999;
 
     private static readonly DateTimeOffset _now = new(2026, 9, 1, 12, 0, 0, TimeSpan.Zero);
 
@@ -26,26 +26,26 @@ public class ReminderStoreTests : IDisposable
     [Fact]
     public async Task SchedulesAReminder()
     {
-        var result = await _store.ScheduleAsync(Alice, Channel, "Check the deploy", _now.AddHours(2));
+        var result = await _store.ScheduleAsync(_alice, _channel, "Check the deploy", _now.AddHours(2));
 
         Assert.True(result.Success);
         Assert.Equal(_now.AddHours(2), result.Reminder.DueAt);
-        Assert.Single(await _store.GetPendingAsync(Alice));
+        Assert.Single(await _store.GetPendingAsync(_alice));
     }
 
     [Fact]
     public async Task RejectsSomethingAlreadyDue()
     {
-        var result = await _store.ScheduleAsync(Alice, Channel, "Too soon", _now.AddSeconds(5));
+        var result = await _store.ScheduleAsync(_alice, _channel, "Too soon", _now.AddSeconds(5));
 
         Assert.False(result.Success);
-        Assert.Empty(await _store.GetPendingAsync(Alice));
+        Assert.Empty(await _store.GetPendingAsync(_alice));
     }
 
     [Fact]
     public async Task RejectsSomethingAbsurdlyFarOut()
     {
-        var result = await _store.ScheduleAsync(Alice, Channel, "In the year 3000", _now.AddYears(5));
+        var result = await _store.ScheduleAsync(_alice, _channel, "In the year 3000", _now.AddYears(5));
 
         Assert.False(result.Success);
         Assert.Contains("days", result.Reason);
@@ -56,13 +56,13 @@ public class ReminderStoreTests : IDisposable
     {
         for (var i = 0; i < DataConstants.MaxPendingRemindersPerUser; i++)
         {
-            Assert.True((await _store.ScheduleAsync(Alice, Channel, $"Reminder {i}", _now.AddHours(i + 1))).Success);
+            Assert.True((await _store.ScheduleAsync(_alice, _channel, $"Reminder {i}", _now.AddHours(i + 1))).Success);
         }
 
-        Assert.False((await _store.ScheduleAsync(Alice, Channel, "One too many", _now.AddHours(50))).Success);
+        Assert.False((await _store.ScheduleAsync(_alice, _channel, "One too many", _now.AddHours(50))).Success);
 
         // Another user is unaffected by Alice hitting her cap.
-        Assert.True((await _store.ScheduleAsync(Bob, Channel, "Bob's first", _now.AddHours(1))).Success);
+        Assert.True((await _store.ScheduleAsync(_bob, _channel, "Bob's first", _now.AddHours(1))).Success);
     }
 
     [Fact]
@@ -70,20 +70,20 @@ public class ReminderStoreTests : IDisposable
     {
         for (var i = 0; i < DataConstants.MaxPendingRemindersPerUser; i++)
         {
-            await _store.ScheduleAsync(Alice, Channel, $"Reminder {i}", _now.AddHours(i + 1));
+            await _store.ScheduleAsync(_alice, _channel, $"Reminder {i}", _now.AddHours(i + 1));
         }
 
-        var first = (await _store.GetPendingAsync(Alice)).First();
+        var first = (await _store.GetPendingAsync(_alice)).First();
         await _store.MarkDeliveredAsync(first.Id);
 
-        Assert.True((await _store.ScheduleAsync(Alice, Channel, "Room for one more", _now.AddHours(50))).Success);
+        Assert.True((await _store.ScheduleAsync(_alice, _channel, "Room for one more", _now.AddHours(50))).Success);
     }
 
     [Fact]
     public async Task ReturnsOnlyRemindersThatAreDue()
     {
-        await _store.ScheduleAsync(Alice, Channel, "Soon", _now.AddMinutes(10));
-        await _store.ScheduleAsync(Alice, Channel, "Later", _now.AddHours(5));
+        await _store.ScheduleAsync(_alice, _channel, "Soon", _now.AddMinutes(10));
+        await _store.ScheduleAsync(_alice, _channel, "Later", _now.AddHours(5));
 
         Assert.Empty(await _store.GetDueAsync(10));
 
@@ -96,7 +96,7 @@ public class ReminderStoreTests : IDisposable
     public async Task MarkDeliveredIsClaimedOnlyOnce()
     {
         // Two delivery passes overlapping must not send the same reminder twice.
-        await _store.ScheduleAsync(Alice, Channel, "Check the deploy", _now.AddMinutes(1));
+        await _store.ScheduleAsync(_alice, _channel, "Check the deploy", _now.AddMinutes(1));
         _time.Advance(TimeSpan.FromMinutes(2));
 
         var due = (await _store.GetDueAsync(10)).Single();
@@ -109,10 +109,10 @@ public class ReminderStoreTests : IDisposable
     [Fact]
     public async Task WillNotCancelAnotherUsersReminder()
     {
-        await _store.ScheduleAsync(Bob, Channel, "Bob's reminder", _now.AddHours(1));
-        var bobsId = (await _store.GetPendingAsync(Bob)).Single().Id;
+        await _store.ScheduleAsync(_bob, _channel, "Bob's reminder", _now.AddHours(1));
+        var bobsId = (await _store.GetPendingAsync(_bob)).Single().Id;
 
-        Assert.Equal(0, await _store.CancelAsync(Alice, [bobsId]));
-        Assert.Single(await _store.GetPendingAsync(Bob));
+        Assert.Equal(0, await _store.CancelAsync(_alice, [bobsId]));
+        Assert.Single(await _store.GetPendingAsync(_bob));
     }
 }

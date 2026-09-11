@@ -7,9 +7,9 @@ namespace Monody.Data.Tests;
 
 public class ConversationStoreTests : IDisposable
 {
-    private const ulong Interaction = 1234567890123456789;
-    private const ulong Alice = 111;
-    private const ulong Channel = 999;
+    private const ulong _interaction = 1234567890123456789;
+    private const ulong _alice = 111;
+    private const ulong _channel = 999;
 
     private static readonly DateTimeOffset _now = new(2026, 9, 1, 12, 0, 0, TimeSpan.Zero);
 
@@ -30,9 +30,9 @@ public class ConversationStoreTests : IDisposable
     [Fact]
     public async Task RoundTripsAConversation()
     {
-        await _store.SaveAsync(Interaction, Alice, Channel, null, Turns("what is the time?", "half past two"));
+        await _store.SaveAsync(_interaction, _alice, _channel, null, Turns("what is the time?", "half past two"));
 
-        var turns = await _store.GetTurnsAsync(Interaction);
+        var turns = await _store.GetTurnsAsync(_interaction);
 
         Assert.Equal(2, turns.Count);
         Assert.Equal("user", turns[0].Role);
@@ -44,28 +44,28 @@ public class ConversationStoreTests : IDisposable
     {
         // The whole point: a redeploy used to drop every conversation, which is what produced
         // "Sorry, I lost this conversation's context" on the next follow-up.
-        await _store.SaveAsync(Interaction, Alice, Channel, null, Turns("remember this"));
+        await _store.SaveAsync(_interaction, _alice, _channel, null, Turns("remember this"));
 
         var afterRestart = new ConversationStore(_fixture.CreateFactory(), new FakeTimeProvider(_now));
 
-        Assert.True(await afterRestart.ExistsAsync(Interaction));
-        Assert.Equal("remember this", (await afterRestart.GetTurnsAsync(Interaction)).Single().Content);
+        Assert.True(await afterRestart.ExistsAsync(_interaction));
+        Assert.Equal("remember this", (await afterRestart.GetTurnsAsync(_interaction)).Single().Content);
     }
 
     [Fact]
     public async Task ReportsAnUnknownConversationAsMissing()
     {
-        Assert.False(await _store.ExistsAsync(Interaction));
-        Assert.Null(await _store.GetTurnsAsync(Interaction));
+        Assert.False(await _store.ExistsAsync(_interaction));
+        Assert.Null(await _store.GetTurnsAsync(_interaction));
     }
 
     [Fact]
     public async Task ReplacesTheTurnsOnFollowUp()
     {
-        await _store.SaveAsync(Interaction, Alice, Channel, null, Turns("first"));
-        await _store.SaveAsync(Interaction, Alice, Channel, null, Turns("first", "reply", "second"));
+        await _store.SaveAsync(_interaction, _alice, _channel, null, Turns("first"));
+        await _store.SaveAsync(_interaction, _alice, _channel, null, Turns("first", "reply", "second"));
 
-        Assert.Equal(3, (await _store.GetTurnsAsync(Interaction)).Count);
+        Assert.Equal(3, (await _store.GetTurnsAsync(_interaction)).Count);
     }
 
     [Fact]
@@ -73,9 +73,9 @@ public class ConversationStoreTests : IDisposable
     {
         var many = Turns([.. Enumerable.Range(0, ConversationStore.MaxTurns + 10).Select(i => $"turn {i}")]);
 
-        await _store.SaveAsync(Interaction, Alice, Channel, null, many);
+        await _store.SaveAsync(_interaction, _alice, _channel, null, many);
 
-        var stored = await _store.GetTurnsAsync(Interaction);
+        var stored = await _store.GetTurnsAsync(_interaction);
 
         Assert.Equal(ConversationStore.MaxTurns, stored.Count);
         Assert.Equal(many[^1].Content, stored[^1].Content);
@@ -84,13 +84,13 @@ public class ConversationStoreTests : IDisposable
     [Fact]
     public async Task PrunesOnlyConversationsPastRetention()
     {
-        await _store.SaveAsync(Interaction, Alice, Channel, null, Turns("old"));
+        await _store.SaveAsync(_interaction, _alice, _channel, null, Turns("old"));
 
         _time.Advance(ConversationStore.RetentionPeriod + TimeSpan.FromDays(1));
-        await _store.SaveAsync(2, Alice, Channel, null, Turns("fresh"));
+        await _store.SaveAsync(2, _alice, _channel, null, Turns("fresh"));
 
         Assert.Equal(1, await _store.PruneAsync());
-        Assert.False(await _store.ExistsAsync(Interaction));
+        Assert.False(await _store.ExistsAsync(_interaction));
         Assert.True(await _store.ExistsAsync(2));
     }
 
@@ -102,8 +102,8 @@ public class ConversationStoreTests : IDisposable
         {
             db.Conversations.Add(new Conversation
             {
-                Id = Interaction,
-                UserId = Alice,
+                Id = _interaction,
+                UserId = _alice,
                 TurnsJson = "{not json}",
                 CreatedAt = _now,
                 UpdatedAt = _now
@@ -111,6 +111,6 @@ public class ConversationStoreTests : IDisposable
             await db.SaveChangesAsync();
         }
 
-        Assert.Empty(await _store.GetTurnsAsync(Interaction));
+        Assert.Empty(await _store.GetTurnsAsync(_interaction));
     }
 }

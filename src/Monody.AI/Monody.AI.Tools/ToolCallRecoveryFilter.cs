@@ -47,7 +47,7 @@ namespace Monody.AI.Tools;
 /// </remarks>
 public sealed class ToolCallRecoveryFilter : IFunctionInvocationFilter
 {
-    private const string RequestParameterName = "request";
+    private const string _requestParameterName = "request";
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -63,20 +63,20 @@ public sealed class ToolCallRecoveryFilter : IFunctionInvocationFilter
 
     public async Task OnFunctionInvocationAsync(FunctionInvocationContext context, Func<FunctionInvocationContext, Task> next)
     {
-        if (context.Arguments.TryGetValue(RequestParameterName, out var argument) && argument is string text)
+        if (context.Arguments.TryGetValue(_requestParameterName, out var argument) && argument is string text)
         {
             var parameterType = context.Function.Metadata.Parameters
-                .FirstOrDefault(p => p.Name == RequestParameterName)?.ParameterType;
+                .FirstOrDefault(p => p.Name == _requestParameterName)?.ParameterType;
 
             if (parameterType is not null && parameterType != typeof(string))
             {
                 if (TryDeserialize(text, parameterType, out var deserialized))
                 {
-                    context.Arguments[RequestParameterName] = deserialized;
+                    context.Arguments[_requestParameterName] = deserialized;
                 }
                 else if (_bareValueCoercions.TryGetValue(context.Function.Name, out var coerce))
                 {
-                    context.Arguments[RequestParameterName] = coerce(text);
+                    context.Arguments[_requestParameterName] = coerce(text);
                 }
             }
         }

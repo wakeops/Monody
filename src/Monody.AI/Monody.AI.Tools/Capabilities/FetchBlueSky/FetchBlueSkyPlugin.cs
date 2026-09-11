@@ -6,7 +6,7 @@ namespace Monody.AI.Tools.Capabilities.FetchBlueSky;
 
 public sealed class FetchBlueSkyPlugin(BlueSkyService blueSkyService)
 {
-    private const string BskyHost = "bsky.app";
+    private const string _bskyHost = "bsky.app";
 
     [KernelFunction("fetch_bluesky")]
     [Description("Fetches the content of a given bsky URL for the assistant to analyze.")]
@@ -30,5 +30,5 @@ public sealed class FetchBlueSkyPlugin(BlueSkyService blueSkyService)
 
     private static bool IsBlueskyUrl(string url)
         => Uri.TryCreate(url, UriKind.Absolute, out var uri)
-           && uri.Host is BskyHost;
+           && uri.Host is _bskyHost;
 }
