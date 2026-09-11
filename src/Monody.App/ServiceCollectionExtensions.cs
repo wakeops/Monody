@@ -66,6 +66,7 @@ internal static class ServiceCollectionExtensions
             .WithOptions(options =>
             {
                 options.CacheKeyPrefix = typeof(ServiceCollectionExtensions).Assembly.GetName().Name;
+                options.DefaultEntryOptions.SkipBackplaneNotifications = true;
             });
 
         if (!string.IsNullOrWhiteSpace(cacheOptions.RedisConfiguration))
