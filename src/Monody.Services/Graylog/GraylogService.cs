@@ -61,6 +61,10 @@ public class GraylogService
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
+        // Graylog's CSRF filter rejects requests without this header on some deployments even for
+        // GET - the value itself is arbitrary, Graylog only checks that it's present.
+        request.Headers.Add("X-Requested-By", "monody");
+
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
