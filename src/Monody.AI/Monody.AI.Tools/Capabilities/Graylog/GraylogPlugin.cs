@@ -45,7 +45,8 @@ public sealed class GraylogPlugin(GraylogService graylogService)
     [Description(
         "Searches this server's Graylog logs using Graylog's query syntax over a relative time " +
         "range. Call list_graylog_streams first and pass its StreamId to scope the search, rather " +
-        "than searching every stream. Only available when a Graylog API key is configured for this " +
+        "than searching every stream. Be sure to pass a stream's Id field (never its Title) as StreamId " +
+        "or you may get a 403 response. Only available when a Graylog API key is configured for this " +
         "bot - check the response's Success field rather than assuming it ran.")]
     public async Task<SearchGraylogToolResponse> SearchAsync(SearchGraylogToolRequest request, CancellationToken cancellationToken = default)
     {
