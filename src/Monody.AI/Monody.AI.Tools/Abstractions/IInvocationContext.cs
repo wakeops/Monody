@@ -1,3 +1,5 @@
+using Discord.WebSocket;
+
 namespace Monody.AI.Tools.Abstractions;
 
 /// <summary>
@@ -11,9 +13,7 @@ namespace Monody.AI.Tools.Abstractions;
 /// </remarks>
 public interface IInvocationContext
 {
-    ulong? UserId { get; }
+    SocketInteraction Interaction { get; }
 
-    ulong? ChannelId { get; }
-
-    IDisposable BeginScope(ulong userId, ulong? channelId);
+    IDisposable BeginScope(SocketInteraction interactionContext);
 }

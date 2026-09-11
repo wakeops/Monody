@@ -14,6 +14,7 @@ using Monody.App.Modules.Slop.Utils;
 using OpenAI.Chat;
 using SkChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 using Monody.Data.Stores;
+using Discord.WebSocket;
 
 namespace Monody.App.Modules.Slop;
 
@@ -42,9 +43,13 @@ public class AIChatService
         _invocationContext = invocationContext;
     }
 
-    public async Task<DiscordCompletionResponse> GetChatCompletionAsync(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user, string prompt, CancellationToken cancellationToken = default)
+    public async Task<DiscordCompletionResponse> GetChatCompletionAsync(ulong interactionId, SocketInteraction interactionContext, string prompt, CancellationToken cancellationToken = default)
     {
-        var history = await LoadHistoryAsync(interactionId, guild, channel, cancellationToken);
+        var history = await LoadHistoryAsync(interactionId, interactionContext, cancellationToken);
+        
+        var user = interactionContext.User;
+        var guildId = interactionContext.GuildId;
+        var channel = interactionContext.Channel;
 
         history.AddUserMessage(new DiscordUserPrompt(user, prompt).ToString());
 
@@ -59,13 +64,13 @@ public class AIChatService
 
         // Scopes the caller for the whole tool-calling loop, so per-user tools know who they
         // are acting for without the model being able to name someone else.
-        using var scope = _invocationContext.BeginScope(user.Id, channel?.Id);
+        using var scope = _invocationContext.BeginScope(interactionContext);
 
         var result = await _chatService.GetChatMessageContentsAsync(history, settings, _kernel, cancellationToken);
 
         // Persist before parsing: a malformed reply should not cost the user the whole thread.
         history.AddRange(result);
-        await SaveHistoryAsync(interactionId, guild, channel, user, history, cancellationToken);
+        await SaveHistoryAsync(interactionId, guildId, channel, user, history, cancellationToken);
 
         var content = result.Last(m => m.Role == AuthorRole.Assistant).Content;
         return DeserializeFirstJsonObject(content);
@@ -80,7 +85,7 @@ public class AIChatService
         return JsonSerializer.Deserialize<DiscordCompletionResponse>(ref reader, _serializerOptions);
     }
 
-    private async Task<ChatHistory> LoadHistoryAsync(ulong interactionId, IGuild guild, IMessageChannel channel, CancellationToken cancellationToken)
+    private async Task<ChatHistory> LoadHistoryAsync(ulong interactionId, SocketInteraction interactionContext, CancellationToken cancellationToken)
     {
         var stored = await _conversationStore.GetTurnsAsync(interactionId, cancellationToken);
 
@@ -88,7 +93,7 @@ public class AIChatService
 
         if (stored is null)
         {
-            DiscordHelper.EnrichWithInteractionContext(history, interactionId, guild, channel);
+            DiscordHelper.EnrichWithInteractionContext(history, interactionId, interactionContext);
         }
         else
         {
@@ -104,7 +109,7 @@ public class AIChatService
         return history;
     }
 
-    private Task SaveHistoryAsync(ulong interactionId, IGuild guild, IMessageChannel channel, IUser user, ChatHistory history, CancellationToken cancellationToken)
+    private Task SaveHistoryAsync(ulong interactionId, ulong? guildId, IMessageChannel channel, IUser user, ChatHistory history, CancellationToken cancellationToken)
     {
         // Only the spoken turns are kept. Tool calls and their results were needed to finish this
         // round, not to carry the thread, and the system prompt is re-seeded on load.
@@ -113,6 +118,6 @@ public class AIChatService
             .Where(m => !string.IsNullOrWhiteSpace(m.Content))
             .Select(m => new ConversationTurn(m.Role.Label, m.Content));
 
-        return _conversationStore.SaveAsync(interactionId, user.Id, channel?.Id, guild?.Id, turns, cancellationToken);
+        return _conversationStore.SaveAsync(interactionId, user.Id, channel?.Id, guildId, turns, cancellationToken);
     }
 }

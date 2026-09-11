@@ -1,3 +1,6 @@
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using Discord.WebSocket;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Monody.AI.Tools.Abstractions;
@@ -42,7 +45,7 @@ public class MemoryPluginTests : IDisposable
     [Fact]
     public async Task RecallIndexReturnsIdsAndSlugsSoForgetAndRecallTopicCanUseThem()
     {
-        using var _ = _invocationContext.BeginScope(_alice, null);
+        using var _ = _invocationContext.BeginScope(FakeInteraction(_alice));
 
         await _plugin.RememberAsync(new RememberToolRequest
         {
@@ -61,7 +64,7 @@ public class MemoryPluginTests : IDisposable
     [Fact]
     public async Task RecallTopicReturnsFullContent()
     {
-        using var _ = _invocationContext.BeginScope(_alice, null);
+        using var _ = _invocationContext.BeginScope(FakeInteraction(_alice));
 
         await _plugin.RememberAsync(new RememberToolRequest
         {
@@ -81,7 +84,7 @@ public class MemoryPluginTests : IDisposable
     [Fact]
     public async Task RememberingTheSameSlugAgainUpdatesRatherThanDuplicating()
     {
-        using var _ = _invocationContext.BeginScope(_alice, null);
+        using var _ = _invocationContext.BeginScope(FakeInteraction(_alice));
 
         await _plugin.RememberAsync(new RememberToolRequest { Slug = "units", Description = "Preferred units", Content = "Prefers metric units" });
         await _plugin.RememberAsync(new RememberToolRequest { Slug = "units", Description = "Preferred units", Content = "Prefers imperial units" });
@@ -97,20 +100,20 @@ public class MemoryPluginTests : IDisposable
     {
         // The id is real, just somebody else's - the case a prompt injection would aim for.
         int bobsId;
-        using (var _ = _invocationContext.BeginScope(_bob, null))
+        using (var _ = _invocationContext.BeginScope(FakeInteraction(_bob)))
         {
             await _plugin.RememberAsync(new RememberToolRequest { Slug = "units", Description = "Preferred units", Content = "Bob's preference" });
             bobsId = (await _plugin.RecallIndexAsync()).Topics.Single().Id;
         }
 
-        using (var _ = _invocationContext.BeginScope(_alice, null))
+        using (var _ = _invocationContext.BeginScope(FakeInteraction(_alice)))
         {
             var result = await _plugin.ForgetAsync(new ForgetToolRequest { MemoryId = bobsId });
 
             Assert.False(result.Forgotten);
         }
 
-        using (var _ = _invocationContext.BeginScope(_bob, null))
+        using (var _ = _invocationContext.BeginScope(FakeInteraction(_bob)))
         {
             Assert.Single((await _plugin.RecallIndexAsync()).Topics);
         }
@@ -124,16 +127,38 @@ public class MemoryPluginTests : IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.ForgetAsync(new ForgetToolRequest { MemoryId = 1 }));
     }
 
+    /// <summary>
+    /// SocketInteraction has no accessible constructor - Discord.Net only builds one from gateway
+    /// data - so a fake for tests has to bypass the constructor and set its backing fields
+    /// directly. Only the fields MemoryPlugin actually reads (User, by way of RequireUserId) are
+    /// populated; anything else stays default.
+    /// </summary>
+    private static SocketInteraction FakeInteraction(ulong userId)
+    {
+        var user = (SocketUnknownUser)RuntimeHelpers.GetUninitializedObject(typeof(SocketUnknownUser));
+        SetBackingField(user, typeof(SocketEntity<ulong>), "Id", userId);
+
+        var interaction = (SocketSlashCommand)RuntimeHelpers.GetUninitializedObject(typeof(SocketSlashCommand));
+        SetBackingField(interaction, typeof(SocketInteraction), "User", user);
+
+        return interaction;
+    }
+
+    private static void SetBackingField(object target, Type declaringType, string propertyName, object value)
+    {
+        var field = declaringType.GetField($"<{propertyName}>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException($"No backing field for '{propertyName}' on {declaringType}.");
+
+        field.SetValue(target, value);
+    }
+
     private sealed class StubInvocationContext : IInvocationContext
     {
-        public ulong? UserId { get; private set; }
+        public SocketInteraction Interaction { get; private set; }
 
-        public ulong? ChannelId { get; private set; }
-
-        public IDisposable BeginScope(ulong userId, ulong? channelId)
+        public IDisposable BeginScope(SocketInteraction interactionContext)
         {
-            UserId = userId;
-            ChannelId = channelId;
+            Interaction = interactionContext;
             return new Reset(this);
         }
 
@@ -143,11 +168,7 @@ public class MemoryPluginTests : IDisposable
 
             public Reset(StubInvocationContext context) => _context = context;
 
-            public void Dispose()
-            {
-                _context.UserId = null;
-                _context.ChannelId = null;
-            }
+            public void Dispose() => _context.Interaction = null;
         }
     }
 

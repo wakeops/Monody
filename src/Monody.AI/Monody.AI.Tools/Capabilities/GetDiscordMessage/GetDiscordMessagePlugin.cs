@@ -2,15 +2,22 @@ using System.ComponentModel;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.SemanticKernel;
+using Monody.AI.Tools.Abstractions;
 
 namespace Monody.AI.Tools.Capabilities.GetDiscordMessage;
 
-public sealed class GetDiscordMessagePlugin(DiscordSocketClient client)
+public sealed class GetDiscordMessagePlugin(DiscordSocketClient client, IInvocationContext invocationContext)
 {
     [KernelFunction("get_discord_message")]
-    [Description("Retrieves a Discord message and returns contextual information such as guild, channel, author, and content.")]
+    [Description(
+        "Retrieves a Discord message and returns contextual information such as guild, channel, " +
+        "author, and content. Only available when Monody is installed to the server, not when " +
+        "running only as the current user's personal app.")]
     public async Task<GetDiscordMessageResponse> GetMessageAsync(GetDiscordMessageRequest request, CancellationToken cancellationToken = default)
     {
+        invocationContext.EnsureIsGuildInstall();
+        invocationContext.EnsureCanReadMessages();
+
         if (client.GetChannel(request.ChannelId) is not IMessageChannel channel)
         {
             throw new InvalidOperationException($"Channel '{request.ChannelId}' was not found or is not a message channel.");

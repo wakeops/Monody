@@ -21,7 +21,8 @@ public sealed class ReminderPlugin(IReminderStore reminderStore, IInvocationCont
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Message);
 
-        var userId = RequireUserId();
+        var userId = invocationContext.RequireUserId();
+        var channelId = invocationContext.Interaction.ChannelId;
 
         if (ResolveDueAt(request) is not { } dueAt)
         {
@@ -32,7 +33,7 @@ public sealed class ReminderPlugin(IReminderStore reminderStore, IInvocationCont
             };
         }
 
-        var result = await reminderStore.ScheduleAsync(userId, invocationContext.ChannelId, request.Message, dueAt, cancellationToken);
+        var result = await reminderStore.ScheduleAsync(userId, channelId, request.Message, dueAt, cancellationToken);
 
         return new SetReminderToolResponse
         {
@@ -46,7 +47,9 @@ public sealed class ReminderPlugin(IReminderStore reminderStore, IInvocationCont
     [Description("Lists the current user's pending reminders.")]
     public async Task<ListRemindersToolResponse> ListRemindersAsync(CancellationToken cancellationToken = default)
     {
-        var pending = await reminderStore.GetPendingAsync(RequireUserId(), cancellationToken);
+        var userId = invocationContext.RequireUserId();
+
+        var pending = await reminderStore.GetPendingAsync(userId, cancellationToken);
 
         return new ListRemindersToolResponse
         {
@@ -70,10 +73,6 @@ public sealed class ReminderPlugin(IReminderStore reminderStore, IInvocationCont
 
         return null;
     }
-
-    private ulong RequireUserId() =>
-        invocationContext.UserId
-        ?? throw new InvalidOperationException("No Discord user is in scope, so reminders cannot be scheduled.");
 
     private static string DiscordTimestamp(DateTimeOffset moment) => $"<t:{moment.ToUnixTimeSeconds()}:R>";
 }

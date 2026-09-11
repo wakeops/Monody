@@ -16,8 +16,8 @@ namespace Monody.App.Modules.Weather;
 [IntegrationType(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)]
 public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
-    private const string ForecastUnavailable = "Failed to find a forecast for this location.";
-    private const string LocationUnresolved = "Failed to resolve this location.";
+    private const string _forecastUnavailable = "Failed to find a forecast for this location.";
+    private const string _locationUnresolved = "Failed to resolve this location.";
 
     private readonly GeocodeService _geocodeService;
     private readonly WeatherService _weatherService;
@@ -52,7 +52,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         if (forecastData == null)
         {
-            await SetContentAsync(ForecastUnavailable);
+            await SetContentAsync(_forecastUnavailable);
             return;
         }
 
@@ -111,7 +111,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         if (forecastData == null)
         {
-            await SetContentAsync(ForecastUnavailable);
+            await SetContentAsync(_forecastUnavailable);
             return;
         }
 
@@ -154,7 +154,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 
         if (forecastData == null)
         {
-            await SetContentAsync(ForecastUnavailable);
+            await SetContentAsync(_forecastUnavailable);
             return;
         }
 
@@ -174,11 +174,11 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     /// </summary>
     private async Task<(LocationDetails Location, MeasurementUnits Unit)?> ResolveRequestAsync(string location, MeasurementUnits? paramUnits)
     {
-        var weatherLocation = await _geocodeService.GetGeocodeForLocationStringAsync(location);
+        var weatherLocation = await _geocodeService.GetGeocodeForLocationStringAsync(location, CancellationToken.None);
 
         if (weatherLocation?.Coordinates == null)
         {
-            await SetContentAsync(LocationUnresolved);
+            await SetContentAsync(_locationUnresolved);
             return null;
         }
 

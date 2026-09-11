@@ -14,7 +14,7 @@ public sealed class WeatherPlugin(WeatherService weatherService, GeocodeService 
     {
         ValidateRequest(request);
 
-        var (latitude, longitude, geocode) = await ResolveCoordinatesAsync(request);
+        var (latitude, longitude, geocode) = await ResolveCoordinatesAsync(request, cancellationToken);
 
         object forecast = request.Range switch
         {
@@ -31,14 +31,14 @@ public sealed class WeatherPlugin(WeatherService weatherService, GeocodeService 
         };
     }
 
-    private async Task<(double Latitude, double Longitude, LocationDetails Geocode)> ResolveCoordinatesAsync(WeatherToolRequest request)
+    private async Task<(double Latitude, double Longitude, LocationDetails Geocode)> ResolveCoordinatesAsync(WeatherToolRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.LocationQuery))
         {
             return (request.Latitude.Value, request.Longitude.Value, null);
         }
 
-        var geocode = await geocodeService.GetGeocodeForLocationStringAsync(request.LocationQuery)
+        var geocode = await geocodeService.GetGeocodeForLocationStringAsync(request.LocationQuery, cancellationToken)
             ?? throw new InvalidOperationException($"Could not resolve a location for '{request.LocationQuery}'.");
 
         return (geocode.Coordinates.Latitude, geocode.Coordinates.Longitude, geocode);

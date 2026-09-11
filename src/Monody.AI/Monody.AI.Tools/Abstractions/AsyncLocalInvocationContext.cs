@@ -1,3 +1,5 @@
+using Discord.WebSocket;
+
 namespace Monody.AI.Tools.Abstractions;
 
 /// <summary>
@@ -8,19 +10,17 @@ public sealed class AsyncLocalInvocationContext : IInvocationContext
 {
     private static readonly AsyncLocal<Scope> _current = new();
 
-    public ulong? UserId => _current.Value?.UserId;
+    public SocketInteraction Interaction => _current.Value?.Interaction;
 
-    public ulong? ChannelId => _current.Value?.ChannelId;
-
-    public IDisposable BeginScope(ulong userId, ulong? channelId)
+    public IDisposable BeginScope(SocketInteraction interactionContext)
     {
         var previous = _current.Value;
-        _current.Value = new Scope(userId, channelId);
+        _current.Value = new Scope(interactionContext);
 
         return new Restore(() => _current.Value = previous);
     }
 
-    private sealed record Scope(ulong UserId, ulong? ChannelId);
+    private sealed record Scope(SocketInteraction Interaction);
 
     private sealed class Restore : IDisposable
     {

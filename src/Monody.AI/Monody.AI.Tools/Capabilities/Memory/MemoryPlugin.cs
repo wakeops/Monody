@@ -21,7 +21,7 @@ public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext in
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Description);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Content);
 
-        var userId = RequireUserId();
+        var userId = invocationContext.RequireUserId();
 
         var result = await memoryStore.RememberAsync(userId, request.Slug, request.Description, request.Content, cancellationToken);
 
@@ -40,7 +40,7 @@ public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext in
         "looks relevant.")]
     public async Task<RecallIndexToolResponse> RecallIndexAsync(CancellationToken cancellationToken = default)
     {
-        var userId = RequireUserId();
+        var userId = invocationContext.RequireUserId();
 
         var index = await memoryStore.GetIndexAsync(userId, cancellationToken);
 
@@ -64,7 +64,7 @@ public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext in
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Slug);
 
-        var userId = RequireUserId();
+        var userId = invocationContext.RequireUserId();
 
         var topic = await memoryStore.GetTopicAsync(userId, request.Slug, cancellationToken);
 
@@ -85,7 +85,7 @@ public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext in
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var userId = RequireUserId();
+        var userId = invocationContext.RequireUserId();
 
         var removed = await memoryStore.ForgetAsync(userId, [request.MemoryId], cancellationToken);
 
@@ -97,10 +97,6 @@ public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext in
                 : "No topic with that Id belongs to this user; call recall_index for the current list."
         };
     }
-
-    private ulong RequireUserId() =>
-        invocationContext.UserId
-        ?? throw new InvalidOperationException("No Discord user is in scope, so memories cannot be read or written.");
 
     private static string DescribeOutcome(MemoryWriteResult result)
     {

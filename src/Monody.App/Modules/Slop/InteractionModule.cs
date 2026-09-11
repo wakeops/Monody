@@ -92,8 +92,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         DiscordCompletionResponse completion;
         try
         {
-            completion = await _aiChatService.GetChatCompletionAsync(
-                interactionId, Context.Guild, Context.Interaction?.InteractionChannel, Context.User, prompt);
+            completion = await _aiChatService.GetChatCompletionAsync(interactionId, Context.Interaction, prompt);
         }
         catch (Exception ex)
         {

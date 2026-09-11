@@ -14,7 +14,7 @@ public sealed class GeocodePlugin(GeocodeService geocodeService)
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Location);
 
-        var response = await geocodeService.GetGeocodeForLocationStringAsync(request.Location);
+        var response = await geocodeService.GetGeocodeForLocationStringAsync(request.Location, cancellationToken);
 
         return new GeocodeToolResponse
         {

@@ -21,21 +21,22 @@ public class GeocodeService
         _logger = logger;
     }
 
-    public async Task<LocationDetails> GetGeocodeForLocationStringAsync(string locationQuery)
+    public async Task<LocationDetails> GetGeocodeForLocationStringAsync(string locationQuery, CancellationToken cancellationToken)
     {
         return await _cache.GetOrSetAsync(
             $"geocodev2-{locationQuery}",
-            _ => SearchGeocodeByLocationFromApiAsync(locationQuery),
-            _geocodeCacheExpiration);
+            ct => SearchGeocodeByLocationFromApiAsync(locationQuery, ct),
+            _geocodeCacheExpiration,
+            cancellationToken);
     }
 
-    private async Task<LocationDetails> SearchGeocodeByLocationFromApiAsync(string locationQuery)
+    private async Task<LocationDetails> SearchGeocodeByLocationFromApiAsync(string locationQuery, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Fetching location for '{Location}'", locationQuery);
 
         try
         {
-            var geocodeResponse = await _hereGeocoding.GeocodingAsync(new GeocodeParameters { Query = locationQuery });
+            var geocodeResponse = await _hereGeocoding.GeocodingAsync(new GeocodeParameters { Query = locationQuery }, cancellationToken);
 
             // Best match wins; US results break ties, since most users are searching US locations.
             var location = geocodeResponse.Items
