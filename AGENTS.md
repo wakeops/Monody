@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Monody is a C# Discord bot: slash commands for weather (`/weather now|hourly|week`)
-and an LLM bridge (`/slop ask|image`) built on Semantic Kernel and OpenAI.
+and an LLM bridge (`/slop ask|memories`) built on Semantic Kernel and OpenAI.
 
 ## Commands
 
@@ -216,8 +216,8 @@ the model to actually retry. It does three things:
   function's real parameter type (read off `context.Function.Metadata.Parameters`, not guessed)
   isn't `string`. **Semantic Kernel's own fallback string-to-object conversion is not reliable
   for anything beyond the simplest shapes** - confirmed broken for a request type with an `enum`
-  property, e.g. `remember`'s `RememberToolRequest {Category, Content}`: even with a perfectly
-  well-formed JSON argument, it threw `ArgumentException: Object of type 'System.String' cannot
+  property: even with a perfectly well-formed JSON argument, it threw
+  `ArgumentException: Object of type 'System.String' cannot
   be converted to type '...'`, which the filter's own catch (below) then turned into a
   plausible-looking string result - and the model read that as success ("I've saved that you
   live in Raleigh NC") while nothing was actually written. Do not trust Semantic Kernel to bind
@@ -237,8 +237,8 @@ the model to actually retry. It does three things:
   of letting it propagate. This is what actually recovers a multi-field request sent as a bare
   string, and every plugin's own validation guard.
 
-A request type with **no required fields** - `recall`'s and `list_reminders`' both have exactly
-one property, and it isn't required - hits a separate failure the `ArgumentException` catch
+A request type with **no required fields** - `current_time`'s `CurrentTimeToolRequest.TimeZone`
+has no `[Required]` - hits a separate failure the `ArgumentException` catch
 alone didn't cover: the model can legally omit the `request` argument entirely, since nothing in
 the object is required, but Semantic Kernel still treats the *parameter* as non-optional and
 throws `KernelException("Missing argument for function parameter 'request'")` - which wraps an
@@ -263,8 +263,9 @@ max-iterations knob. It passes an explicit allow-list to
 `FunctionChoiceBehavior.Auto(functions)` and runs under its own timeout. Adding a tool
 to that list is a deliberate act; adding `research_assistant` to it is a bug.
 
-**Per-user tools must not take the user id as a parameter.** `remember`, `recall`, `forget`
-and `set_reminder` read the caller from `IInvocationContext`, which `AIChatService` scopes
+**Per-user tools must not take the user id as a parameter.** `remember`, `recall_index`,
+`recall_topic`, `forget`, `set_reminder`, and `list_reminders` read the caller from
+`IInvocationContext`, which `AIChatService` scopes
 around the completion. A parameter would be chosen by the model, whose context contains
 untrusted text — channel history and fetched pages — so it could be talked into reading
 or overwriting someone else's data. The stores filter by user id on every query too, so

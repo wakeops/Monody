@@ -91,10 +91,10 @@ public class ToolCallRecoveryFilterTests
     [Fact]
     public async Task RecoversFromABareStringOnARequestWithMoreThanOneField()
     {
-        // The other reported bug: remember has two required fields (Category, Content), so a
-        // bare string can never be safely guessed into place - there is no coercion map entry
-        // for it, and there should not be one. The filter still has to stop this from crashing
-        // the completion; it just can't fix the call, only report why.
+        // The other reported bug: a request with two required fields, like remember's Slug,
+        // Description and Content, means a bare string can never be safely guessed into place -
+        // there is no coercion map entry for it, and there should not be one. The filter still
+        // has to stop this from crashing the completion; it just can't fix the call, only report why.
         var kernel = BuildKernel();
         var function = kernel.Plugins.GetFunction("TwoFieldDemoPlugin", "two_field_demo");
 
@@ -125,15 +125,15 @@ public class ToolCallRecoveryFilterTests
     [Fact]
     public async Task SelfDeserializesAWellFormedJsonArgumentContainingAnEnum()
     {
-        // The reported bug: remember's RememberToolRequest {Category, Content} has an enum
-        // property. Semantic Kernel's own fallback string-to-object conversion cannot bind that
-        // shape - it throws ArgumentException("Object of type 'System.String' cannot be converted
-        // to type '...'") even though the JSON is well-formed, because the argument arrives as a
-        // string rather than already deserialized. The old IsJsonObject check left such strings
-        // alone, trusting Semantic Kernel to convert them, so the exception propagated to this
-        // filter's catch block, and the model read the resulting message as a success ("I've saved
-        // that you live in Raleigh NC") even though the plugin method never ran. This proves the
-        // filter now deserializes the argument itself instead of relying on that fallback.
+        // The reported bug: a request type with a string field alongside an enum field.
+        // Semantic Kernel's own fallback string-to-object conversion cannot bind that shape - it
+        // throws ArgumentException("Object of type 'System.String' cannot be converted to type
+        // '...'") even though the JSON is well-formed, because the argument arrives as a string
+        // rather than already deserialized. The old IsJsonObject check left such strings alone,
+        // trusting Semantic Kernel to convert them, so the exception propagated to this filter's
+        // catch block, and the model read the resulting message as a success ("I've saved that you
+        // live in Raleigh NC") even though the plugin method never ran. This proves the filter now
+        // deserializes the argument itself instead of relying on that fallback.
         var kernel = BuildKernel();
         var function = kernel.Plugins.GetFunction("EnumAndStringDemoPlugin", "enum_and_string_demo");
 
@@ -162,12 +162,12 @@ public class ToolCallRecoveryFilterTests
     [Fact]
     public async Task RecoversWhenTheModelOmitsARequestThatHasNothingRequired()
     {
-        // The reported bug: recall's request has one property, and it isn't required (there is
-        // nothing to pass - recall always returns everything). A well-formed call can legally
-        // supply no "request" argument at all, but Semantic Kernel still treats the parameter
-        // itself as non-optional and throws KernelException("Missing argument for function
-        // parameter 'request'") - a type this filter's earlier ArgumentException catch did not
-        // match, since KernelException wraps an ArgumentException rather than being one.
+        // The reported bug: current_time's request has one property, and it isn't required (an
+        // empty TimeZone just means UTC). A well-formed call can legally supply no "request"
+        // argument at all, but Semantic Kernel still treats the parameter itself as non-optional
+        // and throws KernelException("Missing argument for function parameter 'request'") - a
+        // type this filter's earlier ArgumentException catch did not match, since KernelException
+        // wraps an ArgumentException rather than being one.
         var kernel = BuildKernel();
         var function = kernel.Plugins.GetFunction("NoRequiredFieldsDemoPlugin", "no_required_fields_demo");
 
@@ -196,7 +196,7 @@ public class ToolCallRecoveryFilterTests
         }
     }
 
-    /// <summary>Mirrors RecallToolRequest: a request whose one property is not required.</summary>
+    /// <summary>Mirrors CurrentTimeToolRequest: a request whose one property is not required.</summary>
     private sealed class NoRequiredFieldsDemoRequest
     {
         public string Unused { get; set; }
@@ -217,7 +217,7 @@ public class ToolCallRecoveryFilterTests
         Preference
     }
 
-    /// <summary>Mirrors RememberToolRequest: a string field alongside an enum field.</summary>
+    /// <summary>A request type with a string field alongside an enum field.</summary>
     private sealed class EnumAndStringDemoRequest
     {
         public DemoCategory Category { get; set; }
