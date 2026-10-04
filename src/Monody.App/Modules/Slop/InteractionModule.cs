@@ -155,7 +155,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         var ids = selectedIds
             .Select(id => int.TryParse(id, out var parsed) ? parsed : (int?)null)
             .Where(id => id.HasValue)
-            .Select(id => id.Value);
+            .Select(id => id!.Value);
 
         var deleted = await _memoryStore.ForgetAsync(Context.User.Id, ids);
 
@@ -173,7 +173,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     }
 
     /// <summary>Re-renders the ephemeral message from the store, so it always shows current state.</summary>
-    private async Task ShowCurrentAsync(string notice = null)
+    private async Task ShowCurrentAsync(string? notice = null)
     {
         var memories = await _memoryStore.GetAsync(Context.User.Id);
 
@@ -188,7 +188,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         });
     }
 
-    private static Embed BuildMemoriesEmbed(IReadOnlyList<UserMemory> memories, string notice)
+    private static Embed BuildMemoriesEmbed(IReadOnlyList<UserMemory> memories, string? notice)
     {
         var embed = new EmbedBuilder()
             .WithTitle("What Monody remembers about you")
@@ -246,10 +246,10 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             .Build();
     }
 
-    private static string TruncateLabel(string value, int maxLength) =>
-        value.Length <= maxLength ? value : value[..(maxLength - 1)] + "…";
+    private static string TruncateLabel(string? value, int maxLength) =>
+        value is null || value.Length <= maxLength ? value ?? string.Empty : value[..(maxLength - 1)] + "…";
 
-    private static string Truncate(string text)
+    private static string? Truncate(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
         {

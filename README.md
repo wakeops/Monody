@@ -61,6 +61,8 @@ for example `Services__Geocode__HereApiKey`.
 | Setting | Required | Description |
 | --- | --- | --- |
 | `Discord:Token` | Yes | Discord bot token |
+| `Discord:GatewayIntents` | No | Gateway intents to request. Defaults to `Guilds`. |
+| `Discord:LogSeverity` | No | Discord.Net log level. Defaults to `Info`. |
 | `Services:Geocode:HereApiKey` | Yes | HERE API key |
 | `Services:Weather:PirateWeatherApiKey` | Yes | Pirate Weather API key |
 | `Services:WebSearch:GoogleApiKey` | Yes | Google Custom Search API key |

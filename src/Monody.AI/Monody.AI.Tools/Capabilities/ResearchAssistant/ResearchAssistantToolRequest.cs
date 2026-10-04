@@ -7,5 +7,5 @@ public sealed class ResearchAssistantToolRequest
 {
     [Description("The prompt to send to the assistant agent")]
     [Required]
-    public string Prompt { get; set; }
+    public string? Prompt { get; set; }
 }

@@ -20,6 +20,6 @@ internal static class EmojiIconMap
 
     public static string Resolve(Icon icon)
     {
-        return _emojiMap.GetValueOrDefault(icon);
+        return _emojiMap.GetValueOrDefault(icon) ?? string.Empty;
     }
 }

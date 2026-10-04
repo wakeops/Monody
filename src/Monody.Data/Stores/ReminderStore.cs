@@ -126,7 +126,7 @@ public class ReminderStore : IReminderStore
     }
 }
 
-public readonly record struct ReminderWriteResult(bool Success, Reminder Reminder, string Reason)
+public readonly record struct ReminderWriteResult(bool Success, Reminder? Reminder, string? Reason)
 {
     public static ReminderWriteResult Scheduled(Reminder reminder) => new(true, reminder, null);
 

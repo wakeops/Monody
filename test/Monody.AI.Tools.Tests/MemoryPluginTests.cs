@@ -154,7 +154,7 @@ public class MemoryPluginTests : IDisposable
 
     private sealed class StubInvocationContext : IInvocationContext
     {
-        public SocketInteraction Interaction { get; private set; }
+        public SocketInteraction? Interaction { get; private set; }
 
         public IDisposable BeginScope(SocketInteraction interactionContext)
         {

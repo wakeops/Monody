@@ -23,7 +23,7 @@ public static class HtmlContentExtractor
         return HtmlContentParser.ExtractMainContent(await _parser.ParseDocumentAsync(html));
     }
 
-    private static async Task<string> TryReadArticleAsync(string html)
+    private static async Task<string?> TryReadArticleAsync(string html)
     {
         try
         {

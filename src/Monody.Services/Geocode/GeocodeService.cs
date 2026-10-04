@@ -21,7 +21,7 @@ public class GeocodeService
         _logger = logger;
     }
 
-    public async Task<LocationDetails> GetGeocodeForLocationStringAsync(string locationQuery, CancellationToken cancellationToken)
+    public async Task<LocationDetails?> GetGeocodeForLocationStringAsync(string locationQuery, CancellationToken cancellationToken)
     {
         return await _cache.GetOrSetAsync(
             $"geocodev2-{locationQuery}",
@@ -30,7 +30,7 @@ public class GeocodeService
             cancellationToken);
     }
 
-    private async Task<LocationDetails> SearchGeocodeByLocationFromApiAsync(string locationQuery, CancellationToken cancellationToken)
+    private async Task<LocationDetails?> SearchGeocodeByLocationFromApiAsync(string locationQuery, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Fetching location for '{Location}'", locationQuery);
 

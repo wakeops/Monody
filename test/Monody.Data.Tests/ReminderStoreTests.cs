@@ -29,7 +29,7 @@ public class ReminderStoreTests : IDisposable
         var result = await _store.ScheduleAsync(_alice, _channel, "Check the deploy", _now.AddHours(2));
 
         Assert.True(result.Success);
-        Assert.Equal(_now.AddHours(2), result.Reminder.DueAt);
+        Assert.Equal(_now.AddHours(2), result.Reminder!.DueAt);
         Assert.Single(await _store.GetPendingAsync(_alice));
     }
 

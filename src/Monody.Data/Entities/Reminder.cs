@@ -9,7 +9,7 @@ public class Reminder
     /// <summary>Where to deliver it. Null when the reminder was set somewhere unreachable.</summary>
     public ulong? ChannelId { get; set; }
 
-    public string Message { get; set; }
+    public string? Message { get; set; }
 
     public DateTimeOffset DueAt { get; set; }
 

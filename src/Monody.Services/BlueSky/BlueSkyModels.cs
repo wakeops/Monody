@@ -5,14 +5,14 @@ namespace Monody.Services.BlueSky;
 public sealed class BlueskyThreadResponse
 {
     [JsonPropertyName("thread")]
-    public ThreadViewPost Thread { get; set; }
+    public ThreadViewPost? Thread { get; set; }
 
     // Optional: capture error payloads
     [JsonPropertyName("error")]
-    public string Error { get; set; }
+    public string? Error { get; set; }
 
     [JsonPropertyName("message")]
-    public string Message { get; set; }
+    public string? Message { get; set; }
 }
 
 public sealed class ThreadViewPost
@@ -21,7 +21,7 @@ public sealed class ThreadViewPost
     public BlueskyPost Post { get; set; } = default!;
 
     [JsonPropertyName("replies")]
-    public List<ThreadViewPost> Replies { get; set; }
+    public List<ThreadViewPost>? Replies { get; set; }
 }
 
 public sealed class BlueskyPost

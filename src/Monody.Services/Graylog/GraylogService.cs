@@ -21,7 +21,7 @@ public class GraylogService
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(_options.BaseUrl) && !string.IsNullOrWhiteSpace(_options.ApiKey);
 
-    public async Task<GraylogSearchResult> SearchAsync(string query, int rangeSeconds, int limit, string streamId, CancellationToken cancellationToken = default)
+    public async Task<GraylogSearchResult> SearchAsync(string query, int rangeSeconds, int limit, string? streamId, CancellationToken cancellationToken = default)
     {
         var url = $"search/universal/relative?query={Uri.EscapeDataString(query)}&range={rangeSeconds}&limit={limit}&sort=timestamp:desc";
 
@@ -48,7 +48,7 @@ public class GraylogService
 
         return [.. parsed.Streams
             .Where(s => !s.Disabled)
-            .Select(s => new GraylogStream(s.Id, s.Title, s.Description))];
+            .Select(s => new GraylogStream(s.Id ?? string.Empty, s.Title ?? string.Empty, s.Description ?? string.Empty))];
     }
 
     private async Task<string> GetJsonAsync(string url, CancellationToken cancellationToken)

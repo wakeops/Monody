@@ -8,9 +8,9 @@ namespace Monody.AI.Tools.Abstractions;
 /// </summary>
 public sealed class AsyncLocalInvocationContext : IInvocationContext
 {
-    private static readonly AsyncLocal<Scope> _current = new();
+    private static readonly AsyncLocal<Scope?> _current = new();
 
-    public SocketInteraction Interaction => _current.Value?.Interaction;
+    public SocketInteraction? Interaction => _current.Value?.Interaction;
 
     public IDisposable BeginScope(SocketInteraction interactionContext)
     {

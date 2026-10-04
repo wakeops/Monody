@@ -7,5 +7,5 @@ public sealed class WebSearchToolRequest
 {
     [Description("The search terms to look up.")]
     [Required]
-    public string Query { get; set; }
+    public string? Query { get; set; }
 }

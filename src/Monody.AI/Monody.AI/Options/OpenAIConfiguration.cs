@@ -5,7 +5,7 @@ namespace Monody.AI.Options;
 public sealed class OpenAIConfiguration
 {
     [Required(AllowEmptyStrings = false)]
-    public string ApiKey { get; set; }
+    public string ApiKey { get; set; } = string.Empty;
 
     public string ChatModel { get; set; } = "gpt-4.1-mini";
 }

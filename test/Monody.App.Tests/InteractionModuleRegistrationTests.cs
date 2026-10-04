@@ -14,8 +14,8 @@ namespace Monody.App.Tests;
 /// </summary>
 public class InteractionModuleRegistrationTests : IAsyncLifetime
 {
-    private DiscordSocketClient _client;
-    private InteractionService _interactionService;
+    private DiscordSocketClient _client = null!;
+    private InteractionService _interactionService = null!;
 
     public async Task InitializeAsync()
     {
@@ -35,7 +35,7 @@ public class InteractionModuleRegistrationTests : IAsyncLifetime
     {
         private readonly IServiceProvider _logging = new ServiceCollection().AddLogging().BuildServiceProvider();
 
-        public object GetService(Type serviceType)
+        public object? GetService(Type serviceType)
         {
             if (serviceType.IsInterface)
             {
@@ -57,11 +57,11 @@ public class InteractionModuleRegistrationTests : IAsyncLifetime
                 .GetMethods()
                 .Single(m => m.Name == nameof(DispatchProxy.Create) && m.GetGenericArguments().Length == 2)
                 .MakeGenericMethod(interfaceType, typeof(NoOpProxy))
-                .Invoke(null, null);
+                .Invoke(null, null)!;
 
         private class NoOpProxy : DispatchProxy
         {
-            protected override object Invoke(MethodInfo targetMethod, object[] args) =>
+            protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) =>
                 throw new NotSupportedException("Modules are only inspected for attributes in this test, never invoked.");
         }
     }

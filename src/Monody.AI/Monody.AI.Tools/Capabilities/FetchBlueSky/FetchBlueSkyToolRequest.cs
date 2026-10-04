@@ -7,5 +7,5 @@ public class FetchBlueSkyToolRequest
 {
     [Description("The full URL to fetch (http or https).")]
     [Required]
-    public string Url { get; set; }
+    public string? Url { get; set; }
 }

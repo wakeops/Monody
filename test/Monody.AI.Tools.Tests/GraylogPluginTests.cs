@@ -59,7 +59,7 @@ public class GraylogPluginTests
     [Fact]
     public async Task ScopesSearchToTheGivenStream()
     {
-        Uri requestedUri = null;
+        Uri? requestedUri = null;
 
         using var handler = new StubHandler(request =>
         {
@@ -70,7 +70,7 @@ public class GraylogPluginTests
 
         await plugin.SearchAsync(new SearchGraylogToolRequest { Query = "*", StreamId = "abc123" });
 
-        Assert.Contains("filter=streams%3Aabc123", requestedUri.Query);
+        Assert.Contains("filter=streams%3Aabc123", requestedUri!.Query);
     }
 
     [Fact]

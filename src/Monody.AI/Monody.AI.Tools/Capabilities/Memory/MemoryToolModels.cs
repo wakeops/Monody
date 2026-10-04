@@ -12,14 +12,14 @@ public sealed class RememberToolRequest
         "same slug again to update a topic rather than creating a near-duplicate one.")]
     [Required]
     [MaxLength(DataConstants.MaxSlugLength)]
-    public string Slug { get; set; }
+    public string? Slug { get; set; }
 
     [Description(
         "One short line summarizing this topic, shown in the index before the full content is " +
         "loaded. Keep it under 80 characters, e.g. 'Where the user lives'.")]
     [Required]
     [MaxLength(DataConstants.MaxMemoryDescriptionLength)]
-    public string Description { get; set; }
+    public string? Description { get; set; }
 
     [Description(
         "The full note for this topic, written for your own later reading. Only for lasting facts " +
@@ -27,7 +27,7 @@ public sealed class RememberToolRequest
         "others, or anything sensitive.")]
     [Required]
     [MaxLength(DataConstants.MaxMemoryContentLength)]
-    public string Content { get; set; }
+    public string? Content { get; set; }
 }
 
 public sealed class RememberToolResponse
@@ -36,7 +36,7 @@ public sealed class RememberToolResponse
     public bool Saved { get; set; }
 
     [Description("What happened, to relay to the user if it is worth mentioning.")]
-    public string Outcome { get; set; }
+    public string? Outcome { get; set; }
 }
 
 public sealed class RecallIndexToolResponse
@@ -53,17 +53,17 @@ public sealed class MemoryIndexEntry
     public int Id { get; set; }
 
     [Description("The topic's slug. Reuse this in remember to update the topic instead of creating a new one.")]
-    public string Slug { get; set; }
+    public string? Slug { get; set; }
 
     [Description("One-line summary of the topic.")]
-    public string Description { get; set; }
+    public string? Description { get; set; }
 }
 
 public sealed class RecallTopicToolRequest
 {
     [Description("The slug of the topic to load, taken from a recall_index result.")]
     [Required]
-    public string Slug { get; set; }
+    public string? Slug { get; set; }
 }
 
 public sealed class RecallTopicToolResponse
@@ -72,7 +72,7 @@ public sealed class RecallTopicToolResponse
     public bool Found { get; set; }
 
     [Description("The topic's full content, or empty if not found.")]
-    public string Content { get; set; }
+    public string? Content { get; set; }
 }
 
 public sealed class ForgetToolRequest
@@ -88,5 +88,5 @@ public sealed class ForgetToolResponse
     public bool Forgotten { get; set; }
 
     [Description("What happened, to relay if it is worth mentioning.")]
-    public string Outcome { get; set; }
+    public string? Outcome { get; set; }
 }

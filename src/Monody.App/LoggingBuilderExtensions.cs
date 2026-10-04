@@ -8,14 +8,14 @@ namespace Monody.App;
 
 internal static class LoggingBuilderExtensions
 {
-    private const string _applicationName = "Monody";
-
-    public static ILoggingBuilder AddBotLogging(this ILoggingBuilder builder, IHostEnvironment hostEnvironment, IConfiguration configuration)
+    public static ILoggingBuilder AddLogging(this ILoggingBuilder builder, IHostEnvironment hostEnvironment, IConfiguration configuration)
     {
+        builder.ClearProviders();
+
         var loggerConfig = new LoggerConfiguration()
             .ReadFrom.Configuration(configuration)
             .Enrich.FromLogContext()
-            .Enrich.WithProperty("Application", _applicationName);
+            .Enrich.WithProperty("Application", hostEnvironment.ApplicationName);
 
         if (hostEnvironment.IsDevelopment())
         {

@@ -15,7 +15,7 @@ public class DiscordEmbedFactoryTests
         string url = "",
         string timestamp = "",
         int color = 0,
-        List<DiscordEmbedField> fields = null) => new()
+        List<DiscordEmbedField>? fields = null) => new()
         {
             Title = title,
             Description = description,
@@ -29,6 +29,13 @@ public class DiscordEmbedFactoryTests
             Fields = fields ?? []
         };
 
+    private static Embed Build(DiscordEmbed model)
+    {
+        var embed = DiscordEmbedFactory.TryBuild(model);
+        Assert.NotNull(embed);
+        return embed;
+    }
+
     [Fact]
     public void MapsEveryPartOfTheModel()
     {
@@ -39,17 +46,17 @@ public class DiscordEmbedFactoryTests
         model.Thumbnail = new DiscordEmbedThumbnail { Url = "https://example.com/t.png" };
         model.Fields = [new DiscordEmbedField { Name = "Stat", Value = "42", Inline = true }];
 
-        var embed = DiscordEmbedFactory.TryBuild(model);
+        var embed = Build(model);
 
         Assert.Equal("Title", embed.Title);
         Assert.Equal("Description", embed.Description);
         Assert.Equal("https://example.com/article", embed.Url);
         Assert.Equal(new Color(0x00FF00), embed.Color);
         Assert.NotNull(embed.Timestamp);
-        Assert.Equal("Monody", embed.Author.Value.Name);
-        Assert.Equal("Source", embed.Footer.Value.Text);
-        Assert.Equal("https://example.com/i.png", embed.Image.Value.Url);
-        Assert.Equal("https://example.com/t.png", embed.Thumbnail.Value.Url);
+        Assert.Equal("Monody", embed.Author!.Value.Name);
+        Assert.Equal("Source", embed.Footer!.Value.Text);
+        Assert.Equal("https://example.com/i.png", embed.Image!.Value.Url);
+        Assert.Equal("https://example.com/t.png", embed.Thumbnail!.Value.Url);
         Assert.Equal("Stat", embed.Fields.Single().Name);
         Assert.True(embed.Fields.Single().Inline);
     }
@@ -59,7 +66,7 @@ public class DiscordEmbedFactoryTests
     {
         // Strict mode forces the model to send empty placeholders rather than omitting them;
         // setting an empty footer or author would render a blank line on the card.
-        var embed = DiscordEmbedFactory.TryBuild(Model());
+        var embed = Build(Model());
 
         Assert.Null(embed.Footer);
         Assert.Null(embed.Author);
@@ -77,16 +84,16 @@ public class DiscordEmbedFactoryTests
         var model = Model(title: "", description: "");
         model.Image = new DiscordEmbedImage { Url = "https://example.com/i.png" };
 
-        var embed = DiscordEmbedFactory.TryBuild(model);
+        var embed = Build(model);
 
         Assert.NotNull(embed);
-        Assert.Equal("https://example.com/i.png", embed.Image.Value.Url);
+        Assert.Equal("https://example.com/i.png", embed.Image!.Value.Url);
     }
 
     [Fact]
     public void FallsBackToBrandColourWhenUnset()
     {
-        Assert.Equal(new Color(MonodyConstants.DefaultEmbedColor), DiscordEmbedFactory.TryBuild(Model(color: 0)).Color);
+        Assert.Equal(new Color(MonodyConstants.DefaultEmbedColor), Build(Model(color: 0)).Color);
     }
 
     [Fact]
@@ -109,7 +116,7 @@ public class DiscordEmbedFactoryTests
         var model = Model(url: url);
         model.Image = new DiscordEmbedImage { Url = url };
 
-        var embed = DiscordEmbedFactory.TryBuild(model);
+        var embed = Build(model);
 
         Assert.Null(embed.Url);
         Assert.Null(embed.Image);
@@ -121,7 +128,7 @@ public class DiscordEmbedFactoryTests
         var model = Model(title: new string('t', 500), description: new string('d', 5000));
         model.Fields = [new DiscordEmbedField { Name = new string('n', 400), Value = new string('v', 2000) }];
 
-        var embed = DiscordEmbedFactory.TryBuild(model);
+        var embed = Build(model);
 
         Assert.Equal(EmbedBuilder.MaxTitleLength, embed.Title.Length);
         Assert.Equal(EmbedBuilder.MaxDescriptionLength, embed.Description.Length);
@@ -136,7 +143,7 @@ public class DiscordEmbedFactoryTests
             .Select(i => new DiscordEmbedField { Name = $"f{i}", Value = "v" })
             .ToList();
 
-        var embed = DiscordEmbedFactory.TryBuild(Model(fields: fields));
+        var embed = Build(Model(fields: fields));
 
         Assert.Equal(EmbedBuilder.MaxFieldCount, embed.Fields.Length);
     }
@@ -152,7 +159,7 @@ public class DiscordEmbedFactoryTests
             new() { Name = "kept", Value = "value" }
         };
 
-        var embed = DiscordEmbedFactory.TryBuild(Model(fields: fields));
+        var embed = Build(Model(fields: fields));
 
         Assert.Equal("kept", embed.Fields.Single().Name);
     }
@@ -166,7 +173,7 @@ public class DiscordEmbedFactoryTests
             .Select(i => new DiscordEmbedField { Name = $"field{i}", Value = new string('v', 1000) })
             .ToList();
 
-        var embed = DiscordEmbedFactory.TryBuild(Model(description: new string('d', 4000), fields: fields));
+        var embed = Build(Model(description: new string('d', 4000), fields: fields));
 
         Assert.True(
             embed.Length <= EmbedBuilder.MaxEmbedLength,
@@ -181,7 +188,7 @@ public class DiscordEmbedFactoryTests
             .Select(i => new DiscordEmbedField { Name = $"field{i}", Value = new string('v', 1000) })
             .ToList();
 
-        var embed = DiscordEmbedFactory.TryBuild(Model(description: new string('d', 4000), fields: fields));
+        var embed = Build(Model(description: new string('d', 4000), fields: fields));
 
         Assert.Equal("Title", embed.Title);
         Assert.Equal(4000, embed.Description.Length);

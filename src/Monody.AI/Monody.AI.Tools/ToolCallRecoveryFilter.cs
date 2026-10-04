@@ -95,7 +95,7 @@ public sealed class ToolCallRecoveryFilter : IFunctionInvocationFilter
         }
     }
 
-    private static bool TryDeserialize(string text, Type type, out object value)
+    private static bool TryDeserialize(string text, Type type, out object? value)
     {
         try
         {

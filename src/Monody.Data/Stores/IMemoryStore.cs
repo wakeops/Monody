@@ -8,7 +8,7 @@ public interface IMemoryStore
 
     Task<IReadOnlyList<UserMemory>> GetIndexAsync(ulong userId, CancellationToken cancellationToken = default);
 
-    Task<UserMemory> GetTopicAsync(ulong userId, string slug, CancellationToken cancellationToken = default);
+    Task<UserMemory?> GetTopicAsync(ulong userId, string slug, CancellationToken cancellationToken = default);
 
     Task<MemoryWriteResult> RememberAsync(ulong userId, string slug, string description, string content, CancellationToken cancellationToken = default);
 

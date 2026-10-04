@@ -22,7 +22,7 @@ public class WeatherService
         _logger = logger;
     }
 
-    public async Task<ForecastData<ForecastNow>> GetCurrentForecastAsync(double latitude, double longitude, MeasurementUnits units = MeasurementUnits.Imperial)
+    public async Task<ForecastData<ForecastNow>?> GetCurrentForecastAsync(double latitude, double longitude, MeasurementUnits units = MeasurementUnits.Imperial)
     {
         var forecast = await GetForecastAsync(latitude, longitude);
         if (forecast == null)
@@ -69,7 +69,7 @@ public class WeatherService
         };
     }
 
-    public async Task<ForecastData<List<ForecastHour>>> GetHourlyForecastAsync(double latitude, double longitude, MeasurementUnits units = MeasurementUnits.Imperial)
+    public async Task<ForecastData<List<ForecastHour>>?> GetHourlyForecastAsync(double latitude, double longitude, MeasurementUnits units = MeasurementUnits.Imperial)
     {
         var forecast = await GetForecastAsync(latitude, longitude);
         if (forecast == null)
@@ -100,7 +100,7 @@ public class WeatherService
         };
     }
 
-    public async Task<ForecastData<List<ForecastDay>>> GetDailyForecastAsync(double latitude, double longitude, int dayCount = 5, MeasurementUnits units = MeasurementUnits.Imperial)
+    public async Task<ForecastData<List<ForecastDay>>?> GetDailyForecastAsync(double latitude, double longitude, int dayCount = 5, MeasurementUnits units = MeasurementUnits.Imperial)
     {
         var forecast = await GetForecastAsync(latitude, longitude);
         if (forecast == null)
@@ -130,7 +130,7 @@ public class WeatherService
     private static double ConvertTempUnit(MeasurementUnits units, double temperature) =>
         units == MeasurementUnits.Imperial ? temperature : (temperature - 32.0) / 1.8;
 
-    private async Task<Forecast> GetForecastAsync(double latitude, double longitude)
+    private async Task<Forecast?> GetForecastAsync(double latitude, double longitude)
     {
         return await _cache.GetOrSetAsync(
             $"forecastv2-{latitude}-{longitude}",
@@ -138,7 +138,7 @@ public class WeatherService
             _forecastCacheExpiration);
     }
 
-    private async Task<Forecast> GetForecastFromApiAsync(double latitude, double longitude)
+    private async Task<Forecast?> GetForecastFromApiAsync(double latitude, double longitude)
     {
         _logger.LogInformation("Fetching forecast for {Latitude}, {Longitude}.", latitude, longitude);
 
@@ -170,7 +170,7 @@ public class WeatherService
 
         return alerts
             .GroupBy(a => a.Uri)
-            .Select(g => g.MaxBy(a => a.ExpiresDateTime))
+            .Select(g => g.MaxBy(a => a.ExpiresDateTime)!)
             .OrderBy(a => a.ExpiresDateTime)
             .Select(a => new WeatherAlert
             {

@@ -13,7 +13,7 @@ public class ForecastHour
     public double Humidity { get; set; }
     public double WindSpeed { get; set; }
     public int? WindBearing { get; set; }
-    public string CardinalWindBearing { get; set; }
+    public string? CardinalWindBearing { get; set; }
     public Icon Icon { get; set; }
-    public string Summary { get; set; }
+    public string? Summary { get; set; }
 }

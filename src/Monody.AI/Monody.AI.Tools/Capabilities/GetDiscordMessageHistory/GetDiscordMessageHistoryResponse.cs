@@ -4,7 +4,7 @@ public sealed class GetDiscordMessageHistoryResponse
 {
     public ulong? GuildId { get; set; }
     public ulong ChannelId { get; set; }
-    public string ChannelType { get; set; }
+    public string? ChannelType { get; set; }
 
     public List<GetDiscordMessageHistoryMessage> Messages { get; set; } = [];
 }
@@ -12,12 +12,12 @@ public sealed class GetDiscordMessageHistoryResponse
 public sealed class GetDiscordMessageHistoryMessage
 {
     public ulong MessageId { get; set; }
-    public string Content { get; set; }
+    public string? Content { get; set; }
     public DateTimeOffset Timestamp { get; set; }
 
     public ulong AuthorId { get; set; }
-    public string AuthorUsername { get; set; }
-    public string AuthorGlobalName { get; set; }
+    public string? AuthorUsername { get; set; }
+    public string? AuthorGlobalName { get; set; }
 
     public IReadOnlyList<string> Attachments { get; set; } = [];
     public IReadOnlyList<string> Embeds { get; set; } = [];

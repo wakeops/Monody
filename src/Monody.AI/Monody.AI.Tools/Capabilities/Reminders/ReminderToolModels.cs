@@ -9,7 +9,7 @@ public sealed class SetReminderToolRequest
     [Description("What to remind the user about, in their own words where possible.")]
     [Required]
     [MaxLength(DataConstants.MaxReminderLength)]
-    public string Message { get; set; }
+    public string? Message { get; set; }
 
     [Description(
         "How many minutes from now to fire. Use this for relative requests like 'in 2 hours'. " +
@@ -21,7 +21,7 @@ public sealed class SetReminderToolRequest
         "Absolute UTC time to fire, ISO 8601, e.g. '2026-09-02T14:30:00Z'. Use this only for a " +
         "specific clock time, and call current_time first so you know what 'today' is. " +
         "Empty string when using DelayMinutes.")]
-    public string DueAtUtc { get; set; }
+    public string? DueAtUtc { get; set; }
 }
 
 public sealed class SetReminderToolResponse
@@ -30,10 +30,10 @@ public sealed class SetReminderToolResponse
     public bool Scheduled { get; set; }
 
     [Description("When it will fire, as Discord timestamp markup. Include it verbatim in your reply.")]
-    public string DueAt { get; set; }
+    public string? DueAt { get; set; }
 
     [Description("Why it was rejected, when Scheduled is false.")]
-    public string Outcome { get; set; }
+    public string? Outcome { get; set; }
 }
 
 public sealed class ListRemindersToolResponse

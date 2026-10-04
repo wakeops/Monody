@@ -73,7 +73,7 @@ public class AIChatService
         await SaveHistoryAsync(interactionId, guildId, channel, user, history, cancellationToken);
 
         var content = result.Last(m => m.Role == AuthorRole.Assistant).Content;
-        return DeserializeFirstJsonObject(content);
+        return DeserializeFirstJsonObject(content ?? string.Empty);
     }
 
     // When function calling and a strict JSON-schema response format are both active, the model
@@ -82,7 +82,8 @@ public class AIChatService
     private static DiscordCompletionResponse DeserializeFirstJsonObject(string json)
     {
         var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
-        return JsonSerializer.Deserialize<DiscordCompletionResponse>(ref reader, _serializerOptions);
+        return JsonSerializer.Deserialize<DiscordCompletionResponse>(ref reader, _serializerOptions)
+            ?? throw new JsonException("The model returned an empty response.");
     }
 
     private async Task<ChatHistory> LoadHistoryAsync(ulong interactionId, SocketInteraction interactionContext, CancellationToken cancellationToken)
@@ -116,7 +117,7 @@ public class AIChatService
         var turns = history
             .Where(m => m.Role == AuthorRole.User || m.Role == AuthorRole.Assistant)
             .Where(m => !string.IsNullOrWhiteSpace(m.Content))
-            .Select(m => new ConversationTurn(m.Role.Label, m.Content));
+            .Select(m => new ConversationTurn(m.Role.Label, m.Content!));
 
         return _conversationStore.SaveAsync(interactionId, user.Id, channel?.Id, guildId, turns, cancellationToken);
     }

@@ -48,17 +48,17 @@ public sealed class CalculateToolRequest
     [Description("The expression to evaluate, e.g. '(1234 * 5.5) / 3' or 'round(sqrt(2), 4)'.")]
     [Required]
     [MaxLength(ExpressionEvaluator.MaxExpressionLength)]
-    public string Expression { get; set; }
+    public string? Expression { get; set; }
 }
 
 public sealed class CalculateToolResponse
 {
     [Description("The expression that was evaluated.")]
-    public string Expression { get; set; }
+    public string? Expression { get; set; }
 
     [Description("The exact result. Empty when Error is set.")]
-    public string Result { get; set; }
+    public string? Result { get; set; }
 
     [Description("Why the expression could not be evaluated. Empty on success.")]
-    public string Error { get; set; }
+    public string? Error { get; set; }
 }

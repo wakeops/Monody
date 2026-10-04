@@ -4,7 +4,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
 
-namespace Monody.App.Utils;
+namespace Monody.Discord.Logging;
 
 internal class InteractionLogger
 {

@@ -34,7 +34,7 @@ public class ConversationStore : IConversationStore
     }
 
     /// <summary>Returns the stored turns, or null when there is no such conversation.</summary>
-    public async Task<IReadOnlyList<ConversationTurn>> GetTurnsAsync(ulong conversationId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ConversationTurn>?> GetTurnsAsync(ulong conversationId, CancellationToken cancellationToken = default)
     {
         await using var db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
