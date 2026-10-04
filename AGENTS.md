@@ -11,8 +11,11 @@ dotnet test  -c Release          # xunit
 dotnet publish src/Monody.App/Monody.App.csproj -c Release -o ./out
 ```
 
-CI runs exactly `restore` → `build` → `test` → `docker build`, so a clean local
-build plus tests is a good proxy for green CI.
+CI runs `restore` → `dotnet format --verify-no-changes --severity error` → `build` →
+`test`, so a clean local build plus tests is a good proxy for green CI. Run
+`dotnet format Monody.slnx --verify-no-changes --severity error` locally too; the lint
+step fails the build on formatting errors. A separate CI job also builds the Docker
+image without pushing it, so `docker build .` should pass locally too.
 
 Targets **net10.0**. If the SDK is missing on a Linux box, the Microsoft download
 CDN is often blocked but Ubuntu 24.04 ships it: `apt-get install -y dotnet-sdk-10.0`.
@@ -103,10 +106,8 @@ satisfied — taking the Kernel, and the whole bot, down at startup.
 which binds the options and hands back an instance for use during registration.
 
 **A test project.** Add it to `Monody.slnx` (`dotnet sln add`, or just edit the XML —
-the solution is in the newer `.slnx` format) *and* add a `COPY` line for its csproj to
-the `Dockerfile`. The restore layer copies each csproj individually and then restores the
-whole solution, so a missing one fails the Docker build with `MSB3202` even though
-`dotnet build` locally is fine.
+the solution is in the newer `.slnx` format). The `Dockerfile` copies `src/**/*.csproj`
+with a glob and restores only `Monody.App`, so test projects need no Dockerfile change.
 
 ## Conventions
 
@@ -300,9 +301,9 @@ other breaks paging silently.
 
 ## CI and release
 
-- `01-build-test.yaml` on push to `main`: build, test, Docker build, then auto-tag
-  and create a release via shared workflows in `wakeops/ci`.
-- `02-publish-on-release.yaml`: publishes the image when a release is published.
-- Existing warnings are expected: `NU1902` (AngleSharp advisory) and `SKEXP0001` /
-  `SKEXP0010` (Semantic Kernel experimental APIs, deliberately kept as warnings in
-  `.editorconfig`). Don't add suppressions to "fix" them; do avoid adding new ones.
+- `build-test.yml` on pull requests and pushes to `main`: a `build` job (restore, lint,
+  build, test) and a `docker` job that builds the image with `push: false` to validate
+  the Dockerfile.
+- `release.yml` on pushing a `v*.*.*` tag: restore, build, test, then build and push the
+  image to `ghcr.io/<repo>` (tags `x.y.z`, `x.y`, `latest`) and create a GitHub release
+  with generated notes.
