@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 
 namespace Monody.App.LogEnrichers;
 

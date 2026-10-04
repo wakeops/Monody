@@ -1,4 +1,4 @@
-﻿namespace Monody.App.Modules;
+namespace Monody.App.Modules;
 
 internal static class MonodyConstants
 {

@@ -1,4 +1,4 @@
-﻿using Discord.Addons.Hosting;
+using Discord.Addons.Hosting;
 using Discord.Commands;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

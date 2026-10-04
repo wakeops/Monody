@@ -3,12 +3,12 @@ using DarkSky.Models;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using TimeZoneNames;
-using Monody.Services.Geocode;
-using Monody.Services.Weather;
-using Monody.Services.Geocode.Models;
-using Monody.Services.Weather.Models;
 using Monody.App.Modules.Weather.Utils;
+using Monody.Services.Geocode;
+using Monody.Services.Geocode.Models;
+using Monody.Services.Weather;
+using Monody.Services.Weather.Models;
+using TimeZoneNames;
 
 namespace Monody.App.Modules.Weather;
 

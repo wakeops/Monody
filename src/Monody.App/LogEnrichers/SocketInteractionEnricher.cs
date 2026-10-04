@@ -1,4 +1,4 @@
-﻿using Discord.WebSocket;
+using Discord.WebSocket;
 using Serilog.Core;
 using Serilog.Events;
 

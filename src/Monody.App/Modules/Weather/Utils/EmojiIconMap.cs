@@ -1,10 +1,10 @@
-﻿using DarkSky.Models;
+using DarkSky.Models;
 
 namespace Monody.App.Modules.Weather.Utils;
 
 internal static class EmojiIconMap
 {
-    private static readonly Dictionary<Icon, string> _emojiMap = new ()
+    private static readonly Dictionary<Icon, string> _emojiMap = new()
     {
         { Icon.ClearDay, ":sunny:" },
         { Icon.ClearNight, ":sunny:" },

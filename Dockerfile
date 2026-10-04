@@ -24,4 +24,4 @@ COPY --from=build /app/publish ./
 RUN mkdir -p /data
 VOLUME ["/data"]
 
-ENTRYPOINT ["dotnet", "Monody.App.dll"]
+ENTRYPOINT ["sh", "-c", "exec dotnet Monody.App.dll"]

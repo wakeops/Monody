@@ -1,4 +1,4 @@
-﻿namespace Monody.AI.Tools.Capabilities.GetDiscordMessage;
+namespace Monody.AI.Tools.Capabilities.GetDiscordMessage;
 
 public sealed class GetDiscordMessageResponse
 {

@@ -18,7 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<DatabaseMigrationService>();
 
         services.TryAddSingleton(TimeProvider.System);
-        
+
         services.AddSingleton<IConversationStore, ConversationStore>();
         services.AddSingleton<IMemoryStore, MemoryStore>();
         services.AddSingleton<IReminderStore, ReminderStore>();

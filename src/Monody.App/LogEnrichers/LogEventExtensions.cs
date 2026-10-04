@@ -1,4 +1,4 @@
-﻿using Serilog.Core;
+using Serilog.Core;
 using Serilog.Events;
 
 namespace Monody.App.LogEnrichers;

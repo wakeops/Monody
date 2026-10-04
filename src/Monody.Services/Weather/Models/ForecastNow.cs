@@ -1,4 +1,4 @@
-﻿using DarkSky.Models;
+using DarkSky.Models;
 
 namespace Monody.Services.Weather.Models;
 
@@ -13,7 +13,7 @@ public class ForecastNow
     public int WindBearing { get; set; }
     public string CardinalWindBearing { get; set; }
     public double ForecastHigh { get; set; }
-    public double ForecastLow { get; set;}
+    public double ForecastLow { get; set; }
     public double HeatIndex { get; set; }
     public Icon Icon { get; set; }
     public int UVIndex { get; set; }

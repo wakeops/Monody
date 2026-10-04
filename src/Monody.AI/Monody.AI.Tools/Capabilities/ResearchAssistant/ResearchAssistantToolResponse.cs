@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 
 namespace Monody.AI.Tools.Capabilities.ResearchAssistant;
 

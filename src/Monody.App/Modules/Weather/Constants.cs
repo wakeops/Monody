@@ -1,4 +1,4 @@
-﻿namespace Monody.App.Modules.Weather;
+namespace Monody.App.Modules.Weather;
 
 internal static class Constants
 {

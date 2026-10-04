@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using Monody.Services.Geocode.Models;
 
 namespace Monody.AI.Tools.Capabilities.Weather;

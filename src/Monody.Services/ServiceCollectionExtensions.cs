@@ -1,4 +1,4 @@
-﻿using DarkSky.Services;
+using DarkSky.Services;
 using Geo.Extensions.DependencyInjection;
 using Google.Apis.CustomSearchAPI.v1;
 using Google.Apis.Services;

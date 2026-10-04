@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Interactions;
 
 namespace Monody.App.Modules.Slop.Modals;

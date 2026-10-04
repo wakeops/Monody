@@ -2,19 +2,19 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Discord;
+using Discord.WebSocket;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Monody.AI.Agents;
-using Monody.AI.Tools.Abstractions;
-using Monody.Data.Entities;
 using Monody.AI.SchemaJson;
+using Monody.AI.Tools.Abstractions;
 using Monody.App.Modules.Slop.Models;
 using Monody.App.Modules.Slop.Utils;
+using Monody.Data.Entities;
+using Monody.Data.Stores;
 using OpenAI.Chat;
 using SkChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
-using Monody.Data.Stores;
-using Discord.WebSocket;
 
 namespace Monody.App.Modules.Slop;
 
@@ -46,7 +46,7 @@ public class AIChatService
     public async Task<DiscordCompletionResponse> GetChatCompletionAsync(ulong interactionId, SocketInteraction interactionContext, string prompt, CancellationToken cancellationToken = default)
     {
         var history = await LoadHistoryAsync(interactionId, interactionContext, cancellationToken);
-        
+
         var user = interactionContext.User;
         var guildId = interactionContext.GuildId;
         var channel = interactionContext.Channel;

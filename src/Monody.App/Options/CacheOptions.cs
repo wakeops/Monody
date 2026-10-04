@@ -1,4 +1,4 @@
-﻿
+
 namespace Monody.App.Options;
 
 internal sealed class CacheOptions

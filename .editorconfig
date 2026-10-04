@@ -1,66 +1,18 @@
 root = true
 
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
 [*.json]
 indent_style = space
 indent_size = 2
-end_of_line = lf
 
-[*.cs]
-dotnet_style_operator_placement_when_wrapping = beginning_of_line
+[*.{cs,csx}]
 indent_style = space
 indent_size = 4
-end_of_line = lf
-
-dotnet_sort_system_directives_first = true
-dotnet_separate_import_directive_groups = false
-dotnet_style_coalesce_expression = true:suggestion
-dotnet_style_null_propagation = true:suggestion
-dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
-dotnet_style_prefer_auto_properties = true:silent
-dotnet_style_object_initializer = true:suggestion
-
-dotnet_diagnostic.IDE0005.severity = warning     # Remove unused usings
-dotnet_diagnostic.IDE0008.severity = none        # Use explicit type
-dotnet_diagnostic.IDE0052.severity = warning     # Value assigned is never used
-dotnet_diagnostic.IDE0059.severity = warning     # Unnecessary assignment of a value
-dotnet_diagnostic.IDE0130.severity = warning     # Namespace must match folder structure
-dotnet_diagnostic.IDE1006.severity = warning     # Naming rule violation
-
-dotnet_diagnostic.CA1062.severity = silent       # Validate arguments null
-dotnet_diagnostic.CA1305.severity = none         # Globalization overloads
-dotnet_diagnostic.CA1822.severity = warning      # Mark members static where possible
-dotnet_diagnostic.CA1848.severity = none         # Use LoggerMessage for structured logging
-dotnet_diagnostic.CA2000.severity = error        # Dispose objects correctly
-dotnet_diagnostic.CA2007.severity = none         # Do not directly await a Task
-dotnet_diagnostic.CA2012.severity = warning      # ValueTask usage guidance
-dotnet_diagnostic.CA2254.severity = warning      # Logging message should be constant
-
-dotnet_diagnostic.CS1591.severity = none         # Missing XML comment for publicly visible type or member
-
-dotnet_diagnostic.SKEXP0001.severity = warning   # Type is for evaluation purposes only and is subject to change or removal in future updates.
-dotnet_diagnostic.SKEXP0010.severity = warning   # Type is for evaluation purposes only and is subject to change or removal in future updates.
-
-
-# Naming Rules (Microsoft standard)
-dotnet_naming_rule.non_field_members_should_be_pascalcase.symbols = non_field_members
-dotnet_naming_rule.non_field_members_should_be_pascalcase.style = pascalcase
-dotnet_naming_rule.non_field_members_should_be_pascalcase.severity = error
-
-dotnet_naming_rule.private_fields_underscored.symbols = private_fields
-dotnet_naming_rule.private_fields_underscored.style = underscored
-dotnet_naming_rule.private_fields_underscored.severity = warning
-
-# Symbol groups
-dotnet_naming_symbols.non_field_members.applicable_kinds = property, method, event
-dotnet_naming_symbols.private_fields.applicable_kinds = field
-dotnet_naming_symbols.private_fields.applicable_accessibilities = private
-
-# Styles
-dotnet_naming_style.pascalcase.capitalization = pascal_case
-dotnet_naming_style.camelcase.capitalization = camel_case
-
-dotnet_naming_style.underscored.capitalization = camel_case
-dotnet_naming_style.underscored.required_prefix = _
 
 # Formatting
 csharp_prefer_braces = true:warning
@@ -84,6 +36,58 @@ csharp_style_expression_bodied_local_functions = false:silent
 csharp_space_after_keywords_in_control_flow_statements = true:warning
 csharp_space_between_parentheses = false:warning
 csharp_space_around_binary_operators = before_and_after:warning
+
+# Code Style
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+dotnet_style_prefer_auto_properties = true:silent
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_operator_placement_when_wrapping = beginning_of_line
+
+# Naming Rules
+dotnet_naming_rule.non_field_members_should_be_pascalcase.symbols = non_field_members
+dotnet_naming_rule.non_field_members_should_be_pascalcase.style = pascalcase
+dotnet_naming_rule.non_field_members_should_be_pascalcase.severity = error
+
+dotnet_naming_rule.private_fields_underscored.symbols = private_fields
+dotnet_naming_rule.private_fields_underscored.style = underscored
+dotnet_naming_rule.private_fields_underscored.severity = warning
+
+# Symbol Groups
+dotnet_naming_symbols.non_field_members.applicable_kinds = property, method, event
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+# Naming Styles
+dotnet_naming_style.pascalcase.capitalization = pascal_case
+dotnet_naming_style.camelcase.capitalization = camel_case
+
+dotnet_naming_style.underscored.capitalization = camel_case
+dotnet_naming_style.underscored.required_prefix = _
+
+dotnet_diagnostic.IDE0005.severity = warning     # Remove unused usings
+dotnet_diagnostic.IDE0008.severity = none        # Use explicit type
+dotnet_diagnostic.IDE0052.severity = warning     # Value assigned is never used
+dotnet_diagnostic.IDE0059.severity = warning     # Unnecessary assignment of a value
+dotnet_diagnostic.IDE0130.severity = warning     # Namespace must match folder structure
+dotnet_diagnostic.IDE1006.severity = warning     # Naming rule violation
+
+dotnet_diagnostic.CA1062.severity = silent       # Validate arguments null
+dotnet_diagnostic.CA1305.severity = none         # Globalization overloads
+dotnet_diagnostic.CA1822.severity = warning      # Mark members static where possible
+dotnet_diagnostic.CA1848.severity = none         # Use LoggerMessage for structured logging
+dotnet_diagnostic.CA2000.severity = error        # Dispose objects correctly
+dotnet_diagnostic.CA2007.severity = none         # Do not directly await a Task
+dotnet_diagnostic.CA2012.severity = warning      # ValueTask usage guidance
+dotnet_diagnostic.CA2254.severity = warning      # Logging message should be constant
+
+dotnet_diagnostic.CS1591.severity = none         # Missing XML comment for publicly visible type or member
+
+dotnet_diagnostic.SKEXP0001.severity = warning   # Type is for evaluation purposes only and is subject to change or removal in future updates.
+dotnet_diagnostic.SKEXP0010.severity = warning   # Type is for evaluation purposes only and is subject to change or removal in future updates.
 
 [src/Monody.Data/Migrations/*.cs]
 generated_code = true

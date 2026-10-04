@@ -1,4 +1,4 @@
-﻿namespace Monody.AI.Agents;
+namespace Monody.AI.Agents;
 
 public static class SystemPrompt
 {

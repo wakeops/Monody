@@ -1,4 +1,4 @@
-﻿namespace Monody.Services.Geocode.Models;
+namespace Monody.Services.Geocode.Models;
 
 public class LocationDetails
 {

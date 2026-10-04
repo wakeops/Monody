@@ -1,4 +1,4 @@
-﻿using DarkSky.Models;
+using DarkSky.Models;
 
 namespace Monody.Services.Weather.Models;
 
