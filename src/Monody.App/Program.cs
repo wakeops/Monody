@@ -37,7 +37,6 @@ builder.Services
     .AddServices(builder.Configuration)
     .AddCache(builder.Configuration)
     .AddDiscord()
-    .AddHostedService<ModuleLoaderService>()
     .AddHostedService<ReminderDeliveryService>();
 
 // Build and run

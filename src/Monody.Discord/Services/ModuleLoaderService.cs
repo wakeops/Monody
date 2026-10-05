@@ -7,9 +7,8 @@ using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Monody.App.Options;
 
-namespace Monody.App.Services;
+namespace Monody.Discord.Services;
 
 internal class ModuleLoaderService : DiscordClientService
 {

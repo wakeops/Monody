@@ -45,6 +45,7 @@ public static class ServiceCollectionExtensions
         });
 
         services
+            .AddHostedService<ModuleLoaderService>()
             .AddHostedService<InteractionHandler>()
             .AddHostedService<BotStatusService>();
 
