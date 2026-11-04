@@ -89,7 +89,10 @@ startup wiring is intact.
 
 **A slash command.** Add an `InteractionModule : InteractionModuleBase<SocketInteractionContext>`
 under `src/Monody.App/Modules/<Area>/`. It must live in `Monody.App`:
-`ModuleLoaderService` only scans the executing assembly. If the module needs its
+`ModuleLoaderService` (in `Monody.Discord`) only scans the assemblies handed to
+`AddDiscord(...)`, and `Program.cs` passes just `Monody.App`. It once used
+`Assembly.GetExecutingAssembly()`, which silently became `Monody.Discord` when the loader moved
+there - zero modules, and global registration then deleted every command from Discord. If the module needs its
 own services, add an `InjectionHandler : ModuleInjectionHandler` beside it —
 `AddModulesFromAssembly` finds every such type by reflection and calls it. There
 is no registry or manifest to update.
