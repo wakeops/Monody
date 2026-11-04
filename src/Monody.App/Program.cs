@@ -33,7 +33,7 @@ builder.Services
     .AddSingleton<AIChatService>()
     .AddServices(builder.Configuration)
     .AddCache(builder.Configuration)
-    .AddDiscord()
+    .AddDiscord(typeof(Program).Assembly)
     .AddHostedService<ReminderDeliveryService>();
 
 // Build and run

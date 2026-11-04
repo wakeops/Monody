@@ -1,3 +1,4 @@
+using System.Reflection;
 using Discord.Addons.Hosting;
 using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,8 +9,12 @@ namespace Monody.Discord;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddDiscord(this IServiceCollection services)
+    public static IServiceCollection AddDiscord(this IServiceCollection services, Assembly moduleAssembly)
     {
+        ArgumentNullException.ThrowIfNull(moduleAssembly);
+
+        services.Configure<InteractionModuleOptions>(options => options.Assemblies.Add(moduleAssembly));
+
         services.AddOptionsWithValidateOnStart<DiscordOptions>()
             .BindConfiguration("Discord")
             .ValidateDataAnnotations();

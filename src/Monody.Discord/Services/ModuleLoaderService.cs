@@ -1,4 +1,3 @@
-using System.Reflection;
 using Discord;
 using Discord.Addons.Hosting;
 using Discord.Addons.Hosting.Util;
@@ -15,21 +14,34 @@ internal class ModuleLoaderService : DiscordClientService
     private readonly InteractionService _interactionService;
     private readonly IServiceProvider _serviceProvider;
     private readonly DiscordOptions _options;
+    private readonly InteractionModuleOptions _moduleOptions;
 
     public ModuleLoaderService(DiscordSocketClient client, InteractionService interactionService, IServiceProvider serviceProvider,
-        IOptions<DiscordOptions> options, ILogger<ModuleLoaderService> logger)
+        IOptions<DiscordOptions> options, IOptions<InteractionModuleOptions> moduleOptions, ILogger<ModuleLoaderService> logger)
         : base(client, logger)
     {
         _interactionService = interactionService;
         _serviceProvider = serviceProvider;
         _options = options.Value;
+        _moduleOptions = moduleOptions.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await _interactionService.AddModulesAsync(Assembly.GetExecutingAssembly(), _serviceProvider);
+        foreach (var assembly in _moduleOptions.Assemblies.Distinct())
+        {
+            await _interactionService.AddModulesAsync(assembly, _serviceProvider);
+        }
 
         await Client.WaitForReadyAsync(cancellationToken);
+
+        // Registration replaces the whole command set, so registering nothing would delete every
+        // existing command from Discord.
+        if (_interactionService.Modules.Count == 0)
+        {
+            Logger.LogError("No interaction modules were found; skipping command registration so existing commands are kept");
+            return;
+        }
 
         // A guild id registers commands to that one guild, which propagates instantly and is
         // the usual choice while developing; otherwise they go out globally.
