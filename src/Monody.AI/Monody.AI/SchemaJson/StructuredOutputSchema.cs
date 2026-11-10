@@ -111,7 +111,7 @@ public static class StructuredOutputSchema
             return reference;
         }
 
-        private JsonObject BuildArraySchema(Type type)
+        private JsonObject? BuildArraySchema(Type type)
         {
             var elementType = type.IsArray
                 ? type.GetElementType()
@@ -129,7 +129,7 @@ public static class StructuredOutputSchema
             };
         }
 
-        private JsonObject BuildDictionarySchema(Type type)
+        private JsonObject? BuildDictionarySchema(Type type)
         {
             var dictionary = FindGenericInterface(type, typeof(IDictionary<,>))
                              ?? FindGenericInterface(type, typeof(IReadOnlyDictionary<,>));
@@ -165,7 +165,7 @@ public static class StructuredOutputSchema
             return schema;
         }
 
-        private static JsonObject BuildScalarSchema(Type type) => type switch
+        private static JsonObject? BuildScalarSchema(Type type) => type switch
         {
             _ when type == typeof(string) => new() { ["type"] = "string" },
             _ when type == typeof(bool) => new() { ["type"] = "boolean" },
@@ -251,7 +251,7 @@ public static class StructuredOutputSchema
         // Nested types use '+' in their full name, which isn't valid in a "$ref" pointer.
         private static string GetDefinitionKey(Type type) => (type.FullName ?? type.Name).Replace('+', '.');
 
-        private static Type FindGenericInterface(Type type, Type genericInterface)
+        private static Type? FindGenericInterface(Type type, Type genericInterface)
         {
             if (type.IsInterface && type.IsGenericType && type.GetGenericTypeDefinition() == genericInterface)
             {
@@ -271,6 +271,6 @@ public static class StructuredOutputSchema
             _ => null
         };
 
-        private static JsonObject Clone(JsonObject value) => (JsonObject)JsonNode.Parse(value.ToJsonString());
+        private static JsonObject Clone(JsonObject value) => (JsonObject)JsonNode.Parse(value.ToJsonString())!;
     }
 }

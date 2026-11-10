@@ -6,19 +6,19 @@ public sealed class GetDiscordMessageResponse
 
     public ulong ChannelId { get; set; }
 
-    public string ChannelType { get; set; }
+    public string? ChannelType { get; set; }
 
     public ulong MessageId { get; set; }
 
-    public string Content { get; set; }
+    public string? Content { get; set; }
 
     public DateTimeOffset Timestamp { get; set; }
 
     public ulong AuthorId { get; set; }
 
-    public string AuthorUsername { get; set; }
+    public string? AuthorUsername { get; set; }
 
-    public string AuthorGlobalName { get; set; }
+    public string? AuthorGlobalName { get; set; }
 
     public IReadOnlyList<string> Attachments { get; set; } = [];
 

@@ -11,13 +11,13 @@ internal sealed class GraylogStreamsResponse
 internal sealed class GraylogStreamDto
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; }
+    public string? Id { get; set; }
 
     [JsonPropertyName("title")]
-    public string Title { get; set; }
+    public string? Title { get; set; }
 
     [JsonPropertyName("description")]
-    public string Description { get; set; }
+    public string? Description { get; set; }
 
     [JsonPropertyName("disabled")]
     public bool Disabled { get; set; }

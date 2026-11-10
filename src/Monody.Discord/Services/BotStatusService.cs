@@ -4,10 +4,12 @@ using Discord.Addons.Hosting.Util;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 
-namespace Monody.App.Services;
+namespace Monody.Discord.Services;
 
 internal class BotStatusService : DiscordClientService
 {
+    private const string _statusMessage = "Between signal and silence";
+
     public BotStatusService(DiscordSocketClient client, ILogger<DiscordClientService> logger) : base(client, logger)
     {
     }
@@ -17,14 +19,8 @@ internal class BotStatusService : DiscordClientService
         // Wait for the client to be ready before setting the status
         await Client.WaitForReadyAsync(stoppingToken);
 
-        Logger.Log_ClientReady();
+        Logger.LogInformation("Client is ready!");
 
-        await Client.SetActivityAsync(new Game("Between signal and silence"));
+        await Client.SetActivityAsync(new Game(_statusMessage));
     }
-}
-
-internal static partial class BotStatusServiceLoggingExtensions
-{
-    [LoggerMessage(Level = LogLevel.Information, Message = "Client is ready!")]
-    public static partial void Log_ClientReady(this ILogger logger);
 }

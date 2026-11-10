@@ -22,7 +22,7 @@ public sealed class ReminderPlugin(IReminderStore reminderStore, IInvocationCont
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Message);
 
         var userId = invocationContext.RequireUserId();
-        var channelId = invocationContext.Interaction.ChannelId;
+        var channelId = invocationContext.Interaction!.ChannelId;
 
         if (ResolveDueAt(request) is not { } dueAt)
         {
@@ -38,7 +38,7 @@ public sealed class ReminderPlugin(IReminderStore reminderStore, IInvocationCont
         return new SetReminderToolResponse
         {
             Scheduled = result.Success,
-            DueAt = result.Success ? DiscordTimestamp(result.Reminder.DueAt) : null,
+            DueAt = result.Success ? DiscordTimestamp(result.Reminder!.DueAt) : null,
             Outcome = result.Success ? "Scheduled." : result.Reason
         };
     }

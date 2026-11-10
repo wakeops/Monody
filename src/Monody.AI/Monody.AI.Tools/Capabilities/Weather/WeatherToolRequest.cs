@@ -7,7 +7,7 @@ namespace Monody.AI.Tools.Capabilities.Weather;
 public sealed class WeatherToolRequest
 {
     [Description("Free-form location like 'Raleigh, NC' or '90210'. Use this OR lat/lon.")]
-    public string LocationQuery { get; set; }
+    public string? LocationQuery { get; set; }
 
     [Description("Latitude in decimal degrees. Use with longitude, instead of location_query.")]
     [Range(-90, 90)]

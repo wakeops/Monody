@@ -6,13 +6,18 @@ and an LLM bridge (`/slop ask|memories`) built on Semantic Kernel and OpenAI.
 ## Commands
 
 ```bash
-dotnet build -c Release          # Release is the default Configuration (Directory.Build.props)
-dotnet test  -c Release          # xunit
+dotnet build                     # Debug by default: warnings are errors, style enforced in build
+dotnet test  -c Release          # xunit; CI builds and tests in Release
 dotnet publish src/Monody.App/Monody.App.csproj -c Release -o ./out
 ```
 
-CI runs exactly `restore` → `build` → `test` → `docker build`, so a clean local
-build plus tests is a good proxy for green CI.
+CI runs `restore` → `dotnet format --verify-no-changes --severity error` → `build` →
+`test` in Release. Release does not treat warnings as errors, so build Debug locally too
+(`Directory.Build.props` sets `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild` for Debug
+only) — that is where analyzer warnings from new code surface. Run
+`dotnet format Monody.slnx --verify-no-changes --severity error` locally too; the lint
+step fails the build on formatting errors. A separate CI job also builds the Docker
+image without pushing it, so `docker build .` should pass locally too.
 
 Targets **net10.0**. If the SDK is missing on a Linux box, the Microsoft download
 CDN is often blocked but Ubuntu 24.04 ships it: `apt-get install -y dotnet-sdk-10.0`.
@@ -20,23 +25,30 @@ CDN is often blocked but Ubuntu 24.04 ships it: `apt-get install -y dotnet-sdk-1
 ## Layout
 
 ```
-src/Monody.Domain      Shared DI/options helpers. No project dependencies.
-src/Monody.Services    External APIs: geocoding (HERE), weather (Pirate Weather),
-                       web search (Google CSE), Bluesky. Caching lives here.
-src/Monody.Data        SQLite via EF Core: conversations, user memories and reminders,
-                       plus their stores and migrations.
-src/Monody.AI.Tools    Semantic Kernel plugins (the tools the model can call).
-src/Monody.AI          Kernel/OpenAI wiring, system prompts, the research agent,
-                       and the structured-output JSON Schema generator.
-src/Monody.App         Host, Discord wiring, interaction modules. The entrypoint.
-test/…AI.Tools.Tests   Plugin behaviour: HTML extraction, current time, arg coercion,
-                       the expression evaluator.
-test/Monody.App.Tests  Embed construction and the interaction-command tree. Sees
-                       Monody.App internals via InternalsVisibleTo.
-test/Monody.Data.Tests Store behaviour against a real in-memory SQLite database.
+src/Monody.Domain              Shared DI/options helpers. No project dependencies.
+src/Monody.Services            External APIs: geocoding (HERE), weather (Pirate Weather),
+                               web search (Google CSE), Bluesky, Graylog. Caching lives here.
+src/Monody.Data                SQLite via EF Core: conversations, user memories and reminders,
+                               plus their stores and migrations.
+src/Monody.Discord             Discord host wiring (AddDiscord): module loading and command
+                               registration, the interaction handler, bot status, log enrichers.
+                               No project dependencies.
+src/Monody.AI/Monody.AI.Tools  Semantic Kernel plugins (the tools the model can call) and
+                               ToolCallRecoveryFilter.
+src/Monody.AI/Monody.AI        Kernel/OpenAI wiring, system prompts, the research agent,
+                               and the structured-output JSON Schema generator.
+src/Monody.App                 Host, interaction modules, AIChatService, hosted services
+                               (reminder delivery, AI warm-up). The entrypoint.
+test/Monody.AI.Tools.Tests     Plugin behaviour: HTML extraction, current time, memory,
+                               Graylog, ToolCallRecoveryFilter, the expression evaluator.
+test/Monody.App.Tests          Embed construction, slop reply formatting and the
+                               interaction-command tree. Sees Monody.App internals via
+                               InternalsVisibleTo.
+test/Monody.Data.Tests         Store behaviour against a real in-memory SQLite database.
 ```
 
-Dependencies flow one way: `Bot → AI → AI.Tools → {Services, Data} → Domain`.
+Dependencies flow one way: `App → AI → AI.Tools → {Services, Data} → Domain`, plus `App → Discord`.
+`Monody.Discord` knows nothing about Monody; `Monody.App` hands it the module assembly.
 
 `Monody.AI.Tools` must not reference `Monody.AI`. `ResearchAssistantPlugin` needs
 the research agent, which needs the `Kernel` the plugin is being registered on —
@@ -60,6 +72,8 @@ to start the bot — **verified by running the published bot**:
 | `Services:WebSearch:GoogleApiKey` / `GoogleSearchEngineId` | Yes |
 | `AIOptions:Providers:OpenAI:ApiKey` | Yes |
 | `Cache:RedisConfiguration` | No — optional; set it to enable the FusionCache backplane |
+| `Services:Graylog:BaseUrl` / `ApiKey` | No — optional; without them the Graylog tools tell the model Graylog isn't configured |
+| `Discord:GuildId` | No — set it to register commands to one guild (instant) instead of globally |
 | `Data:ConnectionString` | No — defaults to `Data Source=/data/monody.db` |
 
 A missing value fails fast and names the exact configuration path, e.g.
@@ -86,10 +100,13 @@ startup wiring is intact.
 
 **A slash command.** Add an `InteractionModule : InteractionModuleBase<SocketInteractionContext>`
 under `src/Monody.App/Modules/<Area>/`. It must live in `Monody.App`:
-`ModuleLoaderService` only scans the executing assembly. If the module needs its
-own services, add an `InjectionHandler : ModuleInjectionHandler` beside it —
-`AddModulesFromAssembly` finds every such type by reflection and calls it. There
-is no registry or manifest to update.
+`ModuleLoaderService` (in `Monody.Discord`) only scans the assemblies handed to
+`AddDiscord(...)`, and `Program.cs` passes just `Monody.App`. It once used
+`Assembly.GetExecutingAssembly()`, which silently became `Monody.Discord` when the loader moved
+there - zero modules, and global registration then deleted every command from Discord. The
+loader now refuses to register an empty command set, but don't rely on that. Modules are
+constructed from the main container, so register anything a module needs in `Program.cs` or
+the relevant `AddServices`/`AddMonodyAI` extension. There is no registry or manifest to update.
 
 **A tool the model can call.** Add the plugin plus its request/response types under
 `src/Monody.AI.Tools/Capabilities/<Name>/`, then register it in
@@ -103,10 +120,8 @@ satisfied — taking the Kernel, and the whole bot, down at startup.
 which binds the options and hands back an instance for use during registration.
 
 **A test project.** Add it to `Monody.slnx` (`dotnet sln add`, or just edit the XML —
-the solution is in the newer `.slnx` format) *and* add a `COPY` line for its csproj to
-the `Dockerfile`. The restore layer copies each csproj individually and then restores the
-whole solution, so a missing one fails the Docker build with `MSB3202` even though
-`dotnet build` locally is fine.
+the solution is in the newer `.slnx` format). The `Dockerfile` copies `src/**/*.csproj`
+with a glob and restores only `Monody.App`, so test projects need no Dockerfile change.
 
 ## Conventions
 
@@ -117,8 +132,9 @@ fighting the analyzer):
 - Unused usings (IDE0005), dead assignments (IDE0052/0059), namespace/folder
   mismatch (IDE0130) and "can be static" (CA1822) are warnings; CA2000 (dispose)
   is an error.
-- `ImplicitUsings` and nullable reference types are **off**. Every file writes its
-  own `using System;` etc., and `?` annotations are not checked.
+- `ImplicitUsings` and nullable reference types are **on** (`Directory.Build.props`). Don't
+  add `using System;` and friends; do annotate nullability, since Debug builds fail on the
+  warnings.
 - File-scoped namespaces, 4-space indent, `System` usings sorted first.
 
 Package versions are managed centrally: add a `<PackageVersion>` to
@@ -179,9 +195,14 @@ and keeping them would mean serialising Semantic Kernel's polymorphic content.
 **Discord's 3-second acknowledgement window.** An interaction must be acknowledged
 within 3s or it dies with `Unknown interaction (10062)`. Every command calls
 `DeferAsync()` first and then `ModifyOriginalResponseAsync` / `FollowupAsync`.
-Do not do slow work before the defer. `Program.cs` raises `ThreadPool.SetMinThreads`
-for the same reason, and `UseInteractionSnowflakeDate = false` stops Discord.Net
-from measuring that window against its own clock. Don't remove either.
+Do not do slow work before the defer — and that includes the module's constructor:
+Discord.Net resolves a module's dependencies before the command method runs, so the first
+`/slop ask` after a start once missed the window just building the Kernel and its plugins
+(`Cannot defer an interaction after 3 seconds!`). `AIWarmupService` resolves `AIChatService`
+at startup, registered ahead of `AddDiscord` so it finishes before the gateway connects; give
+any other expensive singleton a module depends on the same treatment. `Program.cs` raises
+`ThreadPool.SetMinThreads` for the same reason, and `UseInteractionSnowflakeDate = false`
+stops Discord.Net from measuring that window against its own clock. Don't remove any of these.
 
 **Structured outputs are strict.** `StructuredOutputSchema` generates the schema
 OpenAI receives, and strict mode means: every object gets `additionalProperties: false`,
@@ -293,6 +314,12 @@ or an empty object, not null; those are treated as absent. Note `EmbedBuilder.Le
 counts text but *not* image urls, so an image-only embed measures zero and must not be
 mistaken for an empty one.
 
+**Every `/slop` reply opens with a quote of the prompt that triggered it** — the original
+prompt or the follow-up text — built by `SlopReplyFormatter`, which clips the quote and then the
+answer so the message stays inside Discord's 2000-character limit. The quote echoes user text
+verbatim, so replies go out with `AllowedMentions.None`; without it a prompt containing
+`@everyone` would have the bot ping on the user's behalf.
+
 **Component custom IDs carry state.** Buttons encode their arguments in the ID
 (e.g. `forecast_hourly_{page}_({location})_{unit}`) and are matched by the wildcard
 pattern on `[ComponentInteraction]`. Changing the format on one side without the
@@ -300,9 +327,9 @@ other breaks paging silently.
 
 ## CI and release
 
-- `01-build-test.yaml` on push to `main`: build, test, Docker build, then auto-tag
-  and create a release via shared workflows in `wakeops/ci`.
-- `02-publish-on-release.yaml`: publishes the image when a release is published.
-- Existing warnings are expected: `NU1902` (AngleSharp advisory) and `SKEXP0001` /
-  `SKEXP0010` (Semantic Kernel experimental APIs, deliberately kept as warnings in
-  `.editorconfig`). Don't add suppressions to "fix" them; do avoid adding new ones.
+- `build-test.yml` on pull requests and pushes to `main`: a `build` job (restore, lint,
+  build, test) and a `docker` job that builds the image with `push: false` to validate
+  the Dockerfile.
+- `release.yml` on pushing a `v*.*.*` tag: restore, build, test, then build and push the
+  image to `ghcr.io/<repo>` (tags `x.y.z`, `x.y`, `latest`) and create a GitHub release
+  with generated notes.

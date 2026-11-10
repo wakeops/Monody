@@ -15,9 +15,6 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
 {
     private const string _lostContextMessage = "Sorry, I lost this conversation's context.";
 
-    // Discord messages cap at 2000 characters; leave room for the ellipsis.
-    private const int _maxMessageLength = 1950;
-
     private const string _memorySelectMenuId = "monody_memory_delete";
     private const string _memoryDeleteAllButtonId = "monody_memory_delete_all";
 
@@ -97,25 +94,21 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unable to complete interaction");
-            await FollowupAsync("Sorry — the prompt request failed", ephemeral: isEphemeral);
+            await SendReplyAsync(prompt, "Sorry — the prompt request failed", isEphemeral);
             return;
         }
-
-        // Strict structured outputs force every property to be present, so "unused" arrives as
-        // an empty string rather than null.
-        var content = Truncate(completion?.Text);
 
         var embed = completion?.Kind == DiscordResponseKind.Embed
             ? DiscordEmbedFactory.TryBuild(completion.Embed)
             : null;
 
-        // Text is sent either way: alongside an embed it reads as a short lead-in, and if the
-        // model asked for an embed but supplied nothing renderable it is all we have left.
-        var text = content;
+        // Strict structured outputs force every property to be present, so "unused" arrives as
+        // an empty string rather than null.
+        var answer = string.IsNullOrWhiteSpace(completion?.Text) ? null : completion.Text;
 
-        if (embed is null && text is null)
+        if (embed is null && answer is null)
         {
-            await FollowupAsync("I didn't get any text back from the model.", ephemeral: isEphemeral);
+            await SendReplyAsync(prompt, "I didn't get any text back from the model.", isEphemeral);
             return;
         }
 
@@ -126,17 +119,32 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
                 style: ButtonStyle.Primary)
             .Build();
 
+        // Text is sent either way: alongside an embed it reads as a short lead-in, and if the
+        // model asked for an embed but supplied nothing renderable it is all we have left.
         if (isEphemeral)
         {
-            await FollowupAsync(text: text, embed: embed, components: components, ephemeral: true);
+            await SendReplyAsync(prompt, answer, isEphemeral: true, embed, components);
             return;
         }
 
         // A public reply can't carry the follow-up button, since anyone could press it;
         // send the button separately, visible only to the user who asked.
-        await FollowupAsync(text: text, embed: embed, ephemeral: false);
+        await SendReplyAsync(prompt, answer, isEphemeral: false, embed);
         await FollowupAsync("You can follow up on this reply here:", components: components, ephemeral: true);
     }
+
+    /// <summary>Sends a reply headed by a quote of the prompt that triggered it.</summary>
+    /// <remarks>
+    /// Mentions are disabled: the quote echoes user text verbatim, so without this a prompt
+    /// containing @everyone would have the bot ping on the user's behalf.
+    /// </remarks>
+    private Task SendReplyAsync(string prompt, string? body, bool isEphemeral, Embed? embed = null, MessageComponent? components = null) =>
+        FollowupAsync(
+            text: SlopReplyFormatter.Build(prompt, body),
+            embed: embed,
+            components: components,
+            ephemeral: isEphemeral,
+            allowedMentions: AllowedMentions.None);
 
     [SlashCommand("memories", "See and manage what Monody remembers about you.")]
     [CommandContextType(InteractionContextType.PrivateChannel, InteractionContextType.BotDm, InteractionContextType.Guild)]
@@ -155,7 +163,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         var ids = selectedIds
             .Select(id => int.TryParse(id, out var parsed) ? parsed : (int?)null)
             .Where(id => id.HasValue)
-            .Select(id => id.Value);
+            .Select(id => id!.Value);
 
         var deleted = await _memoryStore.ForgetAsync(Context.User.Id, ids);
 
@@ -173,7 +181,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
     }
 
     /// <summary>Re-renders the ephemeral message from the store, so it always shows current state.</summary>
-    private async Task ShowCurrentAsync(string notice = null)
+    private async Task ShowCurrentAsync(string? notice = null)
     {
         var memories = await _memoryStore.GetAsync(Context.User.Id);
 
@@ -188,7 +196,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         });
     }
 
-    private static Embed BuildMemoriesEmbed(IReadOnlyList<UserMemory> memories, string notice)
+    private static Embed BuildMemoriesEmbed(IReadOnlyList<UserMemory> memories, string? notice)
     {
         var embed = new EmbedBuilder()
             .WithTitle("What Monody remembers about you")
@@ -246,16 +254,6 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             .Build();
     }
 
-    private static string TruncateLabel(string value, int maxLength) =>
-        value.Length <= maxLength ? value : value[..(maxLength - 1)] + "…";
-
-    private static string Truncate(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return null;
-        }
-
-        return text.Length > _maxMessageLength ? text[.._maxMessageLength] + "\u2026" : text;
-    }
+    private static string TruncateLabel(string? value, int maxLength) =>
+        value is null || value.Length <= maxLength ? value ?? string.Empty : value[..(maxLength - 1)] + "…";
 }

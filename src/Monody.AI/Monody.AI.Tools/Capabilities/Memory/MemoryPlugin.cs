@@ -102,7 +102,7 @@ public sealed class MemoryPlugin(IMemoryStore memoryStore, IInvocationContext in
     {
         if (!result.Success)
         {
-            return result.Reason;
+            return result.Reason ?? string.Empty;
         }
 
         if (result.Duplicate)

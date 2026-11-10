@@ -24,7 +24,7 @@ public sealed class FetchUrlPlugin(HttpClient httpClient)
 
         if (!result.IsSuccessStatusCode)
         {
-            response.Body = result.ReasonPhrase;
+            response.Body = result.ReasonPhrase ?? string.Empty;
             return response;
         }
 

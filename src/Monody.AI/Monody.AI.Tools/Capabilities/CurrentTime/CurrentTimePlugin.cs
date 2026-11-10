@@ -54,7 +54,7 @@ public sealed class CurrentTimePlugin
     /// A place name is rejected with a message telling the model what to send instead, because
     /// it knows perfectly well which zone a city is in and guessing here would be worse.
     /// </summary>
-    private static TimeZoneInfo ResolveTimeZone(string timeZone)
+    private static TimeZoneInfo ResolveTimeZone(string? timeZone)
     {
         if (string.IsNullOrWhiteSpace(timeZone))
         {

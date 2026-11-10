@@ -113,7 +113,7 @@ internal class InteractionLogger
         return name.ToString();
     }
 
-    private static Dictionary<string, object> BuildSlashCommandArguments(IEnumerable<SocketSlashCommandDataOption> options) =>
+    private static Dictionary<string, object?> BuildSlashCommandArguments(IEnumerable<SocketSlashCommandDataOption> options) =>
         FlattenOptions(options).ToDictionary(opt => opt.Name, opt => ConvertOptionValue(opt.Value));
 
     private static IEnumerable<SocketSlashCommandDataOption> FlattenOptions(IEnumerable<SocketSlashCommandDataOption> opts)
@@ -134,7 +134,7 @@ internal class InteractionLogger
         }
     }
 
-    private static object ConvertOptionValue(object value)
+    private static object? ConvertOptionValue(object? value)
     {
         return value switch
         {
