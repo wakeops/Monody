@@ -13,7 +13,7 @@ namespace Monody.AI.Tools.Abstractions;
 /// </remarks>
 public interface IInvocationContext
 {
-    SocketInteraction Interaction { get; }
+    SocketInteraction? Interaction { get; }
 
     IDisposable BeginScope(SocketInteraction interactionContext);
 }

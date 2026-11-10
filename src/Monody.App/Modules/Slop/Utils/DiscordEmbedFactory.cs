@@ -21,7 +21,7 @@ public static class DiscordEmbedFactory
     /// Builds an embed, or returns null when the model asked for one but supplied nothing
     /// renderable, so the caller can fall back to a plain message.
     /// </summary>
-    public static Embed TryBuild(DiscordEmbed model)
+    public static Embed? TryBuild(DiscordEmbed? model)
     {
         if (model is null)
         {
@@ -109,7 +109,7 @@ public static class DiscordEmbedFactory
                 continue;
             }
 
-            var value = Take(field.Value, EmbedFieldBuilder.MaxFieldValueLength, ref budget);
+            var value = Take(field?.Value, EmbedFieldBuilder.MaxFieldValueLength, ref budget);
             if (value is null)
             {
                 // Give back the name's budget, since the field is being dropped.
@@ -117,11 +117,11 @@ public static class DiscordEmbedFactory
                 continue;
             }
 
-            builder.AddField(name, value, field.Inline);
+            builder.AddField(name, value, field?.Inline ?? false);
         }
     }
 
-    private static EmbedAuthorBuilder BuildAuthor(DiscordEmbedAuthor author, ref int budget)
+    private static EmbedAuthorBuilder? BuildAuthor(DiscordEmbedAuthor? author, ref int budget)
     {
         var name = Take(author?.Name, EmbedAuthorBuilder.MaxAuthorNameLength, ref budget);
         if (name is null)
@@ -131,12 +131,12 @@ public static class DiscordEmbedFactory
 
         var builder = new EmbedAuthorBuilder().WithName(name);
 
-        if (TryGetHttpUrl(author.Url) is { } url)
+        if (TryGetHttpUrl(author?.Url) is { } url)
         {
             builder.WithUrl(url);
         }
 
-        if (TryGetHttpUrl(author.IconUrl) is { } iconUrl)
+        if (TryGetHttpUrl(author?.IconUrl) is { } iconUrl)
         {
             builder.WithIconUrl(iconUrl);
         }
@@ -144,7 +144,7 @@ public static class DiscordEmbedFactory
         return builder;
     }
 
-    private static EmbedFooterBuilder BuildFooter(DiscordEmbedFooter footer, ref int budget)
+    private static EmbedFooterBuilder? BuildFooter(DiscordEmbedFooter? footer, ref int budget)
     {
         var text = Take(footer?.Text, EmbedFooterBuilder.MaxFooterTextLength, ref budget);
         if (text is null)
@@ -154,7 +154,7 @@ public static class DiscordEmbedFactory
 
         var builder = new EmbedFooterBuilder().WithText(text);
 
-        if (TryGetHttpUrl(footer.IconUrl) is { } iconUrl)
+        if (TryGetHttpUrl(footer?.IconUrl) is { } iconUrl)
         {
             builder.WithIconUrl(iconUrl);
         }
@@ -166,7 +166,7 @@ public static class DiscordEmbedFactory
     /// Trims <paramref name="value"/> to whatever fits in both its own cap and the remaining
     /// total budget, charging what it takes. Returns null when it is blank or nothing is left.
     /// </summary>
-    private static string Take(string value, int maxLength, ref int budget)
+    private static string? Take(string? value, int maxLength, ref int budget)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -196,7 +196,7 @@ public static class DiscordEmbedFactory
         color is > 0 and <= 0xFFFFFF ? new Color((uint)color) : new Color(MonodyConstants.DefaultEmbedColor);
 
     /// <summary>Discord only accepts http(s) urls here, and throws on anything else.</summary>
-    private static string TryGetHttpUrl(string url)
+    private static string? TryGetHttpUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url))
         {
@@ -209,7 +209,7 @@ public static class DiscordEmbedFactory
             : null;
     }
 
-    private static DateTimeOffset? TryParseTimestamp(string timestamp)
+    private static DateTimeOffset? TryParseTimestamp(string? timestamp)
     {
         if (string.IsNullOrWhiteSpace(timestamp))
         {

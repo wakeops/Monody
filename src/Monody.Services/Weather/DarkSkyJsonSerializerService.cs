@@ -12,7 +12,7 @@ internal class DarkSkyJsonSerializerService : IJsonSerializerService
 {
     private static readonly string[] _integerFields = ["windBearing", "uvIndex", "nearestStormBearing"];
 
-    public async Task<T> DeserializeJsonAsync<T>(Task<string> json)
+    public async Task<T?> DeserializeJsonAsync<T>(Task<string> json)
     {
         try
         {

@@ -34,6 +34,7 @@ public class ConversationStoreTests : IDisposable
 
         var turns = await _store.GetTurnsAsync(_interaction);
 
+        Assert.NotNull(turns);
         Assert.Equal(2, turns.Count);
         Assert.Equal("user", turns[0].Role);
         Assert.Equal("half past two", turns[1].Content);
@@ -49,7 +50,7 @@ public class ConversationStoreTests : IDisposable
         var afterRestart = new ConversationStore(_fixture.CreateFactory(), new FakeTimeProvider(_now));
 
         Assert.True(await afterRestart.ExistsAsync(_interaction));
-        Assert.Equal("remember this", (await afterRestart.GetTurnsAsync(_interaction)).Single().Content);
+        Assert.Equal("remember this", (await afterRestart.GetTurnsAsync(_interaction))!.Single().Content);
     }
 
     [Fact]
@@ -65,7 +66,7 @@ public class ConversationStoreTests : IDisposable
         await _store.SaveAsync(_interaction, _alice, _channel, null, Turns("first"));
         await _store.SaveAsync(_interaction, _alice, _channel, null, Turns("first", "reply", "second"));
 
-        Assert.Equal(3, (await _store.GetTurnsAsync(_interaction)).Count);
+        Assert.Equal(3, (await _store.GetTurnsAsync(_interaction))!.Count);
     }
 
     [Fact]
@@ -77,6 +78,7 @@ public class ConversationStoreTests : IDisposable
 
         var stored = await _store.GetTurnsAsync(_interaction);
 
+        Assert.NotNull(stored);
         Assert.Equal(ConversationStore.MaxTurns, stored.Count);
         Assert.Equal(many[^1].Content, stored[^1].Content);
     }
@@ -111,6 +113,6 @@ public class ConversationStoreTests : IDisposable
             await db.SaveChangesAsync();
         }
 
-        Assert.Empty(await _store.GetTurnsAsync(_interaction));
+        Assert.Empty((await _store.GetTurnsAsync(_interaction))!);
     }
 }

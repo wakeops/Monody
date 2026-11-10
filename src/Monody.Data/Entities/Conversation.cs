@@ -19,7 +19,7 @@ public class Conversation
     public ulong? GuildId { get; set; }
 
     /// <summary>The turns, as a JSON array of {role, content}. Whole-row read and write.</summary>
-    public string TurnsJson { get; set; }
+    public string? TurnsJson { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
 

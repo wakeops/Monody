@@ -3,11 +3,10 @@ using Discord.Addons.Hosting;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
-using Monody.App.LogEnrichers;
-using Monody.App.Utils;
+using Monody.Discord.Logging;
 using Serilog.Context;
 
-namespace Monody.App.Services;
+namespace Monody.Discord.Services;
 
 internal class InteractionHandler : DiscordClientService
 {

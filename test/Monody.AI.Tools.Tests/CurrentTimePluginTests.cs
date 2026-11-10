@@ -9,7 +9,7 @@ public class CurrentTimePluginTests
     // Mid-summer, so the northern-hemisphere zones below are on daylight saving time.
     private static readonly DateTimeOffset _now = new(2026, 7, 15, 12, 00, 00, TimeSpan.Zero);
 
-    private static Task<CurrentTimeToolResponse> RunAsync(string timeZone) =>
+    private static Task<CurrentTimeToolResponse> RunAsync(string? timeZone) =>
         new CurrentTimePlugin(new FakeTimeProvider(_now))
             .GetCurrentTimeAsync(new CurrentTimeToolRequest { TimeZone = timeZone });
 
@@ -106,7 +106,7 @@ public class CurrentTimePluginTests
 
         Assert.Equal(london.UtcTime, tokyo.UtcTime);
         Assert.Equal(
-            DateTimeOffset.Parse(london.LocalTime).ToUniversalTime(),
-            DateTimeOffset.Parse(tokyo.LocalTime).ToUniversalTime());
+            DateTimeOffset.Parse(london.LocalTime!).ToUniversalTime(),
+            DateTimeOffset.Parse(tokyo.LocalTime!).ToUniversalTime());
     }
 }

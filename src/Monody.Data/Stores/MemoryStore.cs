@@ -30,7 +30,7 @@ public class MemoryStore : IMemoryStore
     public Task<IReadOnlyList<UserMemory>> GetIndexAsync(ulong userId, CancellationToken cancellationToken = default) =>
         GetAsync(userId, cancellationToken);
 
-    public async Task<UserMemory> GetTopicAsync(ulong userId, string slug, CancellationToken cancellationToken = default)
+    public async Task<UserMemory?> GetTopicAsync(ulong userId, string slug, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = slug?.Trim().ToLowerInvariant();
 
@@ -139,7 +139,7 @@ public class MemoryStore : IMemoryStore
     }
 }
 
-public readonly record struct MemoryWriteResult(bool Success, bool Replaced, bool Duplicate, string Reason)
+public readonly record struct MemoryWriteResult(bool Success, bool Replaced, bool Duplicate, string? Reason)
 {
     public static MemoryWriteResult Saved(bool replaced) => new(true, replaced, false, null);
 

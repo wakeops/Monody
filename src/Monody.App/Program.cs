@@ -1,10 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Monody.AI;
 using Monody.App;
 using Monody.App.Modules.Slop;
+using Monody.App.Services;
+using Monody.Discord;
 using Monody.Services;
 
 // Avoid slow thread injection delaying interaction defers past Discord's 3s window.
@@ -19,9 +20,7 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 // Logging
-builder.Logging
-    .ClearProviders()
-    .AddBotLogging(builder.Environment, builder.Configuration);
+builder.Logging.AddLogging(builder.Environment, builder.Configuration);
 
 // A Discord gateway hiccup can throw inside a DiscordClientService. The default is to stop the
 // host, which takes the bot down and loses anything held in memory; log and keep running instead.
@@ -34,7 +33,10 @@ builder.Services
     .AddSingleton<AIChatService>()
     .AddServices(builder.Configuration)
     .AddCache(builder.Configuration)
-    .AddDiscord();
+    // Registered before AddDiscord: hosted services start in order, so this finishes before the gateway connects.
+    .AddHostedService<AIWarmupService>()
+    .AddDiscord(typeof(Program).Assembly)
+    .AddHostedService<ReminderDeliveryService>();
 
 // Build and run
 var app = builder.Build();

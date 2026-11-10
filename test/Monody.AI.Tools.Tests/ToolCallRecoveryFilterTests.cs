@@ -37,7 +37,7 @@ public class ToolCallRecoveryFilterTests
         // What the model sends when it skips the request wrapper entirely.
         var result = await kernel.InvokeAsync(function, new KernelArguments { ["request"] = "Asia/Tokyo" });
 
-        Assert.Equal("Asia/Tokyo", result.GetValue<CurrentTimeToolResponse>().TimeZone);
+        Assert.Equal("Asia/Tokyo", result.GetValue<CurrentTimeToolResponse>()!.TimeZone);
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public class ToolCallRecoveryFilterTests
             ["request"] = new CurrentTimeToolRequest { TimeZone = "Asia/Tokyo" }
         });
 
-        Assert.Equal("Asia/Tokyo", result.GetValue<CurrentTimeToolResponse>().TimeZone);
+        Assert.Equal("Asia/Tokyo", result.GetValue<CurrentTimeToolResponse>()!.TimeZone);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class ToolCallRecoveryFilterTests
             ["request"] = "{\"TimeZone\":\"America/New_York\"}"
         });
 
-        Assert.Equal("America/New_York", result.GetValue<CurrentTimeToolResponse>().TimeZone);
+        Assert.Equal("America/New_York", result.GetValue<CurrentTimeToolResponse>()!.TimeZone);
     }
 
     [Fact]
@@ -179,9 +179,9 @@ public class ToolCallRecoveryFilterTests
     /// <summary>A minimal stand-in for a plugin whose request has more than one required field.</summary>
     private sealed class TwoFieldDemoRequest
     {
-        public string First { get; set; }
+        public string? First { get; set; }
 
-        public string Second { get; set; }
+        public string? Second { get; set; }
     }
 
     private sealed class TwoFieldDemoPlugin
@@ -199,7 +199,7 @@ public class ToolCallRecoveryFilterTests
     /// <summary>Mirrors CurrentTimeToolRequest: a request whose one property is not required.</summary>
     private sealed class NoRequiredFieldsDemoRequest
     {
-        public string Unused { get; set; }
+        public string? Unused { get; set; }
     }
 
     private sealed class NoRequiredFieldsDemoPlugin
@@ -222,7 +222,7 @@ public class ToolCallRecoveryFilterTests
     {
         public DemoCategory Category { get; set; }
 
-        public string Content { get; set; }
+        public string? Content { get; set; }
     }
 
     private sealed class EnumAndStringDemoPlugin

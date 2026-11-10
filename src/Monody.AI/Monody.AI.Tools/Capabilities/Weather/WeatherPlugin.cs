@@ -16,7 +16,7 @@ public sealed class WeatherPlugin(WeatherService weatherService, GeocodeService 
 
         var (latitude, longitude, geocode) = await ResolveCoordinatesAsync(request, cancellationToken);
 
-        object forecast = request.Range switch
+        object? forecast = request.Range switch
         {
             WeatherRange.Current => await weatherService.GetCurrentForecastAsync(latitude, longitude, request.Units),
             WeatherRange.Daily => await weatherService.GetDailyForecastAsync(latitude, longitude, request.Days ?? 7, request.Units),
@@ -31,17 +31,20 @@ public sealed class WeatherPlugin(WeatherService weatherService, GeocodeService 
         };
     }
 
-    private async Task<(double Latitude, double Longitude, LocationDetails Geocode)> ResolveCoordinatesAsync(WeatherToolRequest request, CancellationToken cancellationToken)
+    private async Task<(double Latitude, double Longitude, LocationDetails? Geocode)> ResolveCoordinatesAsync(WeatherToolRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.LocationQuery))
         {
-            return (request.Latitude.Value, request.Longitude.Value, null);
+            return (request.Latitude!.Value, request.Longitude!.Value, null);
         }
 
         var geocode = await geocodeService.GetGeocodeForLocationStringAsync(request.LocationQuery, cancellationToken)
             ?? throw new InvalidOperationException($"Could not resolve a location for '{request.LocationQuery}'.");
 
-        return (geocode.Coordinates.Latitude, geocode.Coordinates.Longitude, geocode);
+        var coordinates = geocode.Coordinates
+            ?? throw new InvalidOperationException($"Could not resolve coordinates for '{request.LocationQuery}'.");
+
+        return (coordinates.Latitude, coordinates.Longitude, geocode);
     }
 
     private static void ValidateRequest(WeatherToolRequest request)

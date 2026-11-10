@@ -48,9 +48,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         var (weatherLocation, unit) = request.Value;
 
         var forecastData = await _weatherService.GetCurrentForecastAsync(
-            weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, unit);
+            weatherLocation.Coordinates!.Latitude, weatherLocation.Coordinates.Longitude, unit);
 
-        if (forecastData == null)
+        if (forecastData?.Data is null || forecastData.TimeZone is null)
         {
             await SetContentAsync(_forecastUnavailable);
             return;
@@ -89,7 +89,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var location = string.IsNullOrEmpty(encodedLocation) ? null : Uri.UnescapeDataString(encodedLocation);
+        var location = string.IsNullOrEmpty(encodedLocation) ? string.Empty : Uri.UnescapeDataString(encodedLocation);
 
         await ProcessGetWeatherHourlyAsync(page, location, unit);
     }
@@ -107,9 +107,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         var (weatherLocation, unit) = request.Value;
 
         var forecastData = await _weatherService.GetHourlyForecastAsync(
-            weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, unit);
+            weatherLocation.Coordinates!.Latitude, weatherLocation.Coordinates.Longitude, unit);
 
-        if (forecastData == null)
+        if (forecastData?.Data is null || forecastData.TimeZone is null)
         {
             await SetContentAsync(_forecastUnavailable);
             return;
@@ -150,9 +150,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         var (weatherLocation, unit) = request.Value;
 
         var forecastData = await _weatherService.GetDailyForecastAsync(
-            weatherLocation.Coordinates.Latitude, weatherLocation.Coordinates.Longitude, Constants.MaxForecastDays, unit);
+            weatherLocation.Coordinates!.Latitude, weatherLocation.Coordinates.Longitude, Constants.MaxForecastDays, unit);
 
-        if (forecastData == null)
+        if (forecastData?.Data is null || forecastData.TimeZone is null)
         {
             await SetContentAsync(_forecastUnavailable);
             return;
@@ -209,8 +209,9 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         foreach (var alert in alerts)
         {
             // Alert titles read "<name> issued <date> by <office>"; keep only the name.
-            var issuedIndex = alert.Title.IndexOf("issued", StringComparison.Ordinal);
-            var title = issuedIndex > 0 ? alert.Title[..issuedIndex].Trim() : alert.Title;
+            var alertTitle = alert.Title ?? string.Empty;
+            var issuedIndex = alertTitle.IndexOf("issued", StringComparison.Ordinal);
+            var title = issuedIndex > 0 ? alertTitle[..issuedIndex].Trim() : alertTitle;
 
             description.AppendLine($"[**{title}**]({alert.Uri}) Until {alert.ExpirationDate:dd MMM yy HH:mm} {timeZoneCode}");
         }
@@ -295,12 +296,12 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
             .Build();
     }
 
-    private static Embed BuildEmbed(LocationDetails location, IEnumerable<EmbedFieldBuilder> fields, string description = null)
+    private static Embed BuildEmbed(LocationDetails location, IEnumerable<EmbedFieldBuilder> fields, string? description = null)
     {
         var embed = new EmbedBuilder()
             .WithAuthor(FormatLocation(location))
             .WithTitle(Constants.TitleSeeMoreText)
-            .WithUrl(string.Format(Constants.TitleSeeMoreUrlFormat, location.Coordinates.Latitude, location.Coordinates.Longitude))
+            .WithUrl(string.Format(Constants.TitleSeeMoreUrlFormat, location.Coordinates!.Latitude, location.Coordinates.Longitude))
             .WithColor(new Color(MonodyConstants.DefaultEmbedColor))
             .WithFooter(Constants.FooterPoweredByText);
 
@@ -349,7 +350,7 @@ public class InteractionModule : InteractionModuleBase<SocketInteractionContext>
         return prefix.Append(location.Country).ToString();
     }
 
-    private static string GetTimeZoneCode(string timezone)
+    private static string? GetTimeZoneCode(string timezone)
     {
         try
         {
