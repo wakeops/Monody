@@ -33,7 +33,9 @@ builder.Services
     .AddSingleton<AIChatService>()
     .AddServices(builder.Configuration)
     .AddCache(builder.Configuration)
-    .AddDiscord()
+    // Registered before AddDiscord: hosted services start in order, so this finishes before the gateway connects.
+    .AddHostedService<AIWarmupService>()
+    .AddDiscord(typeof(Program).Assembly)
     .AddHostedService<ReminderDeliveryService>();
 
 // Build and run
